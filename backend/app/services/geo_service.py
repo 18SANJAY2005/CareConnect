@@ -1,4 +1,5 @@
 import re
+import math
 from typing import Dict, Any, Tuple, Optional
 from app.core.config import settings
 
@@ -154,5 +155,49 @@ class GeoService:
             "city": "Chennai",
             "postalCode": clean_postal,
             "assignedHub": hub
+        }
+
+    @staticmethod
+    def haversine_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        Calculate the great-circle distance between two points on the Earth in meters
+        using the Haversine formula.
+        """
+        r = 6371000.0  # Earth radius in meters
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+
+        a = (math.sin(delta_phi / 2.0) ** 2 +
+             math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2))
+        c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+
+        return round(r * c, 2)
+
+    @staticmethod
+    def verify_geofence(
+        elder_lat: float,
+        elder_lng: float,
+        checkin_lat: float,
+        checkin_lng: float,
+        radius_meters: float = 200.0
+    ) -> Dict[str, Any]:
+        """
+        Verify if checkin coordinates fall within the elder's geofence boundary.
+        """
+        dist = GeoService.haversine_distance_meters(elder_lat, elder_lng, checkin_lat, checkin_lng)
+        is_verified = dist <= radius_meters
+
+        return {
+            "distanceMeters": dist,
+            "radiusMeters": radius_meters,
+            "verified": is_verified,
+            "verificationStatus": "VERIFIED" if is_verified else "OUT_OF_RANGE",
+            "message": (
+                f"Location verified within {round(dist, 1)}m of elder residence."
+                if is_verified
+                else f"Check-in location is {round(dist, 1)}m away from elder residence (exceeds {radius_meters}m boundary)."
+            )
         }
 

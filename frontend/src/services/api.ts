@@ -6,6 +6,20 @@ import type {
   LocationVerifyResponse, 
   HomeAssessment 
 } from '../types';
+import type {
+  ShiftDetails,
+  LiveShiftMonitorItem,
+  CareTask,
+  TimelineItem,
+  VitalReading,
+  VitalAlertItem,
+  VitalsTrendData,
+  Incident,
+  CareMedia,
+  ChatMessage,
+  OfflineQueueItem
+} from '../types/phaseC';
+import { offlineQueue } from './offlineQueue';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
@@ -22,7 +36,7 @@ class ApiService {
     localStorage.removeItem('careconnect_token');
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -158,6 +172,253 @@ class ApiService {
 
   async listHomeAssessments(): Promise<HomeAssessment[]> {
     return this.request<HomeAssessment[]>('/home-assessments');
+  }
+
+  // =========================================================
+  // Phase C: Sub-Phases C01 - C04 Endpoints
+  // =========================================================
+
+  // --- C01: Shifts & Attendance ---
+  async getCurrentCaregiverShift(): Promise<ShiftDetails> {
+    return this.request<ShiftDetails>('/shifts/current');
+  }
+
+  async getElderShiftStatus(elderId: string): Promise<any> {
+    return this.request(`/shifts/elder/${elderId}`);
+  }
+
+  async getLiveShiftMonitor(): Promise<LiveShiftMonitorItem[]> {
+    return this.request<LiveShiftMonitorItem[]>('/shifts/monitor');
+  }
+
+  async checkInShift(shiftId: string, data: { latitude: number; longitude: number; overrideCode?: string; method?: string }): Promise<any> {
+    return this.request(`/shifts/${shiftId}/check-in`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async checkOutShift(shiftId: string, data: { latitude?: number; longitude?: number; summary?: string }): Promise<any> {
+    return this.request(`/shifts/${shiftId}/check-out`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async supervisorOverride(shiftId: string, reason: string): Promise<any> {
+    return this.request(`/shifts/${shiftId}/supervisor-override`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async seedDemoScenario(): Promise<any> {
+    return this.request('/shifts/seed-demo', {
+      method: 'POST',
+    });
+  }
+
+  // --- C02: Daily Care Tasks & ADL ---
+  async getShiftTasks(shiftId: string): Promise<CareTask[]> {
+    return this.request<CareTask[]>(`/care-tasks/shift/${shiftId}`);
+  }
+
+  async updateCareTask(taskId: string, data: { status: string; details?: Record<string, any>; notes?: string; idempotencyKey?: string }): Promise<any> {
+    // Check if currently simulated or network offline
+    if (!offlineQueue.isOnline) {
+      offlineQueue.enqueue(`/care-tasks/${taskId}`, 'PATCH', data);
+      return {
+        id: taskId,
+        status: data.status,
+        details: data.details,
+        notes: data.notes,
+        isQueuedOffline: true,
+        message: 'Saved to local device. Will sync automatically upon reconnection.'
+      };
+    }
+
+    try {
+      return await this.request(`/care-tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      // If network failure occurs, fallback to local queue
+      offlineQueue.enqueue(`/care-tasks/${taskId}`, 'PATCH', data);
+      return {
+        id: taskId,
+        status: data.status,
+        details: data.details,
+        notes: data.notes,
+        isQueuedOffline: true,
+        message: 'Connection interrupted. Activity safely queued for background sync.'
+      };
+    }
+  }
+
+  async batchSyncTasks(tasks: any[]): Promise<any> {
+    return this.request('/care-tasks/batch', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    });
+  }
+
+  async getElderCareTimeline(elderId: string, limit: number = 30): Promise<TimelineItem[]> {
+    return this.request<TimelineItem[]>(`/care-tasks/elder/${elderId}/timeline?limit=${limit}`);
+  }
+
+  // --- C03: Vitals & Health Tracker ---
+  async recordVitalReading(data: {
+    elderId: string;
+    shiftId?: string;
+    systolicBp?: number | null;
+    diastolicBp?: number | null;
+    pulse?: number | null;
+    bloodGlucose?: number | null;
+    glucoseContext?: string;
+    temperatureCelsius?: number | null;
+    source?: string;
+    notes?: string;
+    idempotencyKey?: string;
+  }): Promise<VitalReading> {
+    if (!offlineQueue.isOnline) {
+      offlineQueue.enqueue('/vitals/', 'POST', data);
+      return {
+        id: 'temp_' + Date.now(),
+        elderId: data.elderId,
+        shiftId: data.shiftId,
+        recordedById: 'current',
+        recordedAt: new Date().toISOString(),
+        systolicBp: data.systolicBp,
+        diastolicBp: data.diastolicBp,
+        pulse: data.pulse,
+        bloodGlucose: data.bloodGlucose,
+        temperatureCelsius: data.temperatureCelsius,
+        source: data.source || 'MANUAL',
+        isAbnormal: false,
+        alertSeverity: 'NORMAL',
+        alertAcknowledged: false,
+        notes: (data.notes || '') + ' [Queued Offline]'
+      };
+    }
+
+    try {
+      return await this.request<VitalReading>('/vitals/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      offlineQueue.enqueue('/vitals/', 'POST', data);
+      throw err;
+    }
+  }
+
+  async getElderVitalsHistory(elderId: string, limit: number = 50): Promise<VitalReading[]> {
+    return this.request<VitalReading[]>(`/vitals/elder/${elderId}?limit=${limit}`);
+  }
+
+  async getElderVitalsTrends(elderId: string): Promise<VitalsTrendData> {
+    return this.request<VitalsTrendData>(`/vitals/elder/${elderId}/trends`);
+  }
+
+  async getVitalAlerts(): Promise<VitalAlertItem[]> {
+    return this.request<VitalAlertItem[]>('/vitals/alerts');
+  }
+
+  async acknowledgeVitalAlert(vitalId: string): Promise<any> {
+    return this.request(`/vitals/alerts/${vitalId}/acknowledge`, {
+      method: 'POST',
+    });
+  }
+
+  // --- C04: SOS & Incidents ---
+  async triggerSos(data: {
+    elderId: string;
+    shiftId?: string;
+    latitude?: number;
+    longitude?: number;
+    notes?: string;
+  }): Promise<Incident> {
+    return this.request<Incident>('/incidents/sos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getIncidentDesk(statusFilter?: string): Promise<Incident[]> {
+    const param = statusFilter ? `?status_filter=${statusFilter}` : '';
+    return this.request<Incident[]>(`/incidents/desk${param}`);
+  }
+
+  async getElderIncidents(elderId: string): Promise<Incident[]> {
+    return this.request<Incident[]>(`/incidents/elder/${elderId}`);
+  }
+
+  async acknowledgeIncident(incidentId: string): Promise<Incident> {
+    return this.request<Incident>(`/incidents/${incidentId}/acknowledge`, {
+      method: 'POST',
+    });
+  }
+
+  async escalateIncident(incidentId: string, actionTaken: string): Promise<Incident> {
+    return this.request<Incident>(`/incidents/${incidentId}/escalate`, {
+      method: 'POST',
+      body: JSON.stringify({ actionTaken }),
+    });
+  }
+
+  async resolveIncident(incidentId: string, resolutionNotes: string): Promise<Incident> {
+    return this.request<Incident>(`/incidents/${incidentId}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ resolutionNotes }),
+    });
+  }
+
+  // --- Media Updates ---
+  async uploadCareMedia(data: {
+    elderId: string;
+    mediaUrl: string;
+    mediaType?: string;
+    category?: string;
+    caption?: string;
+    shiftId?: string;
+  }): Promise<CareMedia> {
+    return this.request<CareMedia>('/media/upload', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getElderMedia(elderId: string): Promise<CareMedia[]> {
+    return this.request<CareMedia[]>(`/media/elder/${elderId}`);
+  }
+
+  // --- Coordinator Chat ---
+  async sendChatMessage(data: {
+    elderId: string;
+    content: string;
+    channel?: string;
+    recipientId?: string;
+  }): Promise<ChatMessage> {
+    return this.request<ChatMessage>('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getChatMessages(elderId: string, channel?: string): Promise<ChatMessage[]> {
+    const param = channel ? `&channel=${channel}` : '';
+    return this.request<ChatMessage[]>(`/chat/messages?elder_id=${elderId}${param}`);
+  }
+
+  // --- Offline Synchronizer Runner ---
+  async syncPendingOfflineQueue(): Promise<{ processed: number; failed: number }> {
+    return offlineQueue.processQueue(async (item: OfflineQueueItem) => {
+      return this.request(item.endpoint, {
+        method: item.method,
+        body: JSON.stringify(item.body),
+      });
+    });
   }
 }
 
