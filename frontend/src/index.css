@@ -1,0 +1,39 @@
+/* CareConnect Global Styles & Design Tokens */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9ff;
+  color: #111c2d;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* Custom utility for non-diluted touch target */
+.touch-target-primary {
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target-secondary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CareConnect — Curated Elder Care & Verification</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS with CareConnect Design Tokens -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: "#004340",
+                container: "#0d5c58",
+              },
+              secondary: {
+                DEFAULT: "#0e658c",
+                light: "#e0f2fe",
+              },
+              tertiary: {
+                DEFAULT: "#004525",
+                light: "#dcfce7",
+              },
+              error: {
+                DEFAULT: "#ba1a1a",
+                light: "#fee2e2",
+              },
+              surface: {
+                DEFAULT: "#f9f9ff",
+                card: "#ffffff",
+                container: "#e7eeff",
+                highest: "#d8e3fb",
+              },
+              "on-surface": {
+                DEFAULT: "#111c2d",
+                variant: "#3f4947",
+              },
+              outline: {
+                DEFAULT: "#6f7978",
+                light: "#cbd5e1",
+              },
+            },
+            fontFamily: {
+              heading: ['"Plus Jakarta Sans"', "sans-serif"],
+              sans: ["Inter", "sans-serif"],
+            },
+            minHeight: {
+              56: "56px",
+              44: "44px",
+            },
+            boxShadow: {
+              card: "0 2px 8px -2px rgba(17, 28, 45, 0.08), 0 1px 4px -1px rgba(17, 28, 45, 0.04)",
+              elevated:
+                "0 10px 25px -5px rgba(0, 67, 64, 0.12), 0 8px 10px -6px rgba(0, 67, 64, 0.04)",
+            },
+            borderRadius: {
+              xl: "12px",
+              "2xl": "16px",
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-surface text-on-surface font-sans antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
