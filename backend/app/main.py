@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import auth, me, elders, locations, assessments
+from app.api import auth, me, elders, locations, assessments, assignments, replacements, feedback, billing, renewals, audit
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,7 +14,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="CareConnect Elder Care Platform API — Family Sponsor Intake & Geographic Verification",
+    description="CareConnect Elder Care Platform API — Intake, Clinical Operations & Phase D Service Management",
     lifespan=lifespan
 )
 
@@ -33,6 +33,12 @@ app.include_router(me.router, prefix=settings.API_V1_STR)
 app.include_router(elders.router, prefix=settings.API_V1_STR)
 app.include_router(locations.router, prefix=settings.API_V1_STR)
 app.include_router(assessments.router, prefix=settings.API_V1_STR)
+app.include_router(assignments.router, prefix=settings.API_V1_STR)
+app.include_router(replacements.router, prefix=settings.API_V1_STR)
+app.include_router(feedback.router, prefix=settings.API_V1_STR)
+app.include_router(billing.router, prefix=settings.API_V1_STR)
+app.include_router(renewals.router, prefix=settings.API_V1_STR)
+app.include_router(audit.router, prefix=settings.API_V1_STR)
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():
