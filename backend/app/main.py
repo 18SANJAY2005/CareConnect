@@ -28,6 +28,19 @@ from app.api.calls import router as calls_router
 from app.api.payments import router as payments_router
 from app.api.sla import router as sla_router
 
+# ============================================================
+# Phase C routers
+# ============================================================
+
+from app.api import (
+    shifts,
+    care_tasks,
+    vitals,
+    incidents,
+    media,
+    chat,
+)
+
 from app.services.matching_service import seed_initial_data_if_empty
 
 
@@ -40,7 +53,7 @@ async def lifespan(app: FastAPI):
     """
     Application startup and shutdown lifecycle.
 
-    Both Phase A and Phase B use the async database layer.
+    Phase A, Phase B and Phase C use the async database layer.
     """
 
     # Initialize all database tables.
@@ -63,8 +76,9 @@ app = FastAPI(
     description=(
         "CareConnect Elder Care Platform API - "
         "Phase A Family Sponsor Intake, Geographic Verification, "
-        "Persona & Assessment, plus Phase B Caregiver Matching, "
-        "Intro Calls, Payments and SLA Acceptance."
+        "Persona & Assessment, Phase B Caregiver Matching, "
+        "Intro Calls, Payments and SLA Acceptance, "
+        "plus Phase C Active Care & Remote Monitoring."
     ),
     lifespan=lifespan,
 )
@@ -143,7 +157,7 @@ app.include_router(
 # Phase B
 # Matching, Trial & Confirmation
 #
-# Phase B is implemented asynchronously.
+# Phase B remains asynchronous.
 # ============================================================
 
 app.include_router(
@@ -169,4 +183,83 @@ app.include_router(
 app.include_router(
     sla_router,
     prefix=settings.API_V1_STR,
+)
+
+
+# ============================================================
+# Phase C
+# Active Care & Remote Monitoring
+#
+# Primary application prefix remains settings.API_V1_STR.
+# Additional /api/v1 compatibility routes are provided because
+# the Phase C API contract/tests use /api/v1.
+# ============================================================
+
+# ------------------------------------------------------------
+# Phase C - Existing application prefix
+# ------------------------------------------------------------
+
+app.include_router(
+    shifts.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    care_tasks.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    vitals.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    incidents.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    media.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    chat.router,
+    prefix=settings.API_V1_STR,
+)
+
+
+# ------------------------------------------------------------
+# Phase C - /api/v1 compatibility prefix
+# ------------------------------------------------------------
+
+app.include_router(
+    shifts.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    care_tasks.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    vitals.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    incidents.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    media.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    chat.router,
+    prefix="/api/v1",
 )

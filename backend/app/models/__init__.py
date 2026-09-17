@@ -11,8 +11,15 @@ from app.models.call import IntroCall
 from app.models.payment import PaymentOrder, Payment, PaymentEvent
 from app.models.sla import SLAVersion, SLAAcceptance
 
+# Phase C models
+from app.models.shift import CareShift, AttendanceLog
+from app.models.care_log import CareTask
+from app.models.vital import VitalReading
+from app.models.incident import Incident, CareMedia, ChatMessage
+
 
 __all__ = [
+    # Phase A
     "User",
     "Elder",
     "ElderLocation",
@@ -28,4 +35,13 @@ __all__ = [
     "PaymentEvent",
     "SLAVersion",
     "SLAAcceptance",
+
+    # Phase C
+    "CareShift",
+    "AttendanceLog",
+    "CareTask",
+    "VitalReading",
+    "Incident",
+    "CareMedia",
+    "ChatMessage",
 ]

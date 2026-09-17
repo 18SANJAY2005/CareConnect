@@ -14,10 +14,12 @@ import {
 } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useAuth } from '../../context/AuthContext';
+import { FamilyActiveCareView } from '../family/FamilyActiveCareView';
 
 export const SponsorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { activeElder, activeAssessment, setCurrentStep, resetOnboarding } = useOnboarding();
+  const [viewMode, setViewMode] = React.useState<'ACTIVE_CARE' | 'PROFILE'>('ACTIVE_CARE');
 
   if (!activeElder) {
     return (
@@ -77,7 +79,39 @@ export const SponsorDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* View Mode Switcher: Active Care Monitoring vs Clinical Persona */}
+      <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl w-fit">
+        <button
+          onClick={() => setViewMode('ACTIVE_CARE')}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+            viewMode === 'ACTIVE_CARE'
+              ? 'bg-primary text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Active Care & Remote Monitoring</span>
+          <span className="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-extrabold text-[9px] uppercase">
+            Live
+          </span>
+        </button>
+        <button
+          onClick={() => setViewMode('PROFILE')}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-2 ${
+            viewMode === 'PROFILE'
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Heart className="w-4 h-4 text-teal-600" />
+          <span>Patient Intake Profile</span>
+        </button>
+      </div>
+
+      {viewMode === 'ACTIVE_CARE' ? (
+        <FamilyActiveCareView elderId={activeElder.id} elderName={activeElder.name} />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left Column: Elder Clinical Persona Overview (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
@@ -303,6 +337,7 @@ export const SponsorDashboard: React.FC = () => {
         </div>
 
       </div>
+      )}
 
     </div>
   );

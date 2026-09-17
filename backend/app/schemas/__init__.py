@@ -74,6 +74,44 @@ from app.schemas.sla import (
 
 
 # ============================================================
+# Phase C — Active Care & Remote Monitoring Schemas
+# ============================================================
+
+from app.schemas.shift import (
+    CheckInRequest,
+    CheckOutRequest,
+    SupervisorOverrideRequest,
+    ShiftResponse,
+    ShiftDetailResponse,
+    LiveShiftMonitorItem,
+)
+
+from app.schemas.care_log import (
+    CareTaskUpdate,
+    CareTaskItem,
+    BatchSyncTaskRequest,
+    TimelineItem,
+)
+
+from app.schemas.vital import (
+    VitalReadingCreate,
+    VitalReadingResponse,
+    VitalAlertItem,
+)
+
+from app.schemas.incident import (
+    SosTriggerRequest,
+    IncidentActionRequest,
+    IncidentResolveRequest,
+    IncidentResponse,
+    MediaUploadRequest,
+    MediaResponse,
+    ChatSendMessageRequest,
+    ChatMessageItem,
+)
+
+
+# ============================================================
 # Public Schema Exports
 # ============================================================
 
@@ -133,4 +171,33 @@ __all__ = [
     "SLAVersionResponse",
     "SLAAcceptanceCreate",
     "SLAAcceptanceResponse",
+
+    # Phase C — Shifts & Attendance
+    "CheckInRequest",
+    "CheckOutRequest",
+    "SupervisorOverrideRequest",
+    "ShiftResponse",
+    "ShiftDetailResponse",
+    "LiveShiftMonitorItem",
+
+    # Phase C — Care Tasks
+    "CareTaskUpdate",
+    "CareTaskItem",
+    "BatchSyncTaskRequest",
+    "TimelineItem",
+
+    # Phase C — Vitals
+    "VitalReadingCreate",
+    "VitalReadingResponse",
+    "VitalAlertItem",
+
+    # Phase C — Incidents, Media & Chat
+    "SosTriggerRequest",
+    "IncidentActionRequest",
+    "IncidentResolveRequest",
+    "IncidentResponse",
+    "MediaUploadRequest",
+    "MediaResponse",
+    "ChatSendMessageRequest",
+    "ChatMessageItem",
 ]
