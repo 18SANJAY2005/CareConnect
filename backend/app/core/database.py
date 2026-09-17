@@ -46,7 +46,21 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize all Phase A and Phase B database tables."""
+
+    from app.models import (
+        user,
+        elder,
+        location,
+        assessment,
+        caregiver,
+        matching,
+        assignment,
+        call,
+        payment,
+        sla,
+    )
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
