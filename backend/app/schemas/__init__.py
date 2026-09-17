@@ -1,26 +1,136 @@
+# ============================================================
+# Phase A — Onboarding & Intake Schemas
+# ============================================================
+
 from app.schemas.auth import (
-    UserRole, SendOtpRequest, SendOtpResponse, VerifyOtpRequest,
-    GoogleAuthRequest, UserResponse, TokenResponse
+    UserRole,
+    SendOtpRequest,
+    SendOtpResponse,
+    VerifyOtpRequest,
+    GoogleAuthRequest,
+    UserResponse,
+    TokenResponse,
 )
+
 from app.schemas.location import (
-    LocationVerificationStatus, LocationVerifyRequest, LocationVerifyResponse,
-    ElderLocationPersistRequest, ElderLocationResponse
+    LocationVerificationStatus,
+    LocationVerifyRequest,
+    LocationVerifyResponse,
+    ElderLocationPersistRequest,
+    ElderLocationResponse,
 )
+
 from app.schemas.elder import (
-    MobilityLevel, PersonaStatus, ShiftPreference,
-    ElderCreate, ElderUpdate, ElderResponse
+    MobilityLevel,
+    PersonaStatus,
+    ShiftPreference,
+    ElderCreate,
+    ElderUpdate,
+    ElderResponse,
 )
+
 from app.schemas.assessment import (
-    AssessmentStatus, AssessmentCreate, AssessmentResponse
+    AssessmentStatus,
+    AssessmentCreate,
+    AssessmentResponse,
 )
+
+
+# ============================================================
+# Phase B — Matching, Trial & Confirmation Schemas
+# ============================================================
+
+from app.schemas.caregiver import (
+    CaregiverBase,
+    CaregiverResponse,
+    CaregiverMatchItem,
+    CuratedMatchesResponse,
+)
+
+from app.schemas.assignment import (
+    AssignmentCreate,
+    AssignmentStatusUpdate,
+    AssignmentResponse,
+)
+
+from app.schemas.call import (
+    IntroCallScheduleRequest,
+    IntroCallStatusUpdate,
+    IntroCallResponse,
+)
+
+from app.schemas.payment import (
+    PaymentOrderCreate,
+    PaymentOrderResponse,
+    PaymentVerifyRequest,
+    PaymentVerifyResponse,
+)
+
+from app.schemas.sla import (
+    SLAVersionResponse,
+    SLAAcceptanceCreate,
+    SLAAcceptanceResponse,
+)
+
+
+# ============================================================
+# Public Schema Exports
+# ============================================================
 
 __all__ = [
-    "UserRole", "SendOtpRequest", "SendOtpResponse", "VerifyOtpRequest",
-    "GoogleAuthRequest", "UserResponse", "TokenResponse",
-    "LocationVerificationStatus", "LocationVerifyRequest", "LocationVerifyResponse",
-    "ElderLocationPersistRequest", "ElderLocationResponse",
-    "MobilityLevel", "PersonaStatus", "ShiftPreference",
-    "ElderCreate", "ElderUpdate", "ElderResponse",
-    "AssessmentStatus", "AssessmentCreate", "AssessmentResponse"
-]
+    # Phase A — Auth
+    "UserRole",
+    "SendOtpRequest",
+    "SendOtpResponse",
+    "VerifyOtpRequest",
+    "GoogleAuthRequest",
+    "UserResponse",
+    "TokenResponse",
 
+    # Phase A — Location
+    "LocationVerificationStatus",
+    "LocationVerifyRequest",
+    "LocationVerifyResponse",
+    "ElderLocationPersistRequest",
+    "ElderLocationResponse",
+
+    # Phase A — Elder Persona
+    "MobilityLevel",
+    "PersonaStatus",
+    "ShiftPreference",
+    "ElderCreate",
+    "ElderUpdate",
+    "ElderResponse",
+
+    # Phase A — Assessment
+    "AssessmentStatus",
+    "AssessmentCreate",
+    "AssessmentResponse",
+
+    # Phase B — Caregiver
+    "CaregiverBase",
+    "CaregiverResponse",
+    "CaregiverMatchItem",
+    "CuratedMatchesResponse",
+
+    # Phase B — Assignment
+    "AssignmentCreate",
+    "AssignmentStatusUpdate",
+    "AssignmentResponse",
+
+    # Phase B — Intro Call
+    "IntroCallScheduleRequest",
+    "IntroCallStatusUpdate",
+    "IntroCallResponse",
+
+    # Phase B — Payment
+    "PaymentOrderCreate",
+    "PaymentOrderResponse",
+    "PaymentVerifyRequest",
+    "PaymentVerifyResponse",
+
+    # Phase B — SLA
+    "SLAVersionResponse",
+    "SLAAcceptanceCreate",
+    "SLAAcceptanceResponse",
+]
