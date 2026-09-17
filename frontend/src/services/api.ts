@@ -13,6 +13,14 @@ import type {
   PaymentVerifyResponse,
   SLAAcceptanceResponse,
   SLAVersion,
+  ReplacementRequest,
+  CareFeedback,
+  OperationsIssue,
+  Invoice,
+  PaymentIntent,
+  Renewal,
+  Notification,
+  AuditLog,
 } from "../types";
 
 import type {
@@ -91,7 +99,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A — AUTHENTICATION
+     PHASE A ÔÇö AUTHENTICATION
      ========================================================= */
 
   async sendOtp(
@@ -163,7 +171,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A — ELDER MANAGEMENT
+     PHASE A ÔÇö ELDER MANAGEMENT
      ========================================================= */
 
   async createElder(data: {
@@ -197,7 +205,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A — LOCATION VERIFICATION
+     PHASE A ÔÇö LOCATION VERIFICATION
      ========================================================= */
 
   async verifyLocation(data: {
@@ -243,7 +251,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A — HOME ASSESSMENT
+     PHASE A ÔÇö HOME ASSESSMENT
      ========================================================= */
 
   async createHomeAssessment(data: {
@@ -276,7 +284,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B — CAREGIVER MATCHING
+     PHASE B ÔÇö CAREGIVER MATCHING
      ========================================================= */
 
   async getCuratedMatches(
@@ -324,7 +332,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B — CARE ASSIGNMENTS
+     PHASE B ÔÇö CARE ASSIGNMENTS
      ========================================================= */
 
   async createAssignment(payload: {
@@ -353,7 +361,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B — INTRODUCTORY CALL
+     PHASE B ÔÇö INTRODUCTORY CALL
      ========================================================= */
 
   async scheduleIntroCall(payload: {
@@ -405,7 +413,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B — PAYMENTS
+     PHASE B ÔÇö PAYMENTS
      ========================================================= */
 
   async createPaymentOrder(payload: {
@@ -442,7 +450,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B — SLA
+     PHASE B ÔÇö SLA
      ========================================================= */
 
   async getCurrentSLA(): Promise<SLAVersion> {
@@ -475,7 +483,195 @@ class ApiService {
      ========================================================= */
 
   /* ---------------------------------------------------------
-     C01 — Shifts & Attendance
+     C01 ÔÇö*/
+
+  // ==========================================
+  // --- Phase D: Care Assignment & Buffer ---
+  // ==========================================
+  async getActiveAssignment(elderId?: string): Promise<CareAssignment | null> {
+    const q = elderId ? `?elderId=${elderId}` : '';
+    return this.request<CareAssignment | null>(`/assignments/active${q}`);
+  }
+
+  async getBufferPoolCaregivers(): Promise<Caregiver[]> {
+    return this.request<Caregiver[]>('/caregivers/buffer-pool');
+  }
+
+  // ==========================================
+  // --- Phase D01: Replacement Requests ---
+  // ==========================================
+  async createReplacementRequest(data: {
+    assignmentId: string | number;
+    reasonCode: string;
+    notes?: string;
+    priority?: string;
+    requestedStartAt?: string;
+  }): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>('/replacement-requests', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async listReplacementRequests(): Promise<ReplacementRequest[]> {
+    return this.request<ReplacementRequest[]>('/replacement-requests');
+  }
+
+  async getReplacementRequest(id: string): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(`/replacement-requests/${id}`);
+  }
+
+  async cancelReplacementRequest(id: string): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(`/replacement-requests/${id}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async confirmReplacement(id: string): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(`/replacement-requests/${id}/confirm-replacement`, {
+      method: 'POST',
+    });
+  }
+
+  async getOperationsReplacementQueue(statusFilter?: string, priorityFilter?: string): Promise<ReplacementRequest[]> {
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status', statusFilter);
+    if (priorityFilter) params.append('priority', priorityFilter);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<ReplacementRequest[]>(`/operations/replacement-queue${qs}`);
+  }
+
+  async updateOperationsReplacementRequest(id: string, data: { status: string; note?: string; resolutionNotes?: string }): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(`/operations/replacement-requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async assignSubstituteCaregiver(
+    id: string,
+    substituteCaregiverId: string | number,
+    note?: string
+  ): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(`/operations/replacement-requests/${id}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ substituteCaregiverId, note }),
+    });
+  }
+
+  // ==========================================
+  // --- Phase D02: Feedback & QA ---
+  // ==========================================
+  async submitFeedback(data: {
+    assignmentId: string | number;
+    caregiverRating: number;
+    serviceRating: number;
+    tags: string[];
+    comment?: string;
+    seniorFeedback?: string;
+    visibility?: string;
+  }): Promise<CareFeedback> {
+    return this.request<CareFeedback>('/feedback', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async listFeedback(): Promise<CareFeedback[]> {
+    return this.request<CareFeedback[]>('/feedback');
+  }
+
+  async getOperationsFeedbackQueue(statusFilter?: string): Promise<OperationsIssue[]> {
+    const qs = statusFilter ? `?status=${statusFilter}` : '';
+    return this.request<OperationsIssue[]>(`/operations/feedback-queue${qs}`);
+  }
+
+  async updateOperationsIssue(id: string, data: { status: string; resolutionNotes?: string; ownerUserId?: string }): Promise<OperationsIssue> {
+    return this.request<OperationsIssue>(`/operations/issues/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ==========================================
+  // --- Phase D03: Billing & Invoicing ---
+  // ==========================================
+  async listInvoices(): Promise<Invoice[]> {
+    return this.request<Invoice[]>('/invoices');
+  }
+
+  async getInvoice(id: string): Promise<Invoice> {
+    return this.request<Invoice>(`/invoices/${id}`);
+  }
+
+  async initiateInvoicePayment(id: string): Promise<PaymentIntent> {
+    return this.request<PaymentIntent>(`/invoices/${id}/pay`, {
+      method: 'POST',
+    });
+  }
+
+  async confirmInvoicePayment(id: string, data: { razorpayPaymentId: string; razorpayOrderId: string; razorpaySignature: string }): Promise<Invoice> {
+    return this.request<Invoice>(`/invoices/${id}/confirm-payment`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getOperationsInvoices(statusFilter?: string): Promise<Invoice[]> {
+    const qs = statusFilter ? `?status=${statusFilter}` : '';
+    return this.request<Invoice[]>(`/operations/invoices${qs}`);
+  }
+
+  // ==========================================
+  // --- Phase D04: Renewals & Auto-Debit ---
+  // ==========================================
+  async getUpcomingRenewal(): Promise<Renewal | null> {
+    return this.request<Renewal | null>('/renewals/upcoming');
+  }
+
+  async confirmRenewal(notes?: string): Promise<Renewal> {
+    return this.request<Renewal>('/renewals/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async toggleAutoDebitMandate(enable: boolean): Promise<Renewal> {
+    return this.request<Renewal>('/renewals/mandate', {
+      method: 'POST',
+      body: JSON.stringify({ enable }),
+    });
+  }
+
+  async requestRenewalChange(data: { action: 'CHANGE_PLAN' | 'CANCEL_SERVICE'; reason: string; preferredPlan?: string }): Promise<Renewal> {
+    return this.request<Renewal>('/renewals/request-change', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getOperationsRenewals(): Promise<Renewal[]> {
+    return this.request<Renewal[]>('/operations/renewals');
+  }
+
+  // ==========================================
+  // --- Notifications & Audit ---
+  // ==========================================
+  async listNotifications(): Promise<Notification[]> {
+    return this.request<Notification[]>('/notifications');
+  }
+
+  async markNotificationRead(id: string): Promise<Notification> {
+    return this.request<Notification>(`/notifications/${id}/read`, {
+      method: 'PATCH',
+    });
+  }
+
+  async getAuditTrail(): Promise<AuditLog[]> {
+    return this.request<AuditLog[]>('/operations/audit');
+  }
+  /* ---------------------------------------------------------
+     Shifts & Attendance
      --------------------------------------------------------- */
 
   async getCurrentCaregiverShift(): Promise<ShiftDetails> {
@@ -553,7 +749,7 @@ class ApiService {
   }
 
   /* ---------------------------------------------------------
-     C02 — Daily Care Tasks & ADL
+     C02 ÔÇö Daily Care Tasks & ADL
      --------------------------------------------------------- */
 
   async getShiftTasks(
@@ -639,7 +835,7 @@ class ApiService {
   }
 
   /* ---------------------------------------------------------
-     C03 — Vitals & Health Tracker
+     C03 ÔÇö Vitals & Health Tracker
      --------------------------------------------------------- */
 
   async recordVitalReading(data: {
@@ -739,7 +935,7 @@ class ApiService {
   }
 
   /* ---------------------------------------------------------
-     C04 — SOS & Incidents
+     C04 ÔÇö SOS & Incidents
      --------------------------------------------------------- */
 
   async triggerSos(data: {
@@ -896,3 +1092,4 @@ class ApiService {
 }
 
 export const api = new ApiService();
+

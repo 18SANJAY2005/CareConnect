@@ -43,6 +43,18 @@ from app.api import (
 
 from app.services.matching_service import seed_initial_data_if_empty
 
+# ============================================================
+# Phase D routers
+# ============================================================
+
+from app.api import (
+    replacements,
+    feedback,
+    billing,
+    renewals,
+    audit,
+)
+
 
 # ============================================================
 # Application lifecycle
@@ -53,7 +65,8 @@ async def lifespan(app: FastAPI):
     """
     Application startup and shutdown lifecycle.
 
-    Phase A, Phase B and Phase C use the async database layer.
+    Phase A, Phase B, Phase C and Phase D use the async
+    database layer.
     """
 
     # Initialize all database tables.
@@ -78,7 +91,8 @@ app = FastAPI(
         "Phase A Family Sponsor Intake, Geographic Verification, "
         "Persona & Assessment, Phase B Caregiver Matching, "
         "Intro Calls, Payments and SLA Acceptance, "
-        "plus Phase C Active Care & Remote Monitoring."
+        "Phase C Active Care & Remote Monitoring, "
+        "and Phase D Service Management."
     ),
     lifespan=lifespan,
 )
@@ -262,4 +276,35 @@ app.include_router(
 app.include_router(
     chat.router,
     prefix="/api/v1",
+)
+
+
+# ============================================================
+# Phase D
+# Service Management
+# ============================================================
+
+app.include_router(
+    replacements.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    feedback.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    billing.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    renewals.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    audit.router,
+    prefix=settings.API_V1_STR,
 )

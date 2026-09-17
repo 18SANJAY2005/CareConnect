@@ -124,7 +124,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
     try {
       const newAssignment = await api.createAssignment({
         elder_id: elder.id,
-        caregiver_id: selectedMatch.caregiver.id,
+        caregiver_id: Number(selectedMatch.caregiver.id),
         sponsor_id: user.id,
         shift_type: elder.shiftPreference,
         notes: `Selected from B01 matching with ${selectedMatch.match_percentage}% score.`,
@@ -160,7 +160,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
 
     try {
       const call = await api.scheduleIntroCall({
-        assignment_id: assignment.id,
+        assignment_id: Number(assignment.id),
         scheduled_at: scheduledAt,
         timezone,
         call_notes: notes,
@@ -219,7 +219,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
 
     try {
       const order = await api.createPaymentOrder({
-        assignment_id: assignment.id,
+        assignment_id: Number(assignment.id),
         sponsor_id: user.id,
         base_tier_amount: 14000,
         addon_amount: 1000,
@@ -255,7 +255,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
 
     try {
       const result = await api.verifyPayment({
-        assignment_id: assignment.id,
+        assignment_id: Number(assignment.id),
         sponsor_id: user.id,
         provider_order_id: paymentOrder.provider_order_id,
         provider_payment_id: paymentId,
@@ -286,7 +286,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
     setErrorMessage(null);
 
     try {
-      const result = await api.acceptSLA(assignment.id, {
+      const result = await api.acceptSLA(Number(assignment.id), {
         sla_version_id: slaVersion.id,
         sponsor_id: user.id,
         signer_name: signerName,
