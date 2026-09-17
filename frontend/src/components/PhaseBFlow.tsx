@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
 
 import { Header } from "./Header";
 import { StepIndicator } from "./StepIndicator";
@@ -30,50 +30,46 @@ import type {
 interface PhaseBFlowProps {
   user: User;
   elder: Elder;
+  onBackToDashboard?: () => void;
 }
 
 export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
   user,
   elder,
+  onBackToDashboard,
 }) => {
-  const [currentStep, setCurrentStep] =
-    useState<PhaseBStep>("matching");
+  const [currentStep, setCurrentStep] = useState<PhaseBStep>("matching");
 
-  const [matchesData, setMatchesData] =
-    useState<CuratedMatchesResponse | null>(null);
+  const [matchesData, setMatchesData] = useState<CuratedMatchesResponse | null>(
+    null,
+  );
 
-  const [selectedMatch, setSelectedMatch] =
-    useState<CaregiverMatchItem | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<CaregiverMatchItem | null>(
+    null,
+  );
 
-  const [assignment, setAssignment] =
-    useState<CareAssignment | null>(null);
+  const [assignment, setAssignment] = useState<CareAssignment | null>(null);
 
-  const [introCall, setIntroCall] =
-    useState<IntroCall | null>(null);
+  const [introCall, setIntroCall] = useState<IntroCall | null>(null);
 
-  const [isCallInSession, setIsCallInSession] =
-    useState(false);
+  const [isCallInSession, setIsCallInSession] = useState(false);
 
-  const [paymentOrder, setPaymentOrder] =
-    useState<PaymentOrder | null>(null);
+  const [paymentOrder, setPaymentOrder] = useState<PaymentOrder | null>(null);
 
   const [paymentResult, setPaymentResult] =
     useState<PaymentVerifyResponse | null>(null);
 
-  const [slaVersion, setSlaVersion] =
-    useState<SLAVersion | null>(null);
+  const [slaVersion, setSlaVersion] = useState<SLAVersion | null>(null);
 
-  const [slaResult, setSlaResult] =
-    useState<SLAAcceptanceResponse | null>(null);
+  const [slaResult, setSlaResult] = useState<SLAAcceptanceResponse | null>(
+    null,
+  );
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [isActionLoading, setIsActionLoading] =
-    useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-  const [errorMessage, setErrorMessage] =
-    useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   /*
    * Phase B starts using the real Phase A elder UUID.
@@ -96,15 +92,12 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
           setSelectedMatch(matches.matches[0]);
         }
       } catch (err: unknown) {
-        console.error(
-          "Failed to load Phase B initial data:",
-          err
-        );
+        console.error("Failed to load Phase B initial data:", err);
 
         setErrorMessage(
           err instanceof Error
             ? err.message
-            : "Unable to connect to the CareConnect backend."
+            : "Unable to connect to the CareConnect backend.",
         );
       } finally {
         setIsLoading(false);
@@ -143,7 +136,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Failed to create caregiver assignment."
+          : "Failed to create caregiver assignment.",
       );
     } finally {
       setIsActionLoading(false);
@@ -156,7 +149,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
   const handleScheduleCall = async (
     scheduledAt: string,
     timezone: string,
-    notes: string
+    notes: string,
   ) => {
     if (!assignment) {
       return;
@@ -179,7 +172,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Failed to schedule the introductory call."
+          : "Failed to schedule the introductory call.",
       );
     } finally {
       setIsActionLoading(false);
@@ -198,10 +191,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
     setErrorMessage(null);
 
     try {
-      const completed = await api.updateCallStatus(
-        introCall.id,
-        "COMPLETED"
-      );
+      const completed = await api.updateCallStatus(introCall.id, "COMPLETED");
 
       setIntroCall(completed);
       setCurrentStep("payment");
@@ -209,7 +199,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Failed to record call completion."
+          : "Failed to record call completion.",
       );
     } finally {
       setIsActionLoading(false);
@@ -241,7 +231,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setErrorMessage(
         err instanceof Error
           ? err.message
-          : "Failed to create Razorpay payment order."
+          : "Failed to create Razorpay payment order.",
       );
     } finally {
       setIsActionLoading(false);
@@ -254,7 +244,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
   const handlePaymentSuccess = async (
     paymentId: string,
     signature: string,
-    method: string
+    method: string,
   ) => {
     if (!assignment || !paymentOrder) {
       return;
@@ -277,9 +267,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setCurrentStep("sla");
     } catch (err: unknown) {
       setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : "Payment verification failed."
+        err instanceof Error ? err.message : "Payment verification failed.",
       );
     } finally {
       setIsActionLoading(false);
@@ -289,10 +277,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
   /*
    * B04 -> Confirmation
    */
-  const handleAcceptSLA = async (
-    signerName: string,
-    relationship: string
-  ) => {
+  const handleAcceptSLA = async (signerName: string, relationship: string) => {
     if (!assignment || !slaVersion) {
       return;
     }
@@ -315,9 +300,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       setCurrentStep("confirmation");
     } catch (err: unknown) {
       setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : "Failed to record SLA acceptance."
+        err instanceof Error ? err.message : "Failed to record SLA acceptance.",
       );
     } finally {
       setIsActionLoading(false);
@@ -338,14 +321,28 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
     <div className="min-h-screen bg-surface flex flex-col">
       <Header />
 
+      {onBackToDashboard && (
+        <div className="bg-slate-100 border-b border-slate-200 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs">
+          <button
+            type="button"
+            onClick={onBackToDashboard}
+            className="flex items-center gap-1.5 font-bold text-teal-800 hover:text-teal-950 transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>← Back to Phase A (Dashboard & Intake Summary)</span>
+          </button>
+          <span className="text-slate-500 text-[11px] hidden sm:inline">
+            Phase B: Caregiver Matching & Service Confirmation
+          </span>
+        </div>
+      )}
+
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {errorMessage && (
           <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-start space-x-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
 
-            <div className="flex-1 text-sm font-medium">
-              {errorMessage}
-            </div>
+            <div className="flex-1 text-sm font-medium">{errorMessage}</div>
 
             <button
               onClick={() => setErrorMessage(null)}
@@ -379,9 +376,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
               <CaregiverDiscovery
                 matchesData={matchesData}
                 selectedMatch={selectedMatch}
-                onSelectMatch={(match) =>
-                  setSelectedMatch(match)
-                }
+                onSelectMatch={(match) => setSelectedMatch(match)}
                 onProceedToCall={handleProceedToCall}
               />
             )}
@@ -401,9 +396,7 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
                       introCall={introCall}
                       caregiver={selectedMatch.caregiver}
                       onCompleteCall={handleCompleteCall}
-                      onReschedule={() =>
-                        setIsCallInSession(false)
-                      }
+                      onReschedule={() => setIsCallInSession(false)}
                       isCompleting={isActionLoading}
                     />
                   )
@@ -416,41 +409,34 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
                 caregiver={selectedMatch.caregiver}
                 elderName={elder.name}
                 order={paymentOrder}
-                onInitiateOrder={
-                  handleInitiatePaymentOrder
-                }
-                onPaymentSuccess={
-                  handlePaymentSuccess
-                }
+                onInitiateOrder={handleInitiatePaymentOrder}
+                onPaymentSuccess={handlePaymentSuccess}
                 isCreatingOrder={isActionLoading}
               />
             )}
 
-            {currentStep === "sla" &&
-              selectedMatch &&
-              slaVersion && (
-                <SlaAcceptance
-                  sla={slaVersion}
-                  caregiver={selectedMatch.caregiver}
-                  elderName={elder.name}
-                  onAccept={handleAcceptSLA}
-                  isSubmitting={isActionLoading}
-                />
-              )}
+            {currentStep === "sla" && selectedMatch && slaVersion && (
+              <SlaAcceptance
+                sla={slaVersion}
+                caregiver={selectedMatch.caregiver}
+                elderName={elder.name}
+                onAccept={handleAcceptSLA}
+                isSubmitting={isActionLoading}
+              />
+            )}
 
-            {currentStep === "confirmation" &&
-              selectedMatch &&
-              assignment && (
-                <ServiceConfirmation
-                  assignment={assignment}
-                  caregiver={selectedMatch.caregiver}
-                  elderName={elder.name}
-                  introCall={introCall}
-                  paymentResult={paymentResult}
-                  slaResult={slaResult}
-                  onReset={handleResetFlow}
-                />
-              )}
+            {currentStep === "confirmation" && selectedMatch && assignment && (
+              <ServiceConfirmation
+                assignment={assignment}
+                caregiver={selectedMatch.caregiver}
+                elderName={elder.name}
+                introCall={introCall}
+                paymentResult={paymentResult}
+                slaResult={slaResult}
+                onReset={handleResetFlow}
+                onBackToDashboard={onBackToDashboard}
+              />
+            )}
           </>
         )}
       </main>
@@ -459,9 +445,8 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
         <p>© 2026 CareConnect Chennai. All rights reserved.</p>
 
         <p className="mt-1 text-[11px] text-on-surface-variant/75">
-          Regulated under the Digital Personal Data Protection
-          (DPDP) Act 2023. Data stored securely in GCP India
-          (`asia-south1`).
+          Regulated under the Digital Personal Data Protection (DPDP) Act 2023.
+          Data stored securely in GCP India (`asia-south1`).
         </p>
       </footer>
     </div>

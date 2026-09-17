@@ -24,16 +24,16 @@ async def get_current_sla_version(
         select(SLAVersion).where(
             SLAVersion.version == "1.0",
             SLAVersion.is_active.is_(True),
-        )
+        ).limit(1)
     )
 
-    sla = result.scalar_one_or_none()
+    sla = result.scalars().first()
 
     if not sla:
         result = await db.execute(
             select(SLAVersion).limit(1)
         )
-        sla = result.scalar_one_or_none()
+        sla = result.scalars().first()
 
     if not sla:
         raise ValueError("No active SLA version found")

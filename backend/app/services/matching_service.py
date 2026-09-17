@@ -24,7 +24,7 @@ async def seed_initial_data_if_empty(db: AsyncSession):
     # Demo sponsor
     # ---------------------------------------------------------
     result = await db.execute(select(User).limit(1))
-    sponsor = result.scalar_one_or_none()
+    sponsor = result.scalars().first()
 
     if not sponsor:
         sponsor = User(
@@ -43,9 +43,9 @@ async def seed_initial_data_if_empty(db: AsyncSession):
     # Demo elder
     # ---------------------------------------------------------
     result = await db.execute(
-        select(Elder).where(Elder.sponsor_id == sponsor.id)
+        select(Elder).where(Elder.sponsor_id == sponsor.id).limit(1)
     )
-    elder = result.scalar_one_or_none()
+    elder = result.scalars().first()
 
     if not elder:
         elder = Elder(
@@ -180,9 +180,9 @@ async def seed_initial_data_if_empty(db: AsyncSession):
     # SLA v1.0
     # ---------------------------------------------------------
     result = await db.execute(
-        select(SLAVersion).where(SLAVersion.version == "1.0")
+        select(SLAVersion).where(SLAVersion.version == "1.0").limit(1)
     )
-    sla = result.scalar_one_or_none()
+    sla = result.scalars().first()
 
     if not sla:
         sla = SLAVersion(
@@ -371,13 +371,13 @@ async def get_curated_caregivers_for_elder(
     await seed_initial_data_if_empty(db)
 
     result = await db.execute(
-        select(Elder).where(Elder.id == elder_id)
+        select(Elder).where(Elder.id == elder_id).limit(1)
     )
-    elder = result.scalar_one_or_none()
+    elder = result.scalars().first()
 
     if not elder:
         result = await db.execute(select(Elder).limit(1))
-        elder = result.scalar_one_or_none()
+        elder = result.scalars().first()
 
     if not elder:
         raise ValueError("Elder not found")
@@ -419,10 +419,10 @@ async def get_curated_caregivers_for_elder(
             select(CaregiverMatchResult).where(
                 CaregiverMatchResult.elder_id == elder.id,
                 CaregiverMatchResult.caregiver_id == item.caregiver.id,
-            )
+            ).limit(1)
         )
 
-        existing = result.scalar_one_or_none()
+        existing = result.scalars().first()
 
         if not existing:
             db.add(

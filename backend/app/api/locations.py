@@ -59,9 +59,9 @@ async def persist_elder_location(
     
     # Look for existing location record for this elder
     result = await db.execute(
-        select(ElderLocation).where(ElderLocation.elderId == elder.id)
+        select(ElderLocation).where(ElderLocation.elderId == elder.id).limit(1)
     )
-    location = result.scalar_one_or_none()
+    location = result.scalars().first()
 
     now_utc = datetime.now(timezone.utc)
     if not location:

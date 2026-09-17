@@ -55,6 +55,10 @@ async def init_db() -> None:
         call,
         payment,
         sla,
+        shift,
+        care_log,
+        vital,
+        incident,
     )
 
     async with engine.begin() as conn:

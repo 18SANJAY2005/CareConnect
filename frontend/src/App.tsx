@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import {
-  OnboardingProvider,
-  useOnboarding,
-} from "./context/OnboardingContext";
+import { OnboardingProvider, useOnboarding } from "./context/OnboardingContext";
 
 import { Navbar } from "./components/Navbar";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -22,8 +19,7 @@ import { HeartPulse, ShieldCheck } from "lucide-react";
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
 
-  const { currentStep, activeElder } =
-    useOnboarding();
+  const { currentStep, setCurrentStep, activeElder } = useOnboarding();
 
   const [activePortal, setActivePortal] = useState<
     "SPONSOR" | "CAREGIVER" | "OPERATIONS"
@@ -45,33 +41,9 @@ const AppContent: React.FC = () => {
     );
   }
 
-  /*
-   * Phase B is entered only after Phase A has produced
-   * an authenticated sponsor and an active elder.
-   *
-   * We intentionally do NOT modify the Phase A onboarding
-   * states themselves.
-   */
-  if (
-    activePortal === "SPONSOR" &&
-    user &&
-    activeElder &&
-    currentStep === "DASHBOARD"
-  ) {
-    return (
-      <PhaseBFlow
-        user={user}
-        elder={activeElder}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
-      <Navbar
-        activePortal={activePortal}
-        setActivePortal={setActivePortal}
-      />
+      <Navbar activePortal={activePortal} setActivePortal={setActivePortal} />
 
       <main className="flex-1">
         {activePortal === "CAREGIVER" ? (
@@ -88,6 +60,12 @@ const AppContent: React.FC = () => {
           <PersonaWizard />
         ) : currentStep === "ASSESSMENT" ? (
           <AssessmentBooking />
+        ) : currentStep === "MATCHING" && activeElder ? (
+          <PhaseBFlow
+            user={user}
+            elder={activeElder}
+            onBackToDashboard={() => setCurrentStep("DASHBOARD")}
+          />
         ) : (
           <SponsorDashboard />
         )}
@@ -99,8 +77,8 @@ const AppContent: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-teal-600" />
 
             <span>
-              CareConnect Elder Care Platform • Chennai
-              Metropolitan Care Network
+              CareConnect Elder Care Platform • Chennai Metropolitan Care
+              Network
             </span>
           </div>
 
