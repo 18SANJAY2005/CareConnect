@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Video, Clock, ExternalLink, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
-import type { Caregiver, IntroCall } from '../../types';
+import type { Caregiver, IntroCall } from '../../../types';
 
 interface JitsiCallViewProps {
   introCall: IntroCall;

@@ -74,8 +74,8 @@ class AttendanceService:
         loc_res = await db.execute(select(ElderLocation).where(ElderLocation.elderId == shift.elderId))
         elder_loc = loc_res.scalar_one_or_none()
 
-        elder_lat = elder_loc.latitude if elder_loc else 13.0012  # Fallback Adyar, Chennai
-        elder_lng = elder_loc.longitude if elder_loc else 80.2565
+        elder_lat = elder_loc.latitude if elder_loc else 0.0
+        elder_lng = elder_loc.longitude if elder_loc else 0.0
 
         # Evaluate geofence
         geo_result = GeoService.verify_geofence(
@@ -91,8 +91,8 @@ class AttendanceService:
 
         # Handle OTP override if out of range
         if not geo_result["verified"] and override_code:
-            # Household OTP override (deterministic demo code '654321' or valid code)
-            if override_code in ["654321", "123456"]:
+            # Household OTP override (Mocked until OTP service integration)
+            if override_code:
                 verification_status = "OTP_OVERRIDE"
                 checkin_method = "HOUSEHOLD_OTP"
             else:

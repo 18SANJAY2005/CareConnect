@@ -137,7 +137,7 @@ export const CaregiverMobileApp: React.FC = () => {
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const [isSosModalOpen, setIsSosModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState('654321');
+  const [otpInput, setOtpInput] = useState('');
   const [checkOutNotes, setCheckOutNotes] = useState('');
   const [isCheckOutModalOpen, setIsCheckOutModalOpen] = useState(false);
 
@@ -422,14 +422,14 @@ export const CaregiverMobileApp: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 leading-tight">
-                {elder?.name || 'Kalyani Ammal'}
+                {elder?.name || 'Elder'}
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
                 {elder?.age || 74} yrs • {elder?.gender || 'Female'} • {elder?.primaryLanguage || 'Tamil'}
               </p>
               <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                 <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span>{elder?.addressLine1 || 'Plot 12, Gandhi Nagar'}, {elder?.locality || 'Adyar'}</span>
+                <span>{elder?.addressLine1}, {elder?.locality}</span>
               </div>
             </div>
           </div>
@@ -447,7 +447,7 @@ export const CaregiverMobileApp: React.FC = () => {
               <span>
                 {attendance?.distanceMeters 
                   ? `${Math.round(attendance.distanceMeters)}m away • ${attendance.verificationStatus}`
-                  : 'Proximity: 15m away (Adyar corridor)'}
+                  : 'Location unknown'}
               </span>
             </div>
             <span className="text-[11px] font-bold text-primary">GPS OK</span>

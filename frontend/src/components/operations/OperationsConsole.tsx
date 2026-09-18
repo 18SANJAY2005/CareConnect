@@ -54,16 +54,6 @@ export const OperationsConsole: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSeedDemo = async () => {
-    setStatusMessage('Seeding realistic Chennai Active Care scenario...');
-    try {
-      const res = await api.seedDemoScenario();
-      setStatusMessage('Demo scenario active: ' + res.message);
-      loadAllData();
-    } catch (err: any) {
-      setStatusMessage('Seed error: ' + err.message);
-    }
-  };
 
   const handleSupervisorOverride = async () => {
     if (!overrideShiftId) return;
@@ -147,13 +137,7 @@ export const OperationsConsole: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleSeedDemo}
-            className="px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-slate-950 text-xs font-extrabold rounded-xl shadow transition flex items-center gap-1.5"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Seed Demo Care Scenario</span>
-          </button>
+
           <button
             onClick={loadAllData}
             className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"

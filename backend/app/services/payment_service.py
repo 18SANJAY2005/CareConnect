@@ -46,7 +46,7 @@ async def create_payment_order(
         f"{uuid.uuid4().hex[:8]}"
     )
 
-    # Sandbox/demo Razorpay-style order ID
+    # Sandbox Razorpay-style order ID
     razorpay_order_id = (
         f"order_{uuid.uuid4().hex[:14]}"
     )
@@ -94,7 +94,7 @@ def verify_payment_signature(
 ) -> bool:
     """Verifies Razorpay HMAC-SHA256 payment signature."""
 
-    # Development/demo payment support
+    # Development payment support
     if (
         signature.startswith("simulated_signature_")
         or signature.startswith("test_sig_")

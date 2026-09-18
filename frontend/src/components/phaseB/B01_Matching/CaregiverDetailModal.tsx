@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, ShieldCheck, Star, MapPin, Award, CheckCircle2, HeartHandshake } from 'lucide-react';
-import type { CaregiverMatchItem } from '../../types';
+import type { CaregiverMatchItem } from '../../../types';
 
 interface CaregiverDetailModalProps {
   matchItem: CaregiverMatchItem;

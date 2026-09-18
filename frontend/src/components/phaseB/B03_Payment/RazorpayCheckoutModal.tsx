@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, Check, Lock, Smartphone, CreditCard, Building } from 'lucide-react';
-import type { PaymentOrder } from '../../types';
+import type { PaymentOrder } from '../../../types';
 
 interface RazorpayCheckoutModalProps {
   order: PaymentOrder;

@@ -9,8 +9,9 @@ import { GeographicVerification } from "./components/onboarding/GeographicVerifi
 import { PersonaWizard } from "./components/onboarding/persona/PersonaWizard";
 import { AssessmentBooking } from "./components/onboarding/AssessmentBooking";
 import { SponsorDashboard } from "./components/dashboard/SponsorDashboard";
+import { LandingPage } from "./components/LandingPage";
 
-import { PhaseBFlow } from "./components/PhaseBFlow";
+import { PhaseBFlow } from "./components/phaseB/PhaseBFlow";
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
 import { OperationsConsole } from "./components/operations/OperationsConsole";
 
@@ -50,10 +51,14 @@ const AppContent: React.FC = () => {
           <CaregiverMobileApp />
         ) : activePortal === "OPERATIONS" ? (
           <OperationsConsole />
-        ) : !user || currentStep === "AUTH" ? (
-          <div className="py-12 px-4 sm:px-6">
-            <AuthModal />
-          </div>
+        ) : !user ? (
+          currentStep === "AUTH" ? (
+            <div className="py-12 px-4 sm:px-6">
+              <AuthModal />
+            </div>
+          ) : (
+            <LandingPage />
+          )
         ) : currentStep === "GEO_VERIFICATION" ? (
           <GeographicVerification />
         ) : currentStep === "PERSONA" ? (

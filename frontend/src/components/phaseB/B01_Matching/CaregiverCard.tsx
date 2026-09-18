@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Star, MapPin, Languages, Check, ArrowRight, Award } from 'lucide-react';
-import type { CaregiverMatchItem } from '../../types';
+import type { CaregiverMatchItem } from '../../../types';
 
 interface CaregiverCardProps {
   matchItem: CaregiverMatchItem;

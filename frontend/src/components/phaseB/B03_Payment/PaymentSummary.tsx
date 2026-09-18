@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, ShieldCheck, CheckCircle2, ArrowRight, Lock } from 'lucide-react';
-import type { Caregiver, PaymentOrder } from '../../types';
+import type { Caregiver, PaymentOrder } from '../../../types';
 import { RazorpayCheckoutModal } from './RazorpayCheckoutModal';
 
 interface PaymentSummaryProps {

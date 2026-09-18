@@ -17,7 +17,7 @@ export const RenewalCard: React.FC = () => {
   const [isTogglingMandate, setIsTogglingMandate] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<'CHANGE_PLAN' | 'CANCEL_SERVICE'>('CHANGE_PLAN');
-  const [modalReason, setModalReason] = useState('');
+  const [modalReason, setModalReason] = useState('TWELVE_HOUR_DAY_NIGHT');
   const [preferredPlan, setPreferredPlan] = useState('TWELVE_HOUR_DAY_NIGHT');
   const [isSubmittingChange, setIsSubmittingChange] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);

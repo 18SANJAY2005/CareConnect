@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, Globe, Shield, Video, Sparkles, CheckCircle2 } from 'lucide-react';
-import type { Caregiver } from '../../types';
+import type { Caregiver } from '../../../types';
 
 interface IntroCallSchedulerProps {
   caregiver: Caregiver;

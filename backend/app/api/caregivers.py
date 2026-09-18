@@ -9,7 +9,6 @@ from app.models.caregiver import Caregiver
 from app.schemas.caregiver import CaregiverResponse, CuratedMatchesResponse
 from app.services.matching_service import (
     get_curated_caregivers_for_elder,
-    seed_initial_data_if_empty,
 )
 
 router = APIRouter(
@@ -70,7 +69,6 @@ async def list_caregivers(
 ):
     """Returns active caregivers with optional filters."""
 
-    await seed_initial_data_if_empty(db)
 
     query = select(Caregiver).where(
         Caregiver.is_active.is_(True)

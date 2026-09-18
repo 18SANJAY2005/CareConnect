@@ -1,3 +1,5 @@
+from app.models.user import User
+from app.core.security import get_current_user
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -264,6 +266,33 @@ async def create_replacement_request(
 
 
 # ============================================================
+
+# ============================================================
+# FAMILY SPONSOR - GET REPLACEMENT REQUESTS
+# GET /api/replacement-requests
+# ============================================================
+
+@router.get(
+    "/replacement-requests",
+    response_model=List[ReplacementRequestResponse],
+)
+async def get_my_replacement_requests(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = (
+        select(ReplacementRequest)
+        .options(
+            selectinload(ReplacementRequest.assignment)
+        )
+    )
+    result = await db.execute(query)
+    requests = result.scalars().all()
+    # Filter in python for simplicity if needed, but returning all is fine if no multi-tenant strictness is in place, or filter by sponsor_id
+    filtered = [r for r in requests if r.assignment and r.assignment.sponsor_id == current_user.id]
+    return filtered
+
+
 # OPERATIONS QUEUE
 # GET /api/operations/replacement-queue
 # ============================================================

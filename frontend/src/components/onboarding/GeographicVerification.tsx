@@ -43,18 +43,18 @@ export const GeographicVerification: React.FC = () => {
   const { activeElder, setActiveElder, setCurrentStep, loadElderData } = useOnboarding();
 
   // Basic elder fields if new
-  const [elderName, setElderName] = useState('Kalyani Ammal');
-  const [elderAge, setElderAge] = useState(76);
+  const [elderName, setElderName] = useState('');
+  const [elderAge, setElderAge] = useState(0);
   const [elderGender, setElderGender] = useState<'FEMALE' | 'MALE' | 'OTHER'>('FEMALE');
 
   // Location fields
-  const [addressLine1, setAddressLine1] = useState('Flat 3B, Shanthi Apartments, 2nd Main Road');
-  const [addressLine2, setAddressLine2] = useState('Gandhi Nagar');
-  const [locality, setLocality] = useState('Adyar');
-  const [city, setCity] = useState('Chennai');
-  const [state, setState] = useState('Tamil Nadu');
-  const [postalCode, setPostalCode] = useState('600020');
-  const [landmark, setLandmark] = useState('Near Adyar Signal');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [locality, setLocality] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [landmark, setLandmark] = useState('');
 
   // Verification state
   const [verifyResult, setVerifyResult] = useState<LocationVerifyResponse | null>(null);
@@ -167,36 +167,6 @@ export const GeographicVerification: React.FC = () => {
     }
   };
 
-  // Preset test scenarios
-  const setScenario = (type: 'adyar' | 'annanagar' | 'bangalore' | 'invalid' | 'permission') => {
-    if (type === 'adyar') {
-      setAddressLine1('Flat 3B, Shanthi Apartments, 2nd Main Road');
-      setLocality('Adyar');
-      setCity('Chennai');
-      setPostalCode('600020');
-      handleVerifyLocation();
-    } else if (type === 'annanagar') {
-      setAddressLine1('W-Block, 12th Street, 4th Avenue');
-      setLocality('Anna Nagar');
-      setCity('Chennai');
-      setPostalCode('600040');
-      handleVerifyLocation();
-    } else if (type === 'bangalore') {
-      setAddressLine1('12, 100 Feet Road, Indiranagar');
-      setLocality('Indiranagar');
-      setCity('Bengaluru');
-      setPostalCode('560038');
-      handleVerifyLocation();
-    } else if (type === 'invalid') {
-      setAddressLine1('A');
-      setLocality('Chennai');
-      setCity('Chennai');
-      setPostalCode('600');
-      handleVerifyLocation();
-    } else if (type === 'permission') {
-      handleVerifyLocation('PERMISSION_DENIED');
-    }
-  };
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
@@ -214,44 +184,6 @@ export const GeographicVerification: React.FC = () => {
         <p className="text-slate-600 mt-2 text-sm sm:text-base leading-relaxed">
           CareConnect operates dedicated clinical care corridors across Chennai. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
         </p>
-      </div>
-
-      {/* Preset Test Buttons for Quick QA */}
-      <div className="bg-slate-100/80 border border-slate-200 rounded-xl p-3 mb-8 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-semibold text-slate-700 flex items-center gap-1">
-          <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-          Test Corridors:
-        </span>
-        <button
-          onClick={() => setScenario('adyar')}
-          className="px-2.5 py-1 bg-white hover:bg-teal-50 border border-slate-200 rounded-lg text-slate-700 font-medium transition"
-        >
-          🟢 Chennai Adyar (Serviceable)
-        </button>
-        <button
-          onClick={() => setScenario('annanagar')}
-          className="px-2.5 py-1 bg-white hover:bg-teal-50 border border-slate-200 rounded-lg text-slate-700 font-medium transition"
-        >
-          🟢 Anna Nagar (Serviceable)
-        </button>
-        <button
-          onClick={() => setScenario('bangalore')}
-          className="px-2.5 py-1 bg-white hover:bg-amber-50 border border-slate-200 rounded-lg text-slate-700 font-medium transition"
-        >
-          🟡 Bengaluru (Out of Service)
-        </button>
-        <button
-          onClick={() => setScenario('invalid')}
-          className="px-2.5 py-1 bg-white hover:bg-rose-50 border border-slate-200 rounded-lg text-slate-700 font-medium transition"
-        >
-          🔴 Invalid Address
-        </button>
-        <button
-          onClick={() => setScenario('permission')}
-          className="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium transition"
-        >
-          ⚪ Permission Denied
-        </button>
       </div>
 
       {errorMessage && (
@@ -280,7 +212,7 @@ export const GeographicVerification: React.FC = () => {
                   required
                   value={elderName}
                   onChange={(e) => setElderName(e.target.value)}
-                  placeholder="e.g. Kalyani Ammal"
+                  placeholder="e.g. Elder's Name"
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-300 focus:border-teal-600"
                 />
               </div>
@@ -363,7 +295,7 @@ export const GeographicVerification: React.FC = () => {
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600 bg-slate-50"
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600"
                 />
               </div>
 
@@ -372,8 +304,8 @@ export const GeographicVerification: React.FC = () => {
                 <input
                   type="text"
                   value={state}
-                  readOnly
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 text-slate-600"
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600"
                 />
               </div>
 
@@ -400,7 +332,7 @@ export const GeographicVerification: React.FC = () => {
                 type="text"
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
-                placeholder="e.g. Near Adyar Bus Depot / Opposite Sangeetha"
+                placeholder="e.g. Near the bus depot"
                 className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600"
               />
             </div>

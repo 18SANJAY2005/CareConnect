@@ -46,17 +46,17 @@ export const PersonaWizard: React.FC = () => {
   };
 
   // Form State initialized from activeElder
-  const [name, setName] = useState(activeElder?.name || "Kalyani Ammal");
-  const [age, setAge] = useState(activeElder?.age || 76);
+  const [name, setName] = useState(activeElder?.name || "");
+  const [age, setAge] = useState(activeElder?.age || "");
   const [gender, setGender] = useState<"FEMALE" | "MALE" | "OTHER">(
-    activeElder?.gender || "FEMALE",
+    activeElder?.gender || "",
   );
   const [dateOfBirth, setDateOfBirth] = useState(
-    activeElder?.dateOfBirth || "1950-08-15",
+    activeElder?.dateOfBirth || "",
   );
 
   const initialDobParts = parseDobParts(
-    activeElder?.dateOfBirth || "1950-08-15",
+    activeElder?.dateOfBirth || "",
   );
   const [dobDay, setDobDay] = useState(initialDobParts.day);
   const [dobMonth, setDobMonth] = useState(initialDobParts.month);
@@ -270,66 +270,54 @@ export const PersonaWizard: React.FC = () => {
   };
 
   const [mobilityLevel, setMobilityLevel] = useState<MobilityLevel>(
-    activeElder?.mobilityLevel || "CANE_WALKER",
+    activeElder?.mobilityLevel || "",
   );
 
   const [medicalConditions, setMedicalConditions] = useState<string[]>(
     activeElder?.medicalConditions?.length
-      ? activeElder.medicalConditions
-      : ["Diabetes Mellitus", "Hypertension", "Mild Post-Stroke Weakness"],
+      ? activeElder.medicalConditions : [],
   );
   const [careRequirements, setCareRequirements] = useState<string[]>(
     activeElder?.careRequirements?.length
-      ? activeElder.careRequirements
-      : ["Medication Management", "Mobility Assistance", "Vitals Monitoring"],
+      ? activeElder.careRequirements : [],
   );
   const [medicalDevices, setMedicalDevices] = useState<string[]>(
     activeElder?.medicalDevices?.length
-      ? activeElder.medicalDevices
-      : ["Walking Cane / Quadripod", "Blood Glucose Monitor"],
+      ? activeElder.medicalDevices : [],
   );
 
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>(
     activeElder?.dietaryPreferences?.length
-      ? activeElder.dietaryPreferences
-      : ["Vegetarian (South Indian)", "Diabetic Diet", "Low Sodium"],
+      ? activeElder.dietaryPreferences : [],
   );
 
   const [languages, setLanguages] = useState<string[]>(
     activeElder?.languages?.length
-      ? activeElder.languages
-      : ["Tamil", "English"],
+      ? activeElder.languages : [],
   );
   const [primaryLanguage, setPrimaryLanguage] = useState(
-    activeElder?.primaryLanguage || "Tamil",
+    activeElder?.primaryLanguage || "",
   );
 
   const [lifestylePreferences, setLifestylePreferences] = useState<string[]>(
     activeElder?.lifestylePreferences?.length
-      ? activeElder.lifestylePreferences
-      : [
-          "Morning Temple Puja",
-          "Listening to Carnatic Music",
-          "Evening Balcony Walk",
-        ],
+      ? activeElder.lifestylePreferences : [],
   );
   const [wakeTime, setWakeTime] = useState(
-    activeElder?.dailyRoutine?.wakeTime || "06:00 AM",
+    activeElder?.dailyRoutine?.wakeTime || "",
   );
   const [bedTime, setBedTime] = useState(
-    activeElder?.dailyRoutine?.bedTime || "09:30 PM",
+    activeElder?.dailyRoutine?.bedTime || "",
   );
   const [routineNotes, setRoutineNotes] = useState(
-    activeElder?.dailyRoutine?.notes ||
-      "Takes afternoon nap between 1:30 PM to 3:00 PM.",
+    activeElder?.dailyRoutine?.notes || "",
   );
 
   const [shiftPreference, setShiftPreference] = useState<ShiftPreference>(
-    activeElder?.shiftPreference || "TWELVE_HOUR_DAY_NIGHT",
+    activeElder?.shiftPreference || "",
   );
   const [additionalNotes, setAdditionalNotes] = useState(
-    activeElder?.additionalNotes ||
-      "Prepares own morning filter coffee if assisted to kitchen; prefers calm, patient attendants who speak fluent Tamil.",
+    activeElder?.additionalNotes || "",
   );
 
   useEffect(() => {
@@ -610,7 +598,7 @@ export const PersonaWizard: React.FC = () => {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Kalyani Ammal"
+                    placeholder="e.g. Elder's Name"
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600 outline-none"
                   />
                 </div>
@@ -1257,7 +1245,7 @@ export const PersonaWizard: React.FC = () => {
                 rows={5}
                 value={additionalNotes}
                 onChange={(e) => setAdditionalNotes(e.target.value)}
-                placeholder="e.g. Elder prefers to be called 'Kalyani Mami'. Kindly ensure morning coffee is served at 6:15 AM without chicory. Attendant should have gentle demeanour..."
+                placeholder="e.g. Elder prefers to be called by their nickname. Kindly ensure morning coffee is served at 6:15 AM without chicory. Attendant should have gentle demeanour..."
                 className="w-full px-4 py-3 text-sm rounded-xl border border-slate-300 focus:border-teal-600"
               />
             </div>

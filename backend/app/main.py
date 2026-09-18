@@ -41,8 +41,6 @@ from app.api import (
     chat,
 )
 
-from app.services.matching_service import seed_initial_data_if_empty
-
 # ============================================================
 # Phase D routers
 # ============================================================
@@ -71,10 +69,6 @@ async def lifespan(app: FastAPI):
 
     # Initialize all database tables.
     await init_db()
-
-    # Seed Phase B baseline/demo data using an async session.
-    async with AsyncSessionLocal() as db:
-        await seed_initial_data_if_empty(db)
 
     yield
 

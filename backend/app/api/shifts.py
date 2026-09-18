@@ -64,15 +64,15 @@ async def get_current_caregiver_shift(
         },
         "elder": {
             "id": elder.id if elder else None,
-            "name": elder.name if elder else "Elder Patient",
-            "age": elder.age if elder else 72,
-            "gender": elder.gender if elder else "FEMALE",
-            "mobilityLevel": elder.mobilityLevel if elder else "INDEPENDENT",
-            "primaryLanguage": elder.primaryLanguage if elder else "Tamil",
-            "locality": elder_loc.locality if elder_loc else "Adyar, Chennai",
-            "addressLine1": elder_loc.addressLine1 if elder_loc else "14 Gandhi Road",
-            "latitude": elder_loc.latitude if elder_loc else 13.0012,
-            "longitude": elder_loc.longitude if elder_loc else 80.2565
+            "name": elder.name if elder else "",
+            "age": elder.age if elder else 0,
+            "gender": elder.gender if elder else "",
+            "mobilityLevel": elder.mobilityLevel if elder else "",
+            "primaryLanguage": elder.primaryLanguage if elder else "",
+            "locality": elder_loc.locality if elder_loc else "",
+            "addressLine1": elder_loc.addressLine1 if elder_loc else "",
+            "latitude": elder_loc.latitude if elder_loc else 0.0,
+            "longitude": elder_loc.longitude if elder_loc else 0.0
         },
         "latestAttendance": {
             "checkInTime": latest_log.checkInTime.isoformat() if latest_log else None,
@@ -179,124 +179,4 @@ async def supervisor_override(
         reason=payload.reason
     )
     return result
-
-@router.post("/seed-demo", status_code=status.HTTP_200_OK)
-async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
-    """
-    Seed a complete, realistic Chennai Active Care scenario with:
-    - Elder in Adyar (Kalyani Ammal, 74)
-    - Caregiver (Meenakshi Sundaram)
-    - Active shift today
-    - Checked-in attendance log
-    - Daily care tasks
-    - Historical vitals
-    """
-    now = datetime.now(timezone.utc)
-
-    # 1. Ensure caregiver user exists
-    cg_res = await db.execute(select(User).where(User.phone == "+919876500001"))
-    caregiver = cg_res.scalar_one_or_none()
-    if not caregiver:
-        caregiver = User(
-            role="CAREGIVER",
-            fullName="Meenakshi Sundaram",
-            phone="+919876500001",
-            email="meenakshi.care@careconnect.in",
-            authProvider="PHONE_OTP"
-        )
-        db.add(caregiver)
-        await db.flush()
-
-    # 2. Ensure family sponsor exists
-    sp_res = await db.execute(select(User).where(User.phone == "+919876543210"))
-    sponsor = sp_res.scalar_one_or_none()
-    if not sponsor:
-        sponsor = User(
-            role="FAMILY_SPONSOR",
-            fullName="Suresh Kumar",
-            phone="+919876543210",
-            email="suresh.kumar@example.com",
-            authProvider="PHONE_OTP"
-        )
-        db.add(sponsor)
-        await db.flush()
-
-    # 3. Ensure elder exists
-    elder_res = await db.execute(select(Elder).where(Elder.name == "Kalyani Ammal"))
-    elder = elder_res.scalar_one_or_none()
-    if not elder:
-        elder = Elder(
-            familyId=sponsor.id,
-            name="Kalyani Ammal",
-            age=74,
-            gender="FEMALE",
-            mobilityLevel="ASSISTED_WALKER",
-            primaryLanguage="Tamil",
-            medicalConditions=["Hypertension", "Type 2 Diabetes"],
-            careRequirements=["Medication Observation", "Mobility Assistance", "Daily Vitals Tracking"],
-            personaStatus="SAVED"
-        )
-        db.add(elder)
-        await db.flush()
-
-        # Location in Adyar, Chennai (lat 13.0012, lng 80.2565)
-        loc = ElderLocation(
-            elderId=elder.id,
-            addressLine1="Plot 12, 3rd Cross Street, Gandhi Nagar",
-            locality="Adyar",
-            city="Chennai",
-            state="Tamil Nadu",
-            postalCode="600020",
-            latitude=13.0012,
-            longitude=80.2565,
-            verificationStatus="VERIFIED",
-            serviceable=True
-        )
-        db.add(loc)
-        await db.flush()
-
-    # 4. Create or reset Shift for today
-    shift_res = await db.execute(select(CareShift).where(CareShift.elderId == elder.id))
-    shift = shift_res.scalars().first()
-    if not shift:
-        shift = CareShift(
-            elderId=elder.id,
-            caregiverId=caregiver.id,
-            shiftType="EIGHT_HOUR_DAY",
-            status="ACTIVE",
-            scheduledStart=now.replace(hour=8, minute=0, second=0, microsecond=0),
-            scheduledEnd=now.replace(hour=16, minute=0, second=0, microsecond=0),
-            geofenceRadiusMeters=200.0,
-            supervisorNotes="Elder prefers Tamil communication. Routine vitals at 09:00 and 14:00."
-        )
-        db.add(shift)
-        await db.flush()
-
-        # Add verified attendance log (15 meters away)
-        att_log = AttendanceLog(
-            shiftId=shift.id,
-            caregiverId=caregiver.id,
-            checkInTime=now.replace(hour=8, minute=5, second=0, microsecond=0),
-            checkInLatitude=13.0013,
-            checkInLongitude=80.2566,
-            checkInDistanceMeters=15.4,
-            verificationStatus="VERIFIED",
-            checkInMethod="GPS"
-        )
-        db.add(att_log)
-
-    await db.commit()
-
-    # Ensure default tasks are seeded
-    await CareTaskService.ensure_shift_tasks(db, shift.id, elder.id, caregiver.id)
-
-    return {
-        "success": True,
-        "message": "Demo Active Care scenario seeded successfully.",
-        "elderId": elder.id,
-        "elderName": elder.name,
-        "caregiverId": caregiver.id,
-        "caregiverName": caregiver.fullName,
-        "shiftId": shift.id
-    }
 

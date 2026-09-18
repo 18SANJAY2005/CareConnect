@@ -17,7 +17,7 @@ interface FamilyActiveCareViewProps {
 
 export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
   elderId,
-  elderName: _elderName = 'Kalyani Ammal'
+  elderName = 'Elder'
 }) => {
   const [activeTab, setActiveTab] = useState<'TIMELINE' | 'VITALS' | 'MEDIA' | 'CHAT'>('TIMELINE');
   const [attendanceData, setAttendanceData] = useState<any>(null);
@@ -30,9 +30,10 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
   const [, setIsLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState('');
 
-  const targetElderId = elderId || 'demo-elder-id';
+  const targetElderId = elderId;
 
   const loadData = async () => {
+    if (!targetElderId) return;
     setIsLoading(true);
     try {
       // 1. Shift & Attendance
@@ -156,7 +157,7 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 mt-1">
-              Caregiver: {attendanceData?.caregiver?.fullName || 'Meenakshi Sundaram'}
+              Caregiver: {attendanceData?.caregiver?.fullName || 'Caregiver'}
             </h2>
             <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
               <span>Verified Proximity: <strong className="text-slate-700">15.4m</strong></span>

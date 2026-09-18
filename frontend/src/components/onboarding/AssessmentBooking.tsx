@@ -23,7 +23,7 @@ export const AssessmentBooking: React.FC = () => {
 
   const [preferredDate, setPreferredDate] = useState(minDateStr);
   const [preferredTime, setPreferredTime] = useState<'MORNING_9_12' | 'AFTERNOON_12_4' | 'EVENING_4_7'>('MORNING_9_12');
-  const [notes, setNotes] = useState('Elder has mild morning fatigue; please assess transfer safety and mobility.');
+  const [notes, setNotes] = useState('');
   
   const [isBooking, setIsBooking] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');

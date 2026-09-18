@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
 
-import { Header } from "./Header";
 import { StepIndicator } from "./StepIndicator";
 
 import { CaregiverDiscovery } from "./B01_Matching/CaregiverDiscovery";
@@ -11,7 +10,7 @@ import { PaymentSummary } from "./B03_Payment/PaymentSummary";
 import { SlaAcceptance } from "./B04_SLA/SlaAcceptance";
 import { ServiceConfirmation } from "./Confirmation/ServiceConfirmation";
 
-import { api } from "../services/api";
+import { api } from "../../services/api";
 
 import type {
   User,
@@ -25,7 +24,7 @@ import type {
   PhaseBStep,
   SLAAcceptanceResponse,
   SLAVersion,
-} from "../types";
+} from "../../types";
 
 interface PhaseBFlowProps {
   user: User;
@@ -319,7 +318,6 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-      <Header />
 
       {onBackToDashboard && (
         <div className="bg-slate-100 border-b border-slate-200 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs">

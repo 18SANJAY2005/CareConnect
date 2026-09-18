@@ -15,7 +15,7 @@ import type {
   IntroCall,
   PaymentVerifyResponse,
   SLAAcceptanceResponse,
-} from "../../types";
+} from "../../../types";
 
 interface ServiceConfirmationProps {
   assignment: CareAssignment;
@@ -177,7 +177,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                   </div>
                   <p className="text-on-surface-variant mt-0.5">
                     Provider: Jitsi Meet (
-                    {introCall?.room_id || "CareConnect-Intro-Room"})
+                    {introCall?.room_id || "Pending"})
                   </p>
                 </div>
               </div>
@@ -196,8 +196,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                   </div>
                   <p className="text-on-surface-variant mt-0.5">
                     Amount: ₹15,000.00 • ID:{" "}
-                    {paymentResult?.provider_payment_id ||
-                      "pay_rzp_test_confirmed"}
+                    {paymentResult?.provider_payment_id || "Pending"}
                   </p>
                 </div>
               </div>
@@ -215,7 +214,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                     </span>
                   </div>
                   <p className="text-on-surface-variant mt-0.5">
-                    Signer: {slaResult?.signer_name || "Ramesh Krishnan"} •
+                    Signer: {slaResult?.signer_name || "Signer Not Found"} •
                     Version {slaResult?.sla_version || "1.0"}
                   </p>
                 </div>
@@ -258,7 +257,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
         </a>
       </div>
 
-      {/* Restart / Re-run Demonstration & Back */}
+      {/* Restart & Back */}
       <div className="text-center pt-4 space-y-2">
         {onBackToDashboard && (
           <div>
@@ -276,7 +275,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
           onClick={onReset}
           className="text-xs font-semibold text-on-surface-variant hover:text-primary underline transition-colors"
         >
-          Return to Matching and Test Alternative Caregiver Persona
+          Return to Matching and Select Different Caregiver
         </button>
       </div>
     </div>

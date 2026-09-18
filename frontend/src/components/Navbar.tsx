@@ -31,8 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { key: "PERSONA", label: "2. Patient Persona", icon: FileText },
     { key: "ASSESSMENT", label: "3. Home Assessment", icon: Calendar },
     { key: "DASHBOARD", label: "4. Summary & Active Care", icon: ShieldCheck },
-    { key: "MATCHING", label: "5. Phase B Caregivers", icon: Users },
-    { key: "DASHBOARD", label: "4. Summary", icon: ShieldCheck },
+    { key: "MATCHING", label: "5. Caregiver Matching", icon: Users },
   ];
 
   return (
@@ -43,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-3 cursor-pointer shrink-0"
           onClick={() => {
             setActivePortal("SPONSOR");
-            if (user) setCurrentStep("DASHBOARD");
+            if (user) setCurrentStep("DASHBOARD"); else setCurrentStep("LANDING");
           }}
         >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/20">
@@ -130,24 +129,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 );
               })}
             </nav>
-
-            <div className="h-6 w-px bg-slate-200" />
-
-            {/* Distinct Separate Caregiver Matching Section */}
-            <button
-              onClick={() => setCurrentStep("MATCHING")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all shadow-sm ${
-                currentStep === "MATCHING"
-                  ? "bg-teal-700 text-white shadow-teal-700/20 ring-2 ring-teal-600/30"
-                  : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200"
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Caregiver Matching</span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-600 text-white uppercase tracking-wider">
-                Phase B
-              </span>
-            </button>
           </div>
         )}
 

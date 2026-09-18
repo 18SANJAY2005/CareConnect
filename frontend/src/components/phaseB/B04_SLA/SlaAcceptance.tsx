@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileCheck, ShieldCheck, CheckSquare, Square, ArrowRight } from 'lucide-react';
-import type { SLAVersion, Caregiver } from '../../types';
+import type { SLAVersion, Caregiver } from '../../../types';
 
 interface SlaAcceptanceProps {
   sla: SLAVersion;
@@ -17,7 +17,7 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
   onAccept,
   isSubmitting,
 }) => {
-  const [signerName, setSignerName] = useState<string>('Ramesh Krishnan');
+  const [signerName, setSignerName] = useState<string>('');
   const [relationship, setRelationship] = useState<string>('Son (Primary Sponsor)');
   const [agreeConduct, setAgreeConduct] = useState<boolean>(true);
   const [agreeEmergency, setAgreeEmergency] = useState<boolean>(true);

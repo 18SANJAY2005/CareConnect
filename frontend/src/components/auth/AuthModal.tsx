@@ -1,29 +1,55 @@
-import React, { useState } from 'react';
-import { Phone, MessageSquare, ArrowRight, CheckCircle2, ShieldCheck, Mail, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Phone, MessageSquare, ArrowRight, CheckCircle2, ShieldCheck, Mail, Sparkles, ChevronDown, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+
+const countryCodesList = [
+  { code: '+91', country: 'India', flag: '🇮🇳' },
+  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
+  { code: '+44', country: 'United Kingdom', flag: '🇬🇧' },
+  { code: '+61', country: 'Australia', flag: '🇦🇺' },
+  { code: '+65', country: 'Singapore', flag: '🇸🇬' },
+  { code: '+971', country: 'UAE', flag: '🇦🇪' },
+  { code: '+60', country: 'Malaysia', flag: '🇲🇾' },
+  { code: '+94', country: 'Sri Lanka', flag: '🇱🇰' },
+  { code: '+64', country: 'New Zealand', flag: '🇳🇿' },
+  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+];
 
 export const AuthModal: React.FC = () => {
   const { loginWithOtp, loginWithGoogle } = useAuth();
   
-  const [phone, setPhone] = useState('+919876543210');
-  const [fullName, setFullName] = useState('Suresh Kumar');
-  const [email, setEmail] = useState('suresh.kumar@example.com');
+  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [isTrayOpen, setIsTrayOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
+
+  const trayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (trayRef.current && !trayRef.current.contains(event.target as Node)) {
+        setIsTrayOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMessage('');
     setIsLoading(true);
     try {
-      const res = await api.sendOtp(phone, 'WHATSAPP');
-      if (res.dev_otp) {
-        setDevOtpHint(res.dev_otp);
-      }
+      const fullPhone = `${countryCode}${phone}`;
+      await api.sendOtp(fullPhone, 'WHATSAPP');
       setStep('OTP');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to send OTP. Please check your number.');
@@ -37,7 +63,8 @@ export const AuthModal: React.FC = () => {
     setErrorMessage('');
     setIsLoading(true);
     try {
-      await loginWithOtp(phone, otp, fullName, email);
+      const fullPhone = `${countryCode}${phone}`;
+      await loginWithOtp(fullPhone, otp, fullName, email);
     } catch (err: any) {
       setErrorMessage(err.message || 'Invalid code. Please try again.');
     } finally {
@@ -57,11 +84,10 @@ export const AuthModal: React.FC = () => {
     }
   };
 
-  const fillQuickTest = () => {
-    setPhone('+919876543210');
-    setFullName('Suresh Kumar');
-    setEmail('suresh.kumar@example.com');
-  };
+  const filteredCountries = countryCodesList.filter(c => 
+    c.country.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    c.code.includes(searchQuery)
+  );
 
   return (
     <div className="max-w-md w-full mx-auto bg-white rounded-2xl shadow-xl border border-slate-200/80 p-6 sm:p-8">
@@ -103,16 +129,63 @@ export const AuthModal: React.FC = () => {
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Mobile Number (WhatsApp Enabled)
             </label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <div className="relative flex" ref={trayRef}>
+              <button
+                type="button"
+                onClick={() => setIsTrayOpen(!isTrayOpen)}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-300 border-r-0 rounded-l-xl hover:bg-slate-100 focus:z-10 outline-none"
+              >
+                <span>{countryCodesList.find(c => c.code === countryCode)?.flag}</span>
+                <span>{countryCode}</span>
+                <ChevronDown className="w-3 h-3 text-slate-500" />
+              </button>
+              
               <input
                 type="tel"
                 required
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+919876543210"
-                className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600 bg-white"
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                placeholder="9876543210"
+                className="w-full pl-3 pr-3.5 py-2.5 text-sm rounded-r-xl border border-slate-300 focus:border-teal-600 bg-white outline-none"
               />
+
+              {isTrayOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-slate-200 shadow-xl rounded-xl z-50 max-h-64 flex flex-col overflow-hidden">
+                  <div className="p-2 border-b border-slate-100">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                      <input 
+                         type="text" 
+                         placeholder="Search country..."
+                         value={searchQuery}
+                         onChange={(e) => setSearchQuery(e.target.value)}
+                         className="w-full pl-8 pr-2 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-teal-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto flex-1 p-1">
+                    {filteredCountries.map(c => (
+                       <button
+                         type="button"
+                         key={c.country}
+                         onClick={() => {
+                            setCountryCode(c.code);
+                            setIsTrayOpen(false);
+                            setSearchQuery('');
+                         }}
+                         className="w-full text-left px-3 py-2.5 text-sm hover:bg-teal-50 rounded-lg flex items-center gap-2 transition-colors"
+                       >
+                         <span className="text-base">{c.flag}</span>
+                         <span className="flex-1 truncate text-slate-700">{c.country}</span>
+                         <span className="text-slate-400 font-medium text-xs">{c.code}</span>
+                       </button>
+                    ))}
+                    {filteredCountries.length === 0 && (
+                       <div className="px-3 py-4 text-center text-xs text-slate-500">No countries found.</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
               Supports Indian (+91) and overseas/NRI mobile numbers.
@@ -175,34 +248,14 @@ export const AuthModal: React.FC = () => {
             <span>Google Sign-In</span>
           </button>
 
-          {/* Quick Dev Preset */}
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={fillQuickTest}
-              className="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-800 font-medium"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Fill Default Demo Sponsor</span>
-            </button>
-          </div>
         </form>
       ) : (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <div className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl text-xs text-teal-800 flex items-start gap-2.5">
             <CheckCircle2 className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold">Code dispatched to {phone}</p>
+              <p className="font-semibold">Code dispatched to {countryCode}{phone}</p>
               <p className="text-teal-700/80 mt-0.5">Please check WhatsApp or messages for your 6-digit OTP.</p>
-              {devOtpHint && (
-                <button
-                  type="button"
-                  onClick={() => setOtp(devOtpHint)}
-                  className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-teal-200/60 hover:bg-teal-200 text-teal-900 rounded font-mono font-semibold"
-                >
-                  Click to auto-fill dev code: {devOtpHint}
-                </button>
-              )}
             </div>
           </div>
 
@@ -250,4 +303,3 @@ export const AuthModal: React.FC = () => {
     </div>
   );
 };
-

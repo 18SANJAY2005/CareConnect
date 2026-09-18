@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Filter, UserCheck, Sparkles, MapPin, Activity, ArrowRight } from 'lucide-react';
-import type { CaregiverMatchItem, CuratedMatchesResponse } from '../../types';
+import type { CaregiverMatchItem, CuratedMatchesResponse } from '../../../types';
 import { CaregiverCard } from './CaregiverCard';
 import { CaregiverDetailModal } from './CaregiverDetailModal';
 

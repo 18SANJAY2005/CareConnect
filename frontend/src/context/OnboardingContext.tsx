@@ -4,6 +4,7 @@ import { api } from "../services/api";
 import { useAuth } from "./AuthContext";
 
 export type OnboardingStep =
+  | "LANDING"
   | "AUTH"
   | "GEO_VERIFICATION"
   | "PERSONA"
@@ -30,7 +31,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user } = useAuth();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("AUTH");
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>("LANDING");
   const [activeElder, setActiveElder] = useState<Elder | null>(null);
   const [activeAssessment, setActiveAssessment] =
     useState<HomeAssessment | null>(null);
@@ -69,7 +70,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
         })
         .catch(() => {});
     } else {
-      setCurrentStep("AUTH");
+      setCurrentStep("LANDING");
       setActiveElder(null);
       setActiveAssessment(null);
     }
