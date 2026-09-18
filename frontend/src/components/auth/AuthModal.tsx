@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Phone, MessageSquare, ArrowRight, CheckCircle2, ShieldCheck, Mail, Sparkles, ChevronDown, Search } from 'lucide-react';
+import { MessageSquare, ArrowRight, CheckCircle2, ShieldCheck, Mail, ChevronDown, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 
@@ -42,6 +42,17 @@ export const AuthModal: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handlePhoneChange = (val: string) => {
+    let clean = val.replace(/\D/g, '');
+    if (clean.startsWith('0')) {
+      clean = clean.replace(/^0+/, '');
+    }
+    if (countryCode === '+91' && clean.length > 10 && clean.startsWith('91')) {
+      clean = clean.slice(2);
+    }
+    setPhone(clean);
+  };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -144,7 +155,7 @@ export const AuthModal: React.FC = () => {
                 type="tel"
                 required
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="9876543210"
                 className="w-full pl-3 pr-3.5 py-2.5 text-sm rounded-r-xl border border-slate-300 focus:border-teal-600 bg-white outline-none"
               />
@@ -256,6 +267,13 @@ export const AuthModal: React.FC = () => {
             <div>
               <p className="font-semibold">Code dispatched to {countryCode}{phone}</p>
               <p className="text-teal-700/80 mt-0.5">Please check WhatsApp or messages for your 6-digit OTP.</p>
+              <button
+                type="button"
+                onClick={() => setOtp('123456')}
+                className="mt-1.5 text-[11px] font-bold text-teal-800 underline hover:text-teal-950 inline-block"
+              >
+                Auto-fill Demo Code (123456)
+              </button>
             </div>
           </div>
 

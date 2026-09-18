@@ -8,7 +8,6 @@ import {
   ArrowRight, 
   Building2, 
   Compass,
-  Sparkles,
   Info
 } from 'lucide-react';
 import { api } from '../../services/api';
@@ -40,7 +39,7 @@ const CHENNAI_LOCALITIES: LocalityOption[] = [
 ];
 
 export const GeographicVerification: React.FC = () => {
-  const { activeElder, setActiveElder, setCurrentStep, loadElderData } = useOnboarding();
+  const { elders, activeElder, setCurrentStep, refreshElders } = useOnboarding();
 
   // Basic elder fields if new
   const [elderName, setElderName] = useState('');
@@ -62,7 +61,7 @@ export const GeographicVerification: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Auto-fill from active elder if already set
+  // Auto-fill from active elder if already set, or clear for new elder
   useEffect(() => {
     if (activeElder) {
       setElderName(activeElder.name);
@@ -89,6 +88,19 @@ export const GeographicVerification: React.FC = () => {
           assignedHub: 'Chennai Care Hub'
         });
       }
+    } else {
+      setElderName('');
+      setElderAge(0);
+      setElderGender('FEMALE');
+      setAddressLine1('');
+      setAddressLine2('');
+      setLocality('');
+      setCity('Chennai');
+      setState('Tamil Nadu');
+      setPostalCode('');
+      setLandmark('');
+      setVerifyResult(null);
+      setErrorMessage('');
     }
   }, [activeElder]);
 
@@ -141,7 +153,6 @@ export const GeographicVerification: React.FC = () => {
           age: Number(elderAge),
           gender: elderGender,
         });
-        setActiveElder(currentElder);
       }
 
       // 2. Persist verified location
@@ -157,8 +168,8 @@ export const GeographicVerification: React.FC = () => {
         longitude: verifyResult.longitude,
       });
 
-      // 3. Reload full elder and transition to Persona Configuration
-      await loadElderData(currentElder.id);
+      // 3. Refresh elders list and select current elder
+      await refreshElders(currentElder.id);
       setCurrentStep('PERSONA');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save verified address');
@@ -172,18 +183,29 @@ export const GeographicVerification: React.FC = () => {
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
       
       {/* Step Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 uppercase tracking-wider mb-2">
-          <span>Phase A.1</span>
-          <span>•</span>
-          <span>Geographic Verification</span>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 uppercase tracking-wider mb-2">
+            <span>Phase A.1</span>
+            <span>•</span>
+            <span>Geographic Verification</span>
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            Where will your loved one receive care?
+          </h1>
+          <p className="text-slate-600 mt-2 text-sm sm:text-base leading-relaxed">
+            CareConnect operates dedicated clinical care corridors across Chennai. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
+          </p>
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Where will your loved one receive care?
-        </h1>
-        <p className="text-slate-600 mt-2 text-sm sm:text-base leading-relaxed">
-          CareConnect operates dedicated clinical care corridors across Chennai. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
-        </p>
+        {elders && elders.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setCurrentStep("DASHBOARD")}
+            className="self-start sm:self-auto px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition shrink-0"
+          >
+            ← Back to Dashboard
+          </button>
+        )}
       </div>
 
       {errorMessage && (

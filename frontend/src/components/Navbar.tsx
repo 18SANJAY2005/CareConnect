@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   HeartPulse,
   UserCheck,
@@ -10,6 +10,10 @@ import {
   Smartphone,
   Activity,
   Users,
+  User,
+  ChevronDown,
+  PlusCircle,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOnboarding } from "../context/OnboardingContext";
@@ -24,7 +28,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActivePortal,
 }) => {
   const { user, logout } = useAuth();
-  const { currentStep, setCurrentStep } = useOnboarding();
+  const {
+    currentStep,
+    setCurrentStep,
+    elders,
+    activeElder,
+    selectElder,
+    startNewElderOnboarding,
+  } = useOnboarding();
+  const [isElderDropdownOpen, setIsElderDropdownOpen] = useState(false);
+  const elderDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        elderDropdownRef.current &&
+        !elderDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsElderDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const steps = [
     { key: "GEO_VERIFICATION", label: "1. Location", icon: MapPin },
@@ -129,6 +155,72 @@ export const Navbar: React.FC<NavbarProps> = ({
                 );
               })}
             </nav>
+          </div>
+        )}
+
+        {/* Active Elder Quick Switcher (For Sponsor) */}
+        {activePortal === "SPONSOR" && user && elders.length > 0 && (
+          <div className="relative" ref={elderDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsElderDropdownOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100/70 border border-teal-200 text-teal-900 rounded-xl text-xs font-semibold transition"
+            >
+              <User className="w-3.5 h-3.5 text-teal-700" />
+              <span className="font-bold max-w-[120px] truncate">
+                {activeElder?.name || "Select Elder"}
+              </span>
+              <ChevronDown className="w-3 h-3 text-teal-600 ml-0.5" />
+            </button>
+
+            {isElderDropdownOpen && (
+              <div className="absolute right-0 mt-1.5 w-60 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 space-y-1">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Family Elders ({elders.length})
+                </div>
+                {elders.map((elder) => {
+                  const isCurrent = activeElder?.id === elder.id;
+                  return (
+                    <button
+                      key={elder.id}
+                      type="button"
+                      onClick={() => {
+                        selectElder(elder.id);
+                        setIsElderDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition ${
+                        isCurrent
+                          ? "bg-teal-50 text-teal-900 font-bold"
+                          : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex flex-col text-left truncate">
+                        <span className="truncate">{elder.name}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {elder.age} yrs • {elder.location?.locality || "Chennai"}
+                        </span>
+                      </div>
+                      {isCurrent && (
+                        <Check className="w-4 h-4 text-teal-600 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+                <div className="border-t border-slate-100 pt-1 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startNewElderOnboarding();
+                      setIsElderDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold text-teal-700 hover:bg-teal-50 transition"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Add Another Elder</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

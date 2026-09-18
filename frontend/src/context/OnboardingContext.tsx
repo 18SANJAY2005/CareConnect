@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { Elder, HomeAssessment } from "../types";
 import { api } from "../services/api";
 import { useAuth } from "./AuthContext";
@@ -15,11 +15,15 @@ export type OnboardingStep =
 interface OnboardingContextType {
   currentStep: OnboardingStep;
   setCurrentStep: (step: OnboardingStep) => void;
+  elders: Elder[];
   activeElder: Elder | null;
   setActiveElder: (elder: Elder | null) => void;
   activeAssessment: HomeAssessment | null;
   setActiveAssessment: (assessment: HomeAssessment | null) => void;
   loadElderData: (elderId: string) => Promise<void>;
+  refreshElders: (preferredElderId?: string) => Promise<Elder[]>;
+  selectElder: (elderId: string) => void;
+  startNewElderOnboarding: () => void;
   resetOnboarding: () => void;
 }
 
@@ -32,18 +36,49 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>("LANDING");
+  const [elders, setElders] = useState<Elder[]>([]);
   const [activeElder, setActiveElder] = useState<Elder | null>(null);
   const [activeAssessment, setActiveAssessment] =
     useState<HomeAssessment | null>(null);
 
+  const refreshElders = useCallback(
+    async (preferredElderId?: string): Promise<Elder[]> => {
+      try {
+        const fetchedElders = await api.listElders();
+        const list = fetchedElders || [];
+        setElders(list);
+
+        if (list.length > 0) {
+          const targetId = preferredElderId || activeElder?.id;
+          const matched = targetId
+            ? list.find((e) => e.id === targetId)
+            : null;
+          const chosen = matched || list[0];
+          setActiveElder(chosen);
+          return list;
+        } else {
+          setActiveElder(null);
+          return [];
+        }
+      } catch (err) {
+        console.error("Failed to refresh elders:", err);
+        return [];
+      }
+    },
+    [activeElder?.id],
+  );
+
   useEffect(() => {
     if (user) {
-      // If user is authenticated, check if they already have an elder
+      // If user is authenticated, check all elders
       api
         .listElders()
-        .then((elders) => {
-          if (elders && elders.length > 0) {
-            const latest = elders[0];
+        .then((fetchedElders) => {
+          const list = fetchedElders || [];
+          setElders(list);
+
+          if (list.length > 0) {
+            const latest = list[0];
             setActiveElder(latest);
             if (latest.personaStatus === "SAVED") {
               setCurrentStep("DASHBOARD");
@@ -53,10 +88,13 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
               setCurrentStep("GEO_VERIFICATION");
             }
           } else {
+            setActiveElder(null);
             setCurrentStep("GEO_VERIFICATION");
           }
         })
         .catch(() => {
+          setElders([]);
+          setActiveElder(null);
           setCurrentStep("GEO_VERIFICATION");
         });
 
@@ -71,36 +109,60 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch(() => {});
     } else {
       setCurrentStep("LANDING");
+      setElders([]);
       setActiveElder(null);
       setActiveAssessment(null);
     }
   }, [user]);
 
+  const selectElder = (elderId: string) => {
+    const target = elders.find((e) => e.id === elderId);
+    if (target) {
+      setActiveElder(target);
+      if (target.personaStatus === "SAVED") {
+        setCurrentStep("DASHBOARD");
+      } else if (target.location && target.location.serviceable) {
+        setCurrentStep("PERSONA");
+      } else {
+        setCurrentStep("GEO_VERIFICATION");
+      }
+    } else {
+      loadElderData(elderId);
+    }
+  };
+
   const loadElderData = async (elderId: string) => {
     try {
       const elder = await api.getElder(elderId);
       setActiveElder(elder);
+      await refreshElders(elderId);
     } catch (err) {
       console.error("Failed to load elder:", err);
     }
   };
 
-  const resetOnboarding = () => {
+  const startNewElderOnboarding = () => {
     setActiveElder(null);
     setActiveAssessment(null);
     setCurrentStep("GEO_VERIFICATION");
   };
+
+  const resetOnboarding = startNewElderOnboarding;
 
   return (
     <OnboardingContext.Provider
       value={{
         currentStep,
         setCurrentStep,
+        elders,
         activeElder,
         setActiveElder,
         activeAssessment,
         setActiveAssessment,
         loadElderData,
+        refreshElders,
+        selectElder,
+        startNewElderOnboarding,
         resetOnboarding,
       }}
     >

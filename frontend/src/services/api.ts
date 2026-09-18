@@ -40,7 +40,7 @@ import type {
 import { offlineQueue } from "./offlineQueue";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE || "/api";
 
 class ApiService {
   /* =========================================================
@@ -74,10 +74,21 @@ class ApiService {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } catch (networkErr: any) {
+      console.error(
+        `Network error connecting to ${API_BASE}${endpoint}:`,
+        networkErr,
+      );
+      throw new Error(
+        `Unable to reach CareConnect backend server. Please verify the backend service is running on port 8000.`,
+      );
+    }
 
     if (!response.ok) {
       let errorMessage = `Request failed (${response.status})`;

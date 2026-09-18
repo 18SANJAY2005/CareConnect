@@ -22,7 +22,7 @@ import type {
 } from "../../../types";
 
 export const PersonaWizard: React.FC = () => {
-  const { activeElder, setActiveElder, setCurrentStep } = useOnboarding();
+  const { elders, activeElder, setActiveElder, setCurrentStep, refreshElders } = useOnboarding();
 
   // Active step in the 10-step wizard (1-indexed: 1 to 10)
   const [currentStepIndex, setCurrentStepIndex] = useState(1);
@@ -48,7 +48,7 @@ export const PersonaWizard: React.FC = () => {
   // Form State initialized from activeElder
   const [name, setName] = useState(activeElder?.name || "");
   const [age, setAge] = useState(activeElder?.age || "");
-  const [gender, setGender] = useState<"FEMALE" | "MALE" | "OTHER">(
+  const [gender, setGender] = useState<"FEMALE" | "MALE" | "OTHER" | "">(
     activeElder?.gender || "",
   );
   const [dateOfBirth, setDateOfBirth] = useState(
@@ -269,7 +269,7 @@ export const PersonaWizard: React.FC = () => {
     }
   };
 
-  const [mobilityLevel, setMobilityLevel] = useState<MobilityLevel>(
+  const [mobilityLevel, setMobilityLevel] = useState<MobilityLevel | "">(
     activeElder?.mobilityLevel || "",
   );
 
@@ -313,7 +313,7 @@ export const PersonaWizard: React.FC = () => {
     activeElder?.dailyRoutine?.notes || "",
   );
 
-  const [shiftPreference, setShiftPreference] = useState<ShiftPreference>(
+  const [shiftPreference, setShiftPreference] = useState<ShiftPreference | "">(
     activeElder?.shiftPreference || "",
   );
   const [additionalNotes, setAdditionalNotes] = useState(
@@ -371,9 +371,9 @@ export const PersonaWizard: React.FC = () => {
       const updated = await api.updateElder(activeElder.id, {
         name,
         age: Number(age),
-        gender,
+        gender: gender || undefined,
         dateOfBirth: dateOfBirth || null,
-        mobilityLevel,
+        mobilityLevel: mobilityLevel || undefined,
         medicalConditions,
         careRequirements,
         medicalDevices,
@@ -382,7 +382,7 @@ export const PersonaWizard: React.FC = () => {
         primaryLanguage,
         lifestylePreferences,
         dailyRoutine: { wakeTime, bedTime, notes: routineNotes },
-        shiftPreference,
+        shiftPreference: shiftPreference || undefined,
         additionalNotes,
         personaStatus: overrideStatus || "IN_PROGRESS",
       });
@@ -401,7 +401,7 @@ export const PersonaWizard: React.FC = () => {
         setErrorMessage(dobError);
         return;
       }
-      if (!age || age < 1 || age > 125) {
+      if (!age || Number(age) < 1 || Number(age) > 125) {
         setErrorMessage("Please provide a valid elder age");
         return;
       }
@@ -424,9 +424,10 @@ export const PersonaWizard: React.FC = () => {
     setIsSaving(true);
     try {
       await persistChanges("SAVED");
+      await refreshElders(activeElder?.id);
       setSuccessMessage("Patient Persona successfully finalized and saved!");
       setTimeout(() => {
-        setCurrentStep("ASSESSMENT");
+        setCurrentStep("DASHBOARD");
       }, 800);
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to finalize patient persona");
@@ -463,21 +464,31 @@ export const PersonaWizard: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
       {/* Step Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 uppercase tracking-wider mb-1">
-          <span>Phase A.2</span>
-          <span>•</span>
-          <span>Patient Persona Configuration</span>
-          <span>•</span>
-          <span>Step {currentStepIndex} of 10</span>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold text-teal-700 uppercase tracking-wider mb-1">
+            <span>Phase A.2</span>
+            <span>•</span>
+            <span>Patient Persona Configuration</span>
+            <span>•</span>
+            <span>Step {currentStepIndex} of 10</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {stepTitles[currentStepIndex - 1]}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Configuring profile for: <span className="font-bold text-teal-900">{name || activeElder?.name}</span>
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {stepTitles[currentStepIndex - 1]}
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Family-provided clinical and lifestyle intake for tailored elder care
-          in Chennai.
-        </p>
+        {elders && elders.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setCurrentStep("DASHBOARD")}
+            className="self-start sm:self-auto px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition shrink-0"
+          >
+            ← Back to Dashboard
+          </button>
+        )}
       </div>
 
       {/* Visual Stepper Progress Bar */}

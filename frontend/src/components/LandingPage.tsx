@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOnboarding } from '../context/OnboardingContext';
-import { HeartPulse, ShieldCheck, MapPin, Activity, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, MapPin, Activity, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const { setCurrentStep } = useOnboarding();

@@ -1,3 +1,9 @@
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -41,6 +47,8 @@ from app.api import (
     chat,
 )
 
+from app.services.matching_service import seed_initial_data_if_empty
+
 # ============================================================
 # Phase D routers
 # ============================================================
@@ -70,6 +78,10 @@ async def lifespan(app: FastAPI):
     # Initialize all database tables.
     await init_db()
 
+    # Seed Phase B baseline/demo data using an async session.
+    async with AsyncSessionLocal() as db:
+        await seed_initial_data_if_empty(db)
+
     yield
 
 
@@ -98,7 +110,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

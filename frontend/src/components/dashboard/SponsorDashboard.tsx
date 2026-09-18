@@ -6,6 +6,7 @@ import {
   PlusCircle, 
   Stethoscope, 
   User, 
+  Users,
   Activity, 
   Utensils, 
   Clock, 
@@ -31,7 +32,7 @@ import { OperationsConsole } from '../phaseD/OperationsConsole';
 
 export const SponsorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { activeElder, activeAssessment, setCurrentStep, resetOnboarding } = useOnboarding();
+  const { elders, activeElder, activeAssessment, setCurrentStep, selectElder, startNewElderOnboarding } = useOnboarding();
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'ACTIVE_CARE' | 'BILLING' | 'RENEWAL' | 'PERSONA' | 'OPERATIONS'>('ACTIVE_CARE');
@@ -105,8 +106,15 @@ export const SponsorDashboard: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Care for {activeElder.name}
           </h1>
-          <p className="text-teal-100/80 text-xs sm:text-sm mt-1 max-w-xl">
-            Sponsor: <span className="font-semibold text-white">{user?.fullName}</span> • Location: <span className="font-semibold text-white">{loc?.locality || 'Chennai'}</span>
+          <p className="text-teal-100/80 text-xs sm:text-sm mt-1 max-w-xl flex items-center flex-wrap gap-2">
+            <span>Sponsor: <span className="font-semibold text-white">{user?.fullName}</span></span>
+            <span>•</span>
+            <span>Location: <span className="font-semibold text-white">{loc?.locality || 'Chennai'}</span></span>
+            {elders && elders.length > 1 && (
+              <span className="px-2 py-0.5 rounded-full bg-white/20 text-[11px] font-medium text-teal-100">
+                Elder {elders.findIndex(e => e.id === activeElder.id) + 1} of {elders.length}
+              </span>
+            )}
           </p>
         </div>
 
@@ -124,7 +132,7 @@ export const SponsorDashboard: React.FC = () => {
           </button>
           
           <button
-            onClick={resetOnboarding}
+            onClick={startNewElderOnboarding}
             className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5"
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -132,6 +140,82 @@ export const SponsorDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Registered Elders Selector Ribbon */}
+      {elders && elders.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-teal-700" />
+              <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Family Care Recipients ({elders.length})
+              </h2>
+              <span className="hidden sm:inline text-[11px] text-slate-400">• Click an elder to view active care</span>
+            </div>
+            <button
+              onClick={startNewElderOnboarding}
+              className="text-xs font-bold text-teal-700 hover:text-teal-800 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100/80 transition"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ Add Elder</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {elders.map((elder) => {
+              const isSelected = activeElder?.id === elder.id;
+              const elderLoc = elder.location?.locality || 'Chennai';
+              return (
+                <button
+                  key={elder.id}
+                  type="button"
+                  onClick={() => selectElder(elder.id)}
+                  className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-teal-50/90 to-teal-50/40 border-teal-500 shadow-sm ring-2 ring-teal-500/20'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 w-full">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`font-bold text-sm truncate ${isSelected ? 'text-teal-950' : 'text-slate-800'}`}>
+                          {elder.name}
+                        </span>
+                        {isSelected && (
+                          <span className="w-2 h-2 rounded-full bg-teal-600 shrink-0" />
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                        <span>{elder.age} yrs • {elder.gender}</span>
+                      </div>
+                    </div>
+                    {isSelected ? (
+                      <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full border border-slate-300 shrink-0 mt-0.5" />
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100 w-full">
+                    <span className="flex items-center gap-1 truncate max-w-[120px]">
+                      <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span className="truncate">{elderLoc}</span>
+                    </span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                      elder.personaStatus === 'SAVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {elder.personaStatus === 'SAVED' ? 'Active' : elder.personaStatus}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Notifications Alert Bar if unread notifications exist */}
       {notifications.length > 0 && notifications[0] && (
@@ -276,13 +360,20 @@ export const SponsorDashboard: React.FC = () => {
                   </h2>
                   <span className="text-xs text-slate-500">Structured family-supplied care intake</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                     {activeElder.personaStatus}
                   </span>
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200">
                     {activeElder.shiftPreference.replace(/_/g, ' ')}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep('PERSONA')}
+                    className="px-3 py-1 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                  >
+                    Edit Persona
+                  </button>
                 </div>
               </div>
 

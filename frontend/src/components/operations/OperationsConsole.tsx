@@ -3,8 +3,7 @@ import {
   ShieldAlert, 
   Activity, 
   UserCheck, 
-  RefreshCw, 
-  Sparkles
+  RefreshCw
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { LiveShiftMonitorItem, VitalAlertItem, Incident } from '../../types/phaseC';

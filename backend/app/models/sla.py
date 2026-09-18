@@ -23,7 +23,7 @@ class SLAAcceptance(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     assignment_id = Column(Integer, ForeignKey("care_assignments.id"), nullable=False)
-    sponsor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    sponsor_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     sla_version_id = Column(Integer, ForeignKey("sla_versions.id"), nullable=False)
     signer_name = Column(String(255), nullable=False)
     signer_relationship = Column(String(100), default="Primary Sponsor / Family")

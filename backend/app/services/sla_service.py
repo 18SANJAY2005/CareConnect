@@ -10,6 +10,7 @@ from app.schemas.sla import (
     SLAAcceptanceResponse,
     SLAVersionResponse,
 )
+from app.services.matching_service import seed_initial_data_if_empty
 
 
 async def get_current_sla_version(
@@ -17,11 +18,12 @@ async def get_current_sla_version(
 ) -> SLAVersionResponse:
     """Returns the current approved version of the CareConnect SLA."""
 
+    await seed_initial_data_if_empty(db)
 
     result = await db.execute(
         select(SLAVersion).where(
             SLAVersion.version == "1.0",
-            SLAVersion.is_active.is_(True),
+            SLAVersion.is_active == 1,
         ).limit(1)
     )
 

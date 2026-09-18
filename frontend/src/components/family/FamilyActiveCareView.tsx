@@ -17,7 +17,6 @@ interface FamilyActiveCareViewProps {
 
 export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
   elderId,
-  elderName = 'Elder'
 }) => {
   const [activeTab, setActiveTab] = useState<'TIMELINE' | 'VITALS' | 'MEDIA' | 'CHAT'>('TIMELINE');
   const [attendanceData, setAttendanceData] = useState<any>(null);
@@ -74,7 +73,7 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !targetElderId) return;
     try {
       const res = await api.sendChatMessage({
         elderId: targetElderId,

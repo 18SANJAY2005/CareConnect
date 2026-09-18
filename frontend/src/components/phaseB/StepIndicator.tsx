@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users, Video, CreditCard, FileCheck, CheckCircle2 } from 'lucide-react';
-import type { PhaseBStep } from '../types';
+import type { PhaseBStep } from '../../types';
 
 interface StepIndicatorProps {
   currentStep: PhaseBStep;
