@@ -18,6 +18,7 @@ import {
 import { api } from '../../services/api';
 import { offlineQueue } from '../../services/offlineQueue';
 import type { ShiftDetails, CareTask, TimeOfDay } from '../../types/phaseC';
+import { CareConnectLogo } from '../common/CareConnectLogo';
 
 // Vernacular Localization Dictionary
 const I18N = {
@@ -206,7 +207,7 @@ export const CaregiverMobileApp: React.FC = () => {
     if (!shiftData?.shift?.id) return;
     setStatusMessage('Checking proximity to elder residence...');
     try {
-      // Coordinates near Adyar, Chennai (13.0013, 80.2566)
+      // Verified residence location coordinates (13.0013, 80.2566)
       const res = await api.checkInShift(shiftData.shift.id, {
         latitude: 13.0013,
         longitude: 80.2566,
@@ -349,11 +350,14 @@ export const CaregiverMobileApp: React.FC = () => {
       
       {/* Sticky Top App Bar */}
       <header className="sticky top-0 z-30 bg-primary text-white px-4 py-3 shadow-md flex items-center justify-between">
-        <div>
-          <span className="text-[11px] uppercase tracking-wider text-teal-200 font-bold block">
-            CareConnect Chennai
-          </span>
-          <h1 className="text-base font-bold tracking-tight text-white">{t.title}</h1>
+        <div className="flex items-center gap-2.5">
+          <CareConnectLogo size="sm" variant="inverted" />
+          <div>
+            <h1 className="text-base font-bold tracking-tight text-white leading-tight">{t.title}</h1>
+            <span className="text-[10px] uppercase tracking-wider text-teal-200 font-bold block">
+              Caregiver Workspace
+            </span>
+          </div>
         </div>
 
         {/* Language Selector Pill */}
@@ -775,12 +779,12 @@ export const CaregiverMobileApp: React.FC = () => {
               {t.sosButton}
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              This action immediately alerts the CareConnect Operations Desk and notifies family emergency contacts in Chennai.
+              This action immediately alerts the CareConnect Operations Desk and notifies family emergency contacts.
             </p>
 
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-900 font-semibold text-left">
-              • Emergency Hotline: 108 (Tamil Nadu Ambulance)<br />
-              • Apollo / Kauvery triage guidelines activated.<br />
+              • Emergency Ambulance Dispatch alert queued.<br />
+              • Clinical supervisor triage guidelines activated.<br />
               • Operations response SLA: &lt; 2 minutes.
             </div>
 

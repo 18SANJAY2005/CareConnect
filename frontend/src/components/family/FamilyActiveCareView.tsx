@@ -380,8 +380,8 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[500px] overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Chennai Care Coordinator</h3>
-              <p className="text-[11px] text-slate-500">South Chennai Care Hub • Active Support</p>
+              <h3 className="text-sm font-bold text-slate-900">Clinical Care Coordinator</h3>
+              <p className="text-[11px] text-slate-500">Primary Care Hub • Active Support</p>
             </div>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" title="Online" />
           </div>

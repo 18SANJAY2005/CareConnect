@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  HeartPulse,
   UserCheck,
   LogOut,
   MapPin,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOnboarding } from "../context/OnboardingContext";
+import { CareConnectLogo } from "./common/CareConnectLogo";
 
 interface NavbarProps {
   activePortal: "SPONSOR" | "CAREGIVER" | "OPERATIONS";
@@ -71,22 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             if (user) setCurrentStep("DASHBOARD"); else setCurrentStep("LANDING");
           }}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-700 to-teal-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/20">
-            <HeartPulse className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg text-slate-900 tracking-tight">
-                CareConnect
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                Chennai
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-none">
-              Elder Care Platform
-            </p>
-          </div>
+          <CareConnectLogo size="md" showWordmark />
         </div>
 
         {/* Unified Portal / Role Switcher */}
@@ -197,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="flex flex-col text-left truncate">
                         <span className="truncate">{elder.name}</span>
                         <span className="text-[10px] text-slate-400">
-                          {elder.age} yrs • {elder.location?.locality || "Chennai"}
+                          {elder.age} yrs • {elder.location?.locality || "Care Zone"}
                         </span>
                       </div>
                       {isCurrent && (

@@ -15,7 +15,8 @@ import { PhaseBFlow } from "./components/phaseB/PhaseBFlow";
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
 import { OperationsConsole } from "./components/operations/OperationsConsole";
 
-import { HeartPulse, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { CareConnectLogo } from "./components/common/CareConnectLogo";
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -30,12 +31,10 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center animate-pulse shadow-lg">
-            <HeartPulse className="w-6 h-6" />
-          </div>
+          <CareConnectLogo size="lg" className="animate-pulse" />
 
           <span className="text-sm font-semibold text-slate-700">
-            Connecting to CareConnect Chennai...
+            Connecting to CareConnect...
           </span>
         </div>
       </div>
@@ -76,24 +75,21 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-teal-600" />
+      {/* Internal Portal Footer */}
+      {(user || currentStep === "AUTH") && (
+        <footer className="border-t border-slate-200 bg-white py-6 mt-12">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-teal-600" />
+              <span>CareConnect Elder Care Platform</span>
+            </div>
 
-            <span>
-              CareConnect Elder Care Platform • Chennai Metropolitan Care
-              Network
-            </span>
+            <div className="flex items-center gap-4">
+              <span>Phase C Active Care & Remote Monitoring</span>
+            </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <span>Phase C Active Care & Remote Monitoring</span>
-            <span>•</span>
-            <span>DPDP Act 2023 Compliant (asia-south1)</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 };

@@ -34,7 +34,7 @@ export const IntroCallScheduler: React.FC<IntroCallSchedulerProps> = ({
   ];
 
   const timezones = [
-    { id: 'Asia/Kolkata', label: 'IST — India Standard Time (Chennai)' },
+    { id: 'Asia/Kolkata', label: 'IST — India Standard Time' },
     { id: 'Asia/Singapore', label: 'SGT — Singapore Time' },
     { id: 'America/New_York', label: 'EST — US Eastern Time' },
     { id: 'America/Los_Angeles', label: 'PST — US Pacific Time' },

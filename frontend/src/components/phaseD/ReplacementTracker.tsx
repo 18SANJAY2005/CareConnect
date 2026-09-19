@@ -212,7 +212,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-950 flex items-center gap-1.5">
               <UserCheck className="w-4 h-4 text-teal-700" />
-              Proposed Substitute Attendant from Chennai Buffer Pool
+              Proposed Substitute Attendant from Vetted Buffer Pool
             </span>
 
             <span className="text-[10px] px-2 py-0.5 rounded bg-teal-200/80 text-teal-950 font-bold">

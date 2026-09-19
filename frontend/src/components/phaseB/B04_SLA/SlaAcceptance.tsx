@@ -103,13 +103,13 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
           </p>
         </div>
 
-        {/* Section 4: India DPDP Act 2023 Compliance */}
+        {/* Section 4: Data Privacy & Protection */}
         <div className="p-4 rounded-xl bg-tertiary-light/40 border border-tertiary/20 space-y-2">
           <h4 className="text-sm font-bold text-tertiary font-heading flex items-center">
             <span className="w-6 h-6 rounded-full bg-tertiary text-white text-xs flex items-center justify-center mr-2">
               4
             </span>
-            India DPDP Act 2023 Compliance & Elder Health Data Protection
+            Data Privacy & Elder Health Data Protection
           </h4>
           <p className="text-xs text-on-surface-variant leading-relaxed whitespace-pre-line pl-8">
             {sla.dpdp_compliance_terms}
@@ -157,7 +157,7 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
           </span>
         </div>
 
-        {/* Mandatory Checkbox 3: India DPDP Act 2023 */}
+        {/* Mandatory Checkbox 3: Data Privacy Consent */}
         <div
           onClick={() => setAgreeDPDP(!agreeDPDP)}
           className="flex items-start space-x-3 p-3 rounded-xl hover:bg-surface cursor-pointer select-none transition-colors"
@@ -170,7 +170,7 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
             )}
           </div>
           <span className="text-xs sm:text-sm text-on-surface leading-normal">
-            I grant explicit consent under <strong>India's Digital Personal Data Protection (DPDP) Act 2023</strong> for caregiver check-in geofencing and encrypted vitals logging in GCP India (`asia-south1`).
+            I grant explicit consent for caregiver check-in geofencing and encrypted vitals logging under our <strong>Data Privacy & Health Data Protection terms</strong>.
           </span>
         </div>
 

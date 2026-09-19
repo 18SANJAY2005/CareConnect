@@ -133,7 +133,7 @@ export const ReplacementModal: React.FC<ReplacementModalProps> = ({
             </div>
             <h3 className="text-lg font-bold text-slate-900">Replacement Request Submitted</h3>
             <p className="text-xs text-slate-600 max-w-md mx-auto">
-              Our Chennai Operations Care Manager has received your request and is matching an attendant from the vetted Buffer Pool.
+              Our Operations Care Manager has received your request and is matching an attendant from the vetted Buffer Pool.
             </p>
           </div>
         ) : (
@@ -152,7 +152,7 @@ export const ReplacementModal: React.FC<ReplacementModalProps> = ({
             <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-xs flex items-center gap-2.5">
               <Clock className="w-4 h-4 text-teal-700 shrink-0" />
               <p className="leading-relaxed">
-                <strong>Chennai Care Operations SLA:</strong> Requests are triaged within 2 hours. A clinical supervisor will contact you to confirm candidate preferences before any replacement is sent.
+                <strong>Care Operations SLA:</strong> Requests are triaged within 2 hours. A clinical supervisor will contact you to confirm candidate preferences before any replacement is sent.
               </p>
             </div>
 

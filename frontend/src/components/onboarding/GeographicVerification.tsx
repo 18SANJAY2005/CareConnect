@@ -20,22 +20,22 @@ interface LocalityOption {
   hub: string;
 }
 
-const CHENNAI_LOCALITIES: LocalityOption[] = [
-  { name: 'Adyar', pincode: '600020', hub: 'South Chennai Hub' },
-  { name: 'Besant Nagar', pincode: '600090', hub: 'South Chennai Hub' },
-  { name: 'Thiruvanmiyur', pincode: '600041', hub: 'South Chennai Hub' },
-  { name: 'Velachery', pincode: '600042', hub: 'South Chennai Hub' },
-  { name: 'Mylapore', pincode: '600004', hub: 'Central Chennai Hub' },
-  { name: 'T. Nagar', pincode: '600017', hub: 'Central Chennai Hub' },
-  { name: 'Alwarpet', pincode: '600018', hub: 'Central Chennai Hub' },
-  { name: 'Nungambakkam', pincode: '600034', hub: 'Central Chennai Hub' },
-  { name: 'Anna Nagar', pincode: '600040', hub: 'North-West Chennai Hub' },
-  { name: 'Kilpauk', pincode: '600010', hub: 'Central Chennai Hub' },
-  { name: 'Royapettah', pincode: '600014', hub: 'Central Chennai Hub' },
-  { name: 'Perungudi (OMR)', pincode: '600096', hub: 'OMR South Hub' },
-  { name: 'Sholinganallur (OMR)', pincode: '600119', hub: 'OMR South Hub' },
-  { name: 'R.A. Puram', pincode: '600028', hub: 'Central Chennai Hub' },
-  { name: 'Ashok Nagar', pincode: '600083', hub: 'Central Chennai Hub' },
+const SERVICEABLE_LOCALITIES: LocalityOption[] = [
+  { name: 'Adyar', pincode: '600020', hub: 'South Care Hub' },
+  { name: 'Besant Nagar', pincode: '600090', hub: 'South Care Hub' },
+  { name: 'Thiruvanmiyur', pincode: '600041', hub: 'South Care Hub' },
+  { name: 'Velachery', pincode: '600042', hub: 'South Care Hub' },
+  { name: 'Mylapore', pincode: '600004', hub: 'Central Care Hub' },
+  { name: 'T. Nagar', pincode: '600017', hub: 'Central Care Hub' },
+  { name: 'Alwarpet', pincode: '600018', hub: 'Central Care Hub' },
+  { name: 'Nungambakkam', pincode: '600034', hub: 'Central Care Hub' },
+  { name: 'Anna Nagar', pincode: '600040', hub: 'North-West Care Hub' },
+  { name: 'Kilpauk', pincode: '600010', hub: 'Central Care Hub' },
+  { name: 'Royapettah', pincode: '600014', hub: 'Central Care Hub' },
+  { name: 'Perungudi (OMR)', pincode: '600096', hub: 'OMR Care Hub' },
+  { name: 'Sholinganallur (OMR)', pincode: '600119', hub: 'OMR Care Hub' },
+  { name: 'R.A. Puram', pincode: '600028', hub: 'Central Care Hub' },
+  { name: 'Ashok Nagar', pincode: '600083', hub: 'Central Care Hub' },
 ];
 
 export const GeographicVerification: React.FC = () => {
@@ -85,7 +85,7 @@ export const GeographicVerification: React.FC = () => {
           locality: loc.locality,
           city: loc.city,
           postalCode: loc.postalCode,
-          assignedHub: 'Chennai Care Hub'
+          assignedHub: 'Primary Care Hub'
         });
       }
     } else {
@@ -105,10 +105,12 @@ export const GeographicVerification: React.FC = () => {
   }, [activeElder]);
 
   const handleLocalitySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = CHENNAI_LOCALITIES.find(l => l.name === e.target.value);
+    const selected = SERVICEABLE_LOCALITIES.find(l => l.name === e.target.value);
     if (selected) {
       setLocality(selected.name);
       setPostalCode(selected.pincode);
+      setCity('Chennai');
+      setState('Tamil Nadu');
     } else {
       setLocality(e.target.value);
     }
@@ -122,13 +124,23 @@ export const GeographicVerification: React.FC = () => {
         addressLine1,
         addressLine2,
         locality,
-        city,
-        state,
+        city: city || 'Chennai',
+        state: state || 'Tamil Nadu',
         postalCode,
         landmark,
         simulateState
       });
-      setVerifyResult(res);
+      const sanitized = {
+        ...res,
+        message: res.message
+          ? res.message
+              .replace(/Chennai metropolitan region/gi, 'active care network')
+              .replace(/in Chennai/gi, '')
+              .replace(/across Chennai/gi, 'across our network')
+              .replace(/active Chennai service corridors/gi, 'active service corridors')
+          : res.message
+      };
+      setVerifyResult(sanitized);
     } catch (err: any) {
       setErrorMessage(err.message || 'Geographic verification failed');
     } finally {
@@ -138,7 +150,7 @@ export const GeographicVerification: React.FC = () => {
 
   const handleSaveAndProceed = async () => {
     if (!verifyResult || !verifyResult.serviceable) {
-      setErrorMessage('Please verify that the address is within Chennai serviceable coverage first.');
+      setErrorMessage('Please verify that the address is within serviceable coverage first.');
       return;
     }
 
@@ -194,7 +206,7 @@ export const GeographicVerification: React.FC = () => {
             Where will your loved one receive care?
           </h1>
           <p className="text-slate-600 mt-2 text-sm sm:text-base leading-relaxed">
-            CareConnect operates dedicated clinical care corridors across Chennai. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
+            CareConnect operates dedicated clinical care corridors. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
           </p>
         </div>
         {elders && elders.length > 0 && (
@@ -292,20 +304,20 @@ export const GeographicVerification: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Chennai Locality <span className="text-rose-500">*</span>
+                  Locality / Care Zone <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={locality}
                   onChange={handleLocalitySelect}
                   className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-teal-600 bg-white"
                 >
-                  <option value="">Select Chennai Zone</option>
-                  {CHENNAI_LOCALITIES.map((loc) => (
+                  <option value="">Select Serviceable Zone</option>
+                  {SERVICEABLE_LOCALITIES.map((loc) => (
                     <option key={loc.name} value={loc.name}>
                       {loc.name} ({loc.pincode})
                     </option>
                   ))}
-                  <option value="Other">Other Chennai Locality</option>
+                  <option value="Other">Other Locality</option>
                 </select>
               </div>
             </div>
@@ -371,7 +383,7 @@ export const GeographicVerification: React.FC = () => {
                 ) : (
                   <>
                     <Compass className="w-4 h-4 text-teal-400" />
-                    <span>Check Serviceability in Chennai</span>
+                    <span>Check Serviceability</span>
                   </>
                 )}
               </button>
@@ -395,7 +407,7 @@ export const GeographicVerification: React.FC = () => {
                 <Navigation className="w-8 h-8 text-slate-300 mx-auto mb-2" />
                 <p className="text-xs font-medium text-slate-600">No address verified yet</p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Fill in the address details and click "Check Serviceability" to run verification against the Chennai coverage grid.
+                  Fill in the address details and click "Check Serviceability" to run verification against the coverage grid.
                 </p>
               </div>
             ) : verifyResult.verificationStatus === 'VERIFIED' ? (
@@ -430,7 +442,7 @@ export const GeographicVerification: React.FC = () => {
                   {verifyResult.message}
                 </p>
                 <p className="text-[11px] text-amber-700">
-                  CareConnect is currently deploying attendants in Chennai metropolitan zones. You can join our priority expansion waitlist.
+                  CareConnect is currently deploying attendants in active service zones. You can join our priority expansion waitlist.
                 </p>
                 <button
                   type="button"
@@ -474,7 +486,7 @@ export const GeographicVerification: React.FC = () => {
                       <div className="w-12 h-3 rounded-full bg-slate-400/30 blur-xs mt-1"></div>
                     </div>
                     <span className="mt-2 text-xs font-bold text-slate-800 bg-white/90 px-3 py-1 rounded-full shadow-xs border border-slate-200">
-                      {verifyResult.locality}, Chennai ({verifyResult.postalCode})
+                      {verifyResult.locality} ({verifyResult.postalCode})
                     </span>
                     <span className="text-[10px] text-teal-700 font-mono mt-0.5">
                       Lat: {verifyResult.latitude}° N, Lng: {verifyResult.longitude}° E
@@ -490,7 +502,7 @@ export const GeographicVerification: React.FC = () => {
               </div>
               <div className="bg-white px-3 py-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
                 <span>Google Maps / PostGIS Grid</span>
-                <span className="font-semibold text-teal-700">Chennai Core Corridor</span>
+                <span className="font-semibold text-teal-700">Core Care Corridor</span>
               </div>
             </div>
 

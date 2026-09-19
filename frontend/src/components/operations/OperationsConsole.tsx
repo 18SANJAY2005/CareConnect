@@ -5,6 +5,7 @@ import {
   UserCheck, 
   RefreshCw
 } from 'lucide-react';
+import { CareConnectLogo } from '../common/CareConnectLogo';
 import { api } from '../../services/api';
 import type { LiveShiftMonitorItem, VitalAlertItem, Incident } from '../../types/phaseC';
 
@@ -124,15 +125,20 @@ export const OperationsConsole: React.FC = () => {
       
       {/* Ops Header Bar */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-teal-300 text-xs font-bold mb-2">
-            <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-            <span>CareConnect Chennai Operations Desk</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <CareConnectLogo size="md" variant="inverted" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 text-teal-300 text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+              <span>Care Operations Desk</span>
+            </div>
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Active Care Command Console</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Live shift verification, P1 emergency escalation, and vital alert triage across Chennai hubs.
-          </p>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">Active Care Command Console</h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Live shift verification, P1 emergency escalation, and vital alert triage across active hubs.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -216,7 +222,7 @@ export const OperationsConsole: React.FC = () => {
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Chennai Live Shift Monitor</h3>
+              <h3 className="text-base font-bold text-slate-900">Live Shift Monitor</h3>
               <p className="text-xs text-slate-500">Real-time attendance, proximity distance, and supervisor overrides</p>
             </div>
 
@@ -317,7 +323,7 @@ export const OperationsConsole: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-900">Active Emergency Incidents</h3>
             {incidents.length === 0 ? (
               <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">
-                No active incidents reported. All Chennai corridors secure.
+                No active incidents reported. All corridors secure.
               </div>
             ) : (
               incidents.map((inc) => (

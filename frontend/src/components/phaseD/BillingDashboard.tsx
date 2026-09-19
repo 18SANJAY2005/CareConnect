@@ -56,9 +56,9 @@ export const BillingDashboard: React.FC = () => {
       setTimeout(async () => {
         try {
           const paidInvoice = await api.confirmInvoicePayment(selectedInvoice.id, {
-            razorpayPaymentId: `pay_chennai_${Date.now()}`,
+            razorpayPaymentId: `pay_${Date.now()}`,
             razorpayOrderId: intent.orderId,
-            razorpaySignature: 'sig_chennai_verified_ok'
+            razorpaySignature: 'sig_verified_ok'
           });
           setSelectedInvoice(paidInvoice);
           setPaymentSuccess(true);
@@ -100,7 +100,7 @@ export const BillingDashboard: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900">Monthly Billing & Itemized Invoices</h2>
-            <p className="text-xs text-slate-500">Transparent CareConnect Fee Breakdown • 18% GST Compliant (Chennai Hub)</p>
+            <p className="text-xs text-slate-500">Transparent CareConnect Fee Breakdown • 18% GST Compliant</p>
           </div>
         </div>
 

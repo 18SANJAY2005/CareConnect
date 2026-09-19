@@ -73,7 +73,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             </div>
 
             <p className="text-xs text-teal-200/80">
-              Chennai Metropolitan Area • Verified & Police Checked
+              Metropolitan Care Network • Verified & Background Checked
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
 
                   <span className="flex items-center gap-1 text-slate-600">
                     <MapPin className="w-3.5 h-3.5 text-teal-600" />
-                    {cg?.locality || 'Chennai'}
+                    {cg?.locality || 'Care Zone'}
                   </span>
                 </div>
               </div>

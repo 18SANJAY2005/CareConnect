@@ -69,7 +69,7 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
             <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-white/90">
               <span className="flex items-center bg-white/10 px-2.5 py-1 rounded-lg">
                 <MapPin className="w-4 h-4 mr-1 text-white/80" />
-                {matchesData.elder_locality}, Chennai
+                {matchesData.elder_locality}
               </span>
 
               <span className="flex items-center bg-white/10 px-2.5 py-1 rounded-lg">
@@ -121,7 +121,7 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
                     : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
                 }`}
               >
-                {loc === 'all' ? 'All Chennai' : loc}
+                {loc === 'all' ? 'All Localities' : loc}
               </button>
             ))}
           </div>

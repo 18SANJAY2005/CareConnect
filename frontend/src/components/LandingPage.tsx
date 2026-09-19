@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOnboarding } from '../context/OnboardingContext';
-import { ShieldCheck, MapPin, Activity, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, MapPin, Activity, ArrowRight, HeartPulse } from 'lucide-react';
+import { Footer } from './common/Footer';
 
 export const LandingPage: React.FC = () => {
   const { setCurrentStep } = useOnboarding();
@@ -9,9 +10,9 @@ export const LandingPage: React.FC = () => {
     <div className="flex flex-col min-h-full">
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-teal-50 to-white pt-20 pb-16 px-4 sm:px-6 lg:px-8 flex-1 flex flex-col items-center justify-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-100/50 text-teal-800 text-sm font-medium mb-6">
-          <MapPin className="w-4 h-4" />
-          <span>Now operating exclusively across Chennai</span>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-100/70 text-teal-800 text-sm font-medium mb-6 border border-teal-200/50">
+          <HeartPulse className="w-4 h-4 text-teal-600" />
+          <span>Professional In-Home Clinical Elder Care</span>
         </div>
         
         <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight max-w-4xl mx-auto leading-tight">
@@ -49,7 +50,7 @@ export const LandingPage: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold text-slate-900 mb-3">Verified Attendants</h3>
             <p className="text-slate-600 leading-relaxed text-sm">
-              Every caregiver undergoes strict multi-step verification and continuous clinical training before joining our Chennai network.
+              Every caregiver undergoes strict multi-step verification and continuous clinical training before joining our verified care network.
             </p>
           </div>
 
@@ -75,20 +76,8 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
       
-      {/* Trust Badges */}
-      <section className="bg-slate-900 text-slate-400 py-10 px-4">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-center gap-8 text-sm font-medium">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> DPDP Act 2023 Compliant
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> ISO 27001 Security Standard
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Secure Cloud Infrastructure
-          </div>
-        </div>
-      </section>
+      {/* Professional Footer & Contact Section */}
+      <Footer />
     </div>
   );
 };

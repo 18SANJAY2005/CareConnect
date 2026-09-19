@@ -19,6 +19,7 @@ import {
   Loader2,
   X,
 } from 'lucide-react';
+import { CareConnectLogo } from '../common/CareConnectLogo';
 
 export const OperationsConsole: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
@@ -166,7 +167,7 @@ export const OperationsConsole: React.FC = () => {
       setAssignNote('');
 
       setMessage(
-        'Substitute caregiver assigned from Chennai Buffer Pool.'
+        'Substitute caregiver assigned from Buffer Pool.'
       );
 
       setTimeout(() => setMessage(null), 3000);
@@ -218,14 +219,12 @@ export const OperationsConsole: React.FC = () => {
       {/* Console Header */}
       <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-teal-800 text-teal-300 flex items-center justify-center font-bold">
-            CC
-          </div>
+          <CareConnectLogo size="md" variant="inverted" />
 
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-white">
-                Chennai Care Operations Console
+                Care Operations Desk
               </h2>
 
               <span className="px-2 py-0.5 rounded bg-teal-900/80 border border-teal-700 text-teal-300 font-mono text-[10px] uppercase">
@@ -745,8 +744,7 @@ export const OperationsConsole: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-slate-700 font-bold block">
-                  Select Vetted Caregiver from Chennai Buffer
-                  Pool
+                  Select Vetted Caregiver from Care Buffer Pool
                 </label>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -815,7 +813,7 @@ export const OperationsConsole: React.FC = () => {
                     setAssignNote(e.target.value)
                   }
                   rows={2}
-                  placeholder="e.g. Matched based on South Chennai locality and Tamil fluency..."
+                  placeholder="e.g. Matched based on locality, clinical needs, and language fluency..."
                   className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-teal-700"
                 />
               </div>

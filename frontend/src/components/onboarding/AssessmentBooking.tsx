@@ -36,7 +36,7 @@ export const AssessmentBooking: React.FC = () => {
     if (!activeElder) return;
     
     if (!verifiedLocation || !verifiedLocation.serviceable) {
-      setErrorMessage('A verified residential address in Chennai is required to schedule a home assessment.');
+      setErrorMessage('A verified residential address is required to schedule a home assessment.');
       return;
     }
 
@@ -72,7 +72,7 @@ export const AssessmentBooking: React.FC = () => {
           Schedule Clinical Home Assessment
         </h1>
         <p className="text-sm text-slate-600 mt-1">
-          A licensed CareConnect Care Manager visits the elder’s home in Chennai to evaluate vitals, mobility ergonomics, and finalize attendant matching.
+          A licensed CareConnect Care Manager visits the elder’s home to evaluate vitals, mobility ergonomics, and finalize attendant matching.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export const AssessmentBooking: React.FC = () => {
               <span className="font-semibold text-slate-500 uppercase tracking-wider block mb-1">Care Location Snapshot</span>
               <div className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-teal-600" />
-                <span>{bookingSuccess.addressSnapshot?.locality || verifiedLocation?.locality}, Chennai</span>
+                <span>{bookingSuccess.addressSnapshot?.locality || verifiedLocation?.locality}</span>
               </div>
               <div className="text-slate-600 mt-1 text-[11px]">
                 {bookingSuccess.addressSnapshot?.addressLine1 || verifiedLocation?.addressLine1}
@@ -131,7 +131,7 @@ export const AssessmentBooking: React.FC = () => {
             <ul className="space-y-2 text-xs text-slate-600">
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-600 mt-1.5 shrink-0" />
-                <span>Our Chennai Care Manager will call your primary contact number 24 hours prior to confirm arrival.</span>
+                <span>Our Care Manager will call your primary contact number 24 hours prior to confirm arrival.</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-600 mt-1.5 shrink-0" />
@@ -185,11 +185,11 @@ export const AssessmentBooking: React.FC = () => {
                 Verified Assessment Address
               </span>
               <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">
-                Verified Chennai Zone
+                Verified Care Zone
               </span>
             </div>
             <p className="text-sm font-semibold text-slate-900">
-              {verifiedLocation?.addressLine1}, {verifiedLocation?.locality}, Chennai — {verifiedLocation?.postalCode}
+              {verifiedLocation?.addressLine1}, {verifiedLocation?.locality} — {verifiedLocation?.postalCode}
             </p>
             {verifiedLocation?.landmark && (
               <p className="text-xs text-slate-500 mt-0.5">Landmark: {verifiedLocation.landmark}</p>

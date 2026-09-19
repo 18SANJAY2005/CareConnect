@@ -101,7 +101,7 @@ export const SponsorDashboard: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-500/30 text-teal-200 text-xs font-semibold mb-3">
             <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-            <span>Chennai Metropolitcan Care Network • Managed Service</span>
+            <span>Managed Clinical Care Network • Active Service</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Care for {activeElder.name}
@@ -109,7 +109,7 @@ export const SponsorDashboard: React.FC = () => {
           <p className="text-teal-100/80 text-xs sm:text-sm mt-1 max-w-xl flex items-center flex-wrap gap-2">
             <span>Sponsor: <span className="font-semibold text-white">{user?.fullName}</span></span>
             <span>•</span>
-            <span>Location: <span className="font-semibold text-white">{loc?.locality || 'Chennai'}</span></span>
+            <span>Location: <span className="font-semibold text-white">{loc?.locality || 'Care Zone'}</span></span>
             {elders && elders.length > 1 && (
               <span className="px-2 py-0.5 rounded-full bg-white/20 text-[11px] font-medium text-teal-100">
                 Elder {elders.findIndex(e => e.id === activeElder.id) + 1} of {elders.length}
@@ -164,7 +164,7 @@ export const SponsorDashboard: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {elders.map((elder) => {
               const isSelected = activeElder?.id === elder.id;
-              const elderLoc = elder.location?.locality || 'Chennai';
+              const elderLoc = elder.location?.locality || 'Care Zone';
               return (
                 <button
                   key={elder.id}
@@ -490,7 +490,7 @@ export const SponsorDashboard: React.FC = () => {
               {loc ? (
                 <div className="space-y-3 text-xs">
                   <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900">
-                    <div className="font-bold text-sm">{loc.locality}, Chennai</div>
+                    <div className="font-bold text-sm">{loc.locality}</div>
                     <div className="text-emerald-800 mt-0.5">{loc.addressLine1}</div>
                     {loc.addressLine2 && <div className="text-emerald-800">{loc.addressLine2}</div>}
                     <div className="text-emerald-700 font-mono mt-1">PIN: {loc.postalCode}</div>

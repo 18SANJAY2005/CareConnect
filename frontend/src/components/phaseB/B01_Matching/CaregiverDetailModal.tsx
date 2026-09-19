@@ -67,7 +67,7 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2 text-xs text-on-surface-variant">
                 <span className="flex items-center">
                   <MapPin className="w-4 h-4 text-primary mr-1" />
-                  {caregiver.locality}, Chennai (within {caregiver.service_radius_km}km)
+                  {caregiver.locality} (within {caregiver.service_radius_km}km)
                 </span>
 
                 <span className="flex items-center">
@@ -87,7 +87,7 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
               <div className="p-3 rounded-lg bg-surface-card border border-outline-light/30">
                 <ShieldCheck className="w-5 h-5 text-tertiary mb-1.5" />
                 <p className="text-xs font-bold text-on-surface">Police Verification</p>
-                <p className="text-[11px] text-on-surface-variant">Cleared by Chennai City Police</p>
+                <p className="text-[11px] text-on-surface-variant">Cleared & Verified by Local Authority</p>
               </div>
 
               <div className="p-3 rounded-lg bg-surface-card border border-outline-light/30">

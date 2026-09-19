@@ -132,7 +132,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             </div>
             <h3 className="text-lg font-bold text-slate-900">Thank You for Your Feedback!</h3>
             <p className="text-xs text-slate-600 max-w-md mx-auto">
-              Your feedback ensures the highest standard of elder care in Chennai. Our supervisory team continually reviews attendant metrics.
+              Your feedback ensures the highest standard of elder care across our network. Our supervisory team continually reviews attendant metrics.
             </p>
           </div>
         ) : (
@@ -165,7 +165,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <p>
-                  <strong>Automatic Supervisory Review:</strong> Ratings of 2 stars or below automatically open an escalated issue in the Chennai Operations QA queue for proactive manager intervention.
+                  <strong>Automatic Supervisory Review:</strong> Ratings of 2 stars or below automatically open an escalated issue in the Operations QA queue for proactive manager intervention.
                 </p>
               </div>
             )}

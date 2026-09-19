@@ -109,7 +109,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                   {caregiver.headline}
                 </p>
                 <div className="flex items-center space-x-2 mt-1 text-xs text-on-surface-variant">
-                  <span>{caregiver.locality}, Chennai</span>
+                  <span>{caregiver.locality}</span>
                   <span>•</span>
                   <span>{caregiver.languages}</span>
                 </div>
@@ -210,7 +210,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                       SLA Digital Execution
                     </span>
                     <span className="text-[10px] font-bold text-secondary bg-secondary-light px-2 py-0.5 rounded-full">
-                      DPDP 2023 SIGNED
+                      PRIVACY SIGNED
                     </span>
                   </div>
                   <p className="text-on-surface-variant mt-0.5">
@@ -223,7 +223,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
           </div>
 
           <div className="mt-4 pt-4 border-t border-outline-light/30 flex items-center justify-between text-xs text-on-surface-variant">
-            <span>India DPDP Act 2023 Registry</span>
+            <span>CareConnect Privacy Registry</span>
             <span className="text-tertiary font-semibold flex items-center">
               <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Legally Enforceable
             </span>

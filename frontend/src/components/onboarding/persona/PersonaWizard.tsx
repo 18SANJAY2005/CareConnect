@@ -585,10 +585,10 @@ export const PersonaWizard: React.FC = () => {
                     3
                   </div>
                   <h4 className="font-bold text-xs text-slate-800">
-                    Chennai Corridors
+                    Dedicated Corridors
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Tailored for Chennai households with regional food and
+                    Tailored for elder households with regional preferences and
                     language matching.
                   </p>
                 </div>

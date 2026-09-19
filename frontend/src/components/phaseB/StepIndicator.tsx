@@ -19,7 +19,7 @@ const steps: StepItem[] = [
   { id: 'matching', label: 'Curated Matches', sub: 'B01 Matching', icon: Users, stepNumber: 1 },
   { id: 'call', label: '10-Min Intro Call', sub: 'B02 Video/Audio', icon: Video, stepNumber: 2 },
   { id: 'payment', label: 'Advance Deposit', sub: 'B03 Razorpay Hold', icon: CreditCard, stepNumber: 3 },
-  { id: 'sla', label: 'SLA Sign-off', sub: 'B04 DPDP Terms', icon: FileCheck, stepNumber: 4 },
+  { id: 'sla', label: 'SLA Sign-off', sub: 'B04 Privacy Terms', icon: FileCheck, stepNumber: 4 },
 ];
 
 export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => {

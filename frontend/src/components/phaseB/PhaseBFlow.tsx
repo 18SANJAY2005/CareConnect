@@ -440,11 +440,10 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
       </main>
 
       <footer className="bg-surface-card border-t border-outline-light/40 py-6 text-center text-xs text-on-surface-variant">
-        <p>© 2026 CareConnect Chennai. All rights reserved.</p>
+        <p>© 2026 CareConnect. All rights reserved.</p>
 
         <p className="mt-1 text-[11px] text-on-surface-variant/75">
-          Regulated under the Digital Personal Data Protection (DPDP) Act 2023.
-          Data stored securely in GCP India (`asia-south1`).
+          Data Privacy & Elder Health Data Protection • Encrypted Healthcare Infrastructure
         </p>
       </footer>
     </div>
