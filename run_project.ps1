@@ -40,6 +40,12 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# Free ports 8000 and 5173 if occupied by prior or orphaned processes
+Get-NetTCPConnection -LocalPort 8000, 5173 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    Write-Host "[*] Freeing occupied port $($_.LocalPort) (PID: $($_.OwningProcess))..." -ForegroundColor Yellow
+    Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host "[1/3] Starting FastAPI Backend on Port 8000..." -ForegroundColor Green
 Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$BackendDir`" && title CareConnect Backend [FastAPI :8000] && python run.py"
 

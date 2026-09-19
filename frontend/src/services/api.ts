@@ -38,9 +38,14 @@ import type {
 } from "../types/phaseC";
 
 import { offlineQueue } from "./offlineQueue";
+import { Capacitor } from "@capacitor/core";
+
+const DEFAULT_API_BASE = Capacitor.isNativePlatform()
+  ? "http://192.168.29.24:8000/api"
+  : "/api";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "/api";
+  import.meta.env.VITE_API_BASE || DEFAULT_API_BASE;
 
 class ApiService {
   /* =========================================================

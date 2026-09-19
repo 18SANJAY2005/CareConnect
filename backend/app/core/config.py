@@ -38,6 +38,12 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:5173",
         "http://localhost:4173",
+        "http://192.168.29.24:5173",
+        "http://192.168.29.24:3000",
+        "http://192.168.29.24:8000",
+        "capacitor://localhost",
+        "https://localhost",
+        "http://localhost",
     ]
 
     model_config = SettingsConfigDict(

@@ -54,6 +54,17 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
+:: Clear any leftover processes on ports 8000 and 5173
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do (
+    echo [*] Port 8000 is occupied by PID %%a. Freeing port...
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5173" ^| findstr "LISTENING"') do (
+    echo [*] Port 5173 is occupied by PID %%a. Freeing port...
+    taskkill /f /pid %%a >nul 2>&1
+)
+
 echo [1/3] Launching FastAPI Backend on Port 8000...
 start "CareConnect Backend" cmd /k "cd /d %BACKEND_DIR% && python run.py"
 
