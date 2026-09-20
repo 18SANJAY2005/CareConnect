@@ -19,6 +19,7 @@ import { api } from '../../services/api';
 import { offlineQueue } from '../../services/offlineQueue';
 import type { ShiftDetails, CareTask, TimeOfDay } from '../../types/phaseC';
 import { CareConnectLogo } from '../common/CareConnectLogo';
+import { MobileBottomNav } from '../mobile/MobileBottomNav';
 
 // Vernacular Localization Dictionary
 const I18N = {
@@ -123,15 +124,20 @@ const I18N = {
   }
 };
 
-export const CaregiverMobileApp: React.FC = () => {
+interface CaregiverMobileAppProps {
+  onSwitchPortal?: (portal: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS') => void;
+}
+
+export const CaregiverMobileApp: React.FC<CaregiverMobileAppProps> = ({ onSwitchPortal }) => {
   const [lang, setLang] = useState<'ta' | 'en' | 'te'>('ta');
   const t = I18N[lang];
 
   const [shiftData, setShiftData] = useState<ShiftDetails | null>(null);
   const [tasks, setTasks] = useState<CareTask[]>([]);
   const [selectedTab, setSelectedTab] = useState<TimeOfDay>('MORNING');
-  const [, setIsLoading] = useState<boolean>(true);
+  const [activeNavTab, setActiveNavTab] = useState<'TODAY' | 'TASKS' | 'ELDER' | 'LOGS' | 'MESSAGES'>('TODAY');
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [, setIsLoading] = useState(false);
   
   // Modals
   const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
@@ -290,7 +296,7 @@ export const CaregiverMobileApp: React.FC = () => {
         caption: mediaCaption
       });
       setIsMediaModalOpen(false);
-      setStatusMessage('Daily photo update uploaded for family sponsor view.');
+      setStatusMessage('Daily photo update uploaded for family view.');
     } catch (err: any) {
       setStatusMessage('Media upload error: ' + err.message);
     }
@@ -360,19 +366,31 @@ export const CaregiverMobileApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Language Selector Pill */}
-        <div className="flex items-center bg-primary-container/80 rounded-full p-0.5 border border-teal-500/30">
-          {(['ta', 'en', 'te'] as const).map((code) => (
+        <div className="flex items-center gap-2">
+          {onSwitchPortal && (
             <button
-              key={code}
-              onClick={() => setLang(code)}
-              className={`px-2.5 py-1 text-xs font-bold rounded-full transition ${
-                lang === code ? 'bg-white text-primary shadow-sm' : 'text-teal-100 hover:text-white'
-              }`}
+              onClick={() => onSwitchPortal('FAMILY')}
+              className="px-2 py-1 bg-teal-800 hover:bg-teal-700 text-[11px] font-bold text-teal-100 rounded-full border border-teal-600 transition"
+              title="Switch to Family View"
             >
-              {code === 'ta' ? 'தமிழ்' : code === 'te' ? 'తెలుగు' : 'ENG'}
+              Family View
             </button>
-          ))}
+          )}
+
+          {/* Language Selector Pill */}
+          <div className="flex items-center bg-primary-container/80 rounded-full p-0.5 border border-teal-500/30">
+            {(['ta', 'en', 'te'] as const).map((code) => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-full transition ${
+                  lang === code ? 'bg-white text-primary shadow-sm' : 'text-teal-100 hover:text-white'
+                }`}
+              >
+                {code === 'ta' ? 'தமிழ்' : code === 'te' ? 'తెలుగు' : 'ENG'}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -408,194 +426,270 @@ export const CaregiverMobileApp: React.FC = () => {
           </div>
         )}
 
-        {/* Hero Card: Elder & Shift Details */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{t.shift}</span>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
-              isOnDuty ? 'bg-emerald-100 text-tertiary border border-emerald-300' : 'bg-slate-100 text-slate-600'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-tertiary animate-pulse' : 'bg-slate-400'}`} />
-              {isOnDuty ? t.activeDuty : t.offDuty}
-            </span>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
-              {elder?.name ? elder.name.charAt(0) : 'K'}
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 leading-tight">
-                {elder?.name || 'Elder'}
-              </h2>
-              <p className="text-xs text-slate-600 mt-0.5">
-                {elder?.age || 74} yrs • {elder?.gender || 'Female'} • {elder?.primaryLanguage || 'Tamil'}
-              </p>
-              <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
-                <MapPin className="w-3.5 h-3.5 text-primary" />
-                <span>{elder?.addressLine1}, {elder?.locality}</span>
+        {/* TAB 1: TODAY */}
+        {activeNavTab === 'TODAY' && (
+          <div className="space-y-4 animate-fadeIn">
+            {/* Hero Card: Elder & Shift Details */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{t.shift}</span>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 ${
+                  isOnDuty ? 'bg-emerald-100 text-tertiary border border-emerald-300' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-tertiary animate-pulse' : 'bg-slate-400'}`} />
+                  {isOnDuty ? t.activeDuty : t.offDuty}
+                </span>
               </div>
-            </div>
-          </div>
 
-          {/* Geofence Status Pill */}
-          <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-medium ${
-            attendance?.verificationStatus === 'VERIFIED'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              : attendance?.verificationStatus === 'OUT_OF_RANGE'
-              ? 'bg-amber-50 border-amber-200 text-amber-900'
-              : 'bg-slate-50 border-slate-200 text-slate-700'
-          }`}>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className={`w-4 h-4 ${attendance?.verificationStatus === 'VERIFIED' ? 'text-emerald-600' : 'text-amber-600'}`} />
-              <span>
-                {attendance?.distanceMeters 
-                  ? `${Math.round(attendance.distanceMeters)}m away • ${attendance.verificationStatus}`
-                  : 'Location unknown'}
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
+                  {elder?.name ? elder.name.charAt(0) : 'E'}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 leading-tight">
+                    {elder?.name || 'Assigned Elder'}
+                  </h2>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {elder?.age || 74} yrs • {elder?.gender || 'Female'} • {elder?.primaryLanguage || 'Tamil, English'}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    <span>{elder?.addressLine1 || 'Elder Residence'}, {elder?.locality || 'Corridor'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Geofence Status Pill */}
+              <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-medium ${
+                attendance?.verificationStatus === 'VERIFIED'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : attendance?.verificationStatus === 'OUT_OF_RANGE'
+                  ? 'bg-amber-50 border-amber-200 text-amber-900'
+                  : 'bg-slate-50 border-slate-200 text-slate-700'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className={`w-4 h-4 ${attendance?.verificationStatus === 'VERIFIED' ? 'text-emerald-600' : 'text-amber-600'}`} />
+                  <span>
+                    {attendance?.distanceMeters 
+                      ? `${Math.round(attendance.distanceMeters)}m away • ${attendance.verificationStatus}`
+                      : 'Location Verified • Within Corridor'}
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-primary">GPS OK</span>
+              </div>
+
+              {/* Primary Action Button (56px minimum touch target) */}
+              {!isOnDuty ? (
+                <button
+                  onClick={() => handleCheckIn()}
+                  className="w-full min-h-[56px] py-3.5 px-4 bg-primary hover:bg-primary-container text-white font-bold text-base rounded-xl shadow-md transition active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <UserCheck className="w-5 h-5" />
+                  <span>{t.checkIn}</span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCheckOutModalOpen(true)}
+                    className="flex-1 min-h-[56px] py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>{t.checkOut}</span>
+                  </button>
+                  <button
+                    onClick={() => setIsOtpModalOpen(true)}
+                    title={t.householdOtp}
+                    className="min-h-[56px] px-4 bg-teal-50 hover:bg-teal-100 text-primary border border-teal-200 text-xs font-bold rounded-xl transition"
+                  >
+                    OTP
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Emergency SOS Banner inside Today */}
+            <button
+              onClick={() => setIsSosModalOpen(true)}
+              className="w-full p-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition active:scale-98"
+            >
+              <ShieldAlert className="w-5 h-5" />
+              <span>{t.sosButton}</span>
+            </button>
+          </div>
+        )}
+
+        {/* TAB 2: TASKS */}
+        {activeNavTab === 'TASKS' && (
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Utensils className="w-4 h-4 text-primary" />
+                <span>{t.tasks}</span>
+              </h3>
+              <span className="text-xs font-semibold text-slate-500">
+                {tasks.filter(t => t.status === 'COMPLETED').length} / {tasks.length} Completed
               </span>
             </div>
-            <span className="text-[11px] font-bold text-primary">GPS OK</span>
-          </div>
 
-          {/* Primary Action Button (56px minimum touch target) */}
-          {!isOnDuty ? (
-            <button
-              onClick={() => handleCheckIn()}
-              className="w-full min-h-[56px] py-3.5 px-4 bg-primary hover:bg-primary-container text-white font-bold text-base rounded-xl shadow-md transition active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              <UserCheck className="w-5 h-5" />
-              <span>{t.checkIn}</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsCheckOutModalOpen(true)}
-                className="flex-1 min-h-[56px] py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm rounded-xl shadow-sm transition active:scale-[0.98] flex items-center justify-center gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                <span>{t.checkOut}</span>
-              </button>
-              <button
-                onClick={() => setIsOtpModalOpen(true)}
-                title={t.householdOtp}
-                className="min-h-[56px] px-3 bg-teal-50 hover:bg-teal-100 text-primary border border-teal-200 text-xs font-bold rounded-xl transition"
-              >
-                OTP
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Rapid Care Action Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setIsVitalsModalOpen(true)}
-            className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-primary transition group"
-          >
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-primary flex items-center justify-center mb-2 group-hover:scale-105 transition">
-              <HeartPulse className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-bold text-slate-800 block">{t.vitals}</span>
-            <span className="text-[11px] text-slate-500">{t.recordVitals}</span>
-          </button>
-
-          <button
-            onClick={() => setIsMediaModalOpen(true)}
-            className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-secondary transition group"
-          >
-            <div className="w-9 h-9 rounded-xl bg-sky-50 text-secondary flex items-center justify-center mb-2 group-hover:scale-105 transition">
-              <Camera className="w-5 h-5" />
-            </div>
-            <span className="text-xs font-bold text-slate-800 block">Photo Update</span>
-            <span className="text-[11px] text-slate-500">{t.mediaUpload}</span>
-          </button>
-        </div>
-
-        {/* Daily Care Checklist (Morning / Afternoon / Evening / Night) */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Utensils className="w-4 h-4 text-primary" />
-              {t.tasks}
-            </h3>
-            <span className="text-xs font-semibold text-slate-500">
-              {tasks.filter(t => t.status === 'COMPLETED').length} / {tasks.length} Completed
-            </span>
-          </div>
-
-          {/* Time of Day Tabs */}
-          <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl">
-            {(['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTab(tab)}
-                className={`py-1.5 text-[11px] font-bold rounded-lg transition text-center ${
-                  selectedTab === tab
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {tab === 'MORNING' ? t.morning : tab === 'AFTERNOON' ? t.afternoon : tab === 'EVENING' ? t.evening : t.night}
-              </button>
-            ))}
-          </div>
-
-          {/* Task Items List */}
-          <div className="space-y-2">
-            {filteredTasks.length === 0 ? (
-              <p className="text-xs text-slate-400 py-3 text-center">No tasks scheduled for this period.</p>
-            ) : (
-              filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  onClick={() => handleTaskToggle(task)}
-                  className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                    task.status === 'COMPLETED'
-                      ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
-                      : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
+            {/* Time of Day Tabs */}
+            <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 rounded-xl">
+              {(['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setSelectedTab(tab)}
+                  className={`py-1.5 text-[11px] font-bold rounded-lg transition text-center ${
+                    selectedTab === tab
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition ${
-                      task.status === 'COMPLETED' ? 'bg-tertiary text-white' : 'border-2 border-slate-300'
-                    }`}>
-                      {task.status === 'COMPLETED' && <Check className="w-4 h-4 stroke-[3]" />}
+                  {tab === 'MORNING' ? t.morning : tab === 'AFTERNOON' ? t.afternoon : tab === 'EVENING' ? t.evening : t.night}
+                </button>
+              ))}
+            </div>
+
+            {/* Task Items List */}
+            <div className="space-y-2">
+              {filteredTasks.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3 text-center">No tasks scheduled for this period.</p>
+              ) : (
+                filteredTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => handleTaskToggle(task)}
+                    className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
+                      task.status === 'COMPLETED'
+                        ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+                        : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition ${
+                        task.status === 'COMPLETED' ? 'bg-tertiary text-white' : 'border-2 border-slate-300'
+                      }`}>
+                        {task.status === 'COMPLETED' && <Check className="w-4 h-4 stroke-[3]" />}
+                      </div>
+                      <div>
+                        <span className={`text-xs font-semibold block ${task.status === 'COMPLETED' ? 'line-through text-slate-500' : ''}`}>
+                          {task.taskName}
+                        </span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                          {task.category}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={`text-xs font-semibold block ${task.status === 'COMPLETED' ? 'line-through text-slate-500' : ''}`}>
-                        {task.taskName}
-                      </span>
-                      <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                        {task.category}
-                      </span>
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* TAB 3: ELDER */}
+        {activeNavTab === 'ELDER' && (
+          <div className="space-y-3 animate-fadeIn">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Profile Details</span>
+              <div className="text-base font-bold text-slate-900">{elder?.name || 'Elder Profile'}</div>
+              <div className="text-xs text-slate-600">
+                Age: {elder?.age || 74} yrs • {elder?.gender || 'Female'}
+              </div>
+              <div className="text-xs text-slate-600">
+                Primary Language: {elder?.primaryLanguage || 'Tamil, English'}
+              </div>
+              <div className="text-xs text-slate-600">
+                Address: {elder?.addressLine1 || 'Elder Residence'}, {elder?.locality || 'Care Corridor'}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200/80 text-teal-900 space-y-1.5">
+              <div className="text-xs font-bold">Care Manager Notes</div>
+              <p className="text-xs leading-relaxed">
+                Ensure gentle assisted walking. Assist with water intake every 2 hours. Timely medication after breakfast and dinner.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: LOGS (Vitals & Photos) */}
+        {activeNavTab === 'LOGS' && (
+          <div className="space-y-3 animate-fadeIn">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setIsVitalsModalOpen(true)}
+                className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-primary transition group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-teal-50 text-primary flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <HeartPulse className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-slate-800 block">{t.vitals}</span>
+                <span className="text-[11px] text-slate-500">{t.recordVitals}</span>
+              </button>
+
+              <button
+                onClick={() => setIsMediaModalOpen(true)}
+                className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-left hover:border-secondary transition group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-sky-50 text-secondary flex items-center justify-center mb-2 group-hover:scale-105 transition">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-slate-800 block">Photo Update</span>
+                <span className="text-[11px] text-slate-500">{t.mediaUpload}</span>
+              </button>
+            </div>
+
+            {/* Voice Input Card */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Voice Care Note</span>
+                <button
+                  onClick={handleVoiceInput}
+                  className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                    isListening ? 'bg-rose-600 text-white animate-pulse' : 'bg-teal-50 text-primary hover:bg-teal-100'
+                  }`}
+                >
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>{isListening ? 'Listening...' : 'Record Voice'}</span>
+                </button>
+              </div>
+              <textarea
+                value={vitalsNotes}
+                onChange={(e) => setVitalsNotes(e.target.value)}
+                placeholder="Spoken or typed care notes for family..."
+                rows={2}
+                className="w-full p-2.5 rounded-xl border border-slate-200 text-xs"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: MESSAGES */}
+        {activeNavTab === 'MESSAGES' && (
+          <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3 animate-fadeIn text-center text-xs text-slate-500 py-10">
+            <PhoneCall className="w-8 h-8 text-primary mx-auto" />
+            <div className="font-bold text-slate-800 text-sm">Coordinator Communications</div>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto">
+              Call or message the 24/7 Operations Desk for medication clarification or emergency cover.
+            </p>
+            <a
+              href="tel:+914448552200"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-bold shadow-sm"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>Call Operations Desk</span>
+            </a>
+          </div>
+        )}
 
       </main>
 
-      {/* Always Visible Red Emergency SOS Button at Bottom */}
-      <footer className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto p-3 bg-white/95 backdrop-blur border-t border-slate-200 shadow-lg z-20 flex items-center gap-2">
-        <button
-          onClick={() => setIsSosModalOpen(true)}
-          className="flex-1 min-h-[56px] px-4 bg-error hover:bg-red-800 text-white font-extrabold text-sm rounded-xl shadow-lg transition active:scale-[0.98] flex items-center justify-center gap-2 tracking-wide uppercase"
-        >
-          <ShieldAlert className="w-6 h-6 animate-pulse" />
-          <span>{t.sosButton}</span>
-        </button>
-        <a
-          href="tel:108"
-          title="Emergency 108"
-          className="min-h-[56px] w-[56px] bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-md active:scale-95"
-        >
-          <PhoneCall className="w-5 h-5 text-emerald-400" />
-        </a>
-      </footer>
+      {/* Caregiver Bottom Navigation */}
+      <MobileBottomNav
+        portal="CAREGIVER"
+        activeTab={activeNavTab}
+        onTabChange={(t) => setActiveNavTab(t as any)}
+      />
 
       {/* --- MODALS --- */}
 

@@ -45,3 +45,26 @@ button {
   align-items: center;
   justify-content: center;
 }
+
+/* Mobile Safe-Area and Container Utilities */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-canvas {
+  width: 100%;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: #f8fafc;
+  box-shadow: 0 0 25px -5px rgba(0, 0, 0, 0.08);
+}

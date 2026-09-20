@@ -758,6 +758,13 @@ class ApiService {
     );
   }
 
+  async seedDemoScenario(): Promise<any> {
+    return this.request("/shifts/seed-demo", {
+      method: "POST",
+    });
+  }
+
+
 
   /* ---------------------------------------------------------
      C02 ÔÇö Daily Care Tasks & ADL
