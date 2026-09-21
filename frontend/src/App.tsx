@@ -145,8 +145,8 @@ const AppContent: React.FC = () => {
         await api.persistElderLocation(created.id, {
           addressLine1: draftLocation.addressLine1 || "Verified Residence",
           locality: draftLocation.locality || "Care Corridor",
-          city: draftLocation.city || "Regional Hub",
-          state: "State",
+          city: draftLocation.city || "Chennai",
+          state: "Tamil Nadu",
           postalCode: draftLocation.postalCode || "600020",
           latitude: draftLocation.latitude || 13.0012,
           longitude: draftLocation.longitude || 80.2565,
@@ -227,8 +227,10 @@ const AppContent: React.FC = () => {
             onBack={() => setIsAuthOpen(false)}
             onSuccess={() => {
               setIsAuthOpen(false);
-              // If was in middle of onboarding, proceed to finalize
-              if (onboardingStep === "PREFERENCES" || onboardingStep === "DETAILED_INTAKE") {
+              // If was at LOCATION step when auth triggered, advance directly to REQUIREMENTS
+              if (onboardingStep === "LOCATION") {
+                setOnboardingStep("REQUIREMENTS");
+              } else if (onboardingStep === "PREFERENCES" || onboardingStep === "DETAILED_INTAKE") {
                 finalizeElderOnboarding();
               }
             }}
@@ -301,10 +303,14 @@ const AppContent: React.FC = () => {
 
           {!isCreatingElder && onboardingStep === "LOCATION" && (
             <MobileLocationCheck
-              initialPostalCode={draftLocation?.postalCode || "600020"}
+              initialPostalCode={draftLocation?.postalCode || ""}
               onSuccess={(locData) => {
                 setDraftLocation(locData);
-                setOnboardingStep("REQUIREMENTS");
+                if (!user) {
+                  setIsAuthOpen(true);
+                } else {
+                  setOnboardingStep("REQUIREMENTS");
+                }
               }}
               onBack={() => setOnboardingStep("BASIC")}
             />

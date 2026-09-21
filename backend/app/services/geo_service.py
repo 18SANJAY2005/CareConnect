@@ -32,17 +32,24 @@ CHENNAI_LOCALITY_HUB_MAP: Dict[str, Dict[str, Any]] = {
 class GeoService:
     @staticmethod
     def verify_address(
-        address_line_1: str,
-        locality: str,
-        postal_code: str,
-        city: str = "Chennai",
-        state: str = "Tamil Nadu",
+        address_line_1: Optional[str] = "Residence",
+        locality: Optional[str] = "",
+        postal_code: Optional[str] = None,
+        city: Optional[str] = "Chennai",
+        state: Optional[str] = "Tamil Nadu",
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
         simulate_state: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Evaluate geographic address and return canonical serviceability status.
         Backend acts as the sole source of truth; never trusts client-supplied serviceable boolean.
+        Supports GPS coordinates, manual postal codes, and full street addresses.
         """
+        locality = locality or ""
+        city = city or "Chennai"
+        state = state or "Tamil Nadu"
+
         # Handle QA simulation states
         if simulate_state == "PERMISSION_DENIED":
             return {
@@ -53,7 +60,7 @@ class GeoService:
                 "longitude": 0.0,
                 "locality": locality,
                 "city": city,
-                "postalCode": postal_code,
+                "postalCode": postal_code or "",
                 "assignedHub": None
             }
 
@@ -66,12 +73,12 @@ class GeoService:
                 "longitude": 0.0,
                 "locality": locality,
                 "city": city,
-                "postalCode": postal_code,
+                "postalCode": postal_code or "",
                 "assignedHub": None
             }
 
-        # Validate input format
-        if not address_line_1 or len(address_line_1.strip()) < 4:
+        # Validate input format if address_line_1 is provided
+        if address_line_1 is not None and len(address_line_1.strip()) < 4:
             return {
                 "serviceable": False,
                 "verificationStatus": "INVALID_ADDRESS",
@@ -80,28 +87,28 @@ class GeoService:
                 "longitude": 0.0,
                 "locality": locality,
                 "city": city,
-                "postalCode": postal_code,
+                "postalCode": postal_code or "",
                 "assignedHub": None
             }
 
-        clean_postal = postal_code.strip()
-        if not re.match(r"^\d{6}$", clean_postal):
-            return {
-                "serviceable": False,
-                "verificationStatus": "INVALID_ADDRESS",
-                "message": "Postal code must be a 6-digit Indian PIN code.",
-                "latitude": 0.0,
-                "longitude": 0.0,
-                "locality": locality,
-                "city": city,
-                "postalCode": postal_code,
-                "assignedHub": None
-            }
+        clean_postal = postal_code.strip() if postal_code else None
+        if clean_postal:
+            if not re.match(r"^\d{6}$", clean_postal):
+                return {
+                    "serviceable": False,
+                    "verificationStatus": "INVALID_ADDRESS",
+                    "message": "Postal code must be a 6-digit Indian PIN code.",
+                    "latitude": 0.0,
+                    "longitude": 0.0,
+                    "locality": locality,
+                    "city": city,
+                    "postalCode": postal_code,
+                    "assignedHub": None
+                }
 
         # Check Chennai city and Tamil Nadu state
         norm_city = city.strip().lower()
-        norm_state = state.strip().lower()
-        if "chennai" not in norm_city and "madras" not in norm_city:
+        if norm_city and ("chennai" not in norm_city and "madras" not in norm_city):
             return {
                 "serviceable": False,
                 "verificationStatus": "NOT_SERVICEABLE",
@@ -110,7 +117,61 @@ class GeoService:
                 "longitude": 0.0,
                 "locality": locality,
                 "city": city,
-                "postalCode": postal_code,
+                "postalCode": clean_postal or "",
+                "assignedHub": None
+            }
+
+        # GPS coordinate resolution if coordinates are provided
+        if latitude is not None and longitude is not None:
+            min_dist = float("inf")
+            closest_loc = None
+            closest_hub_data = None
+            for loc_key, hub_data in CHENNAI_LOCALITY_HUB_MAP.items():
+                dist = GeoService.haversine_distance_meters(latitude, longitude, hub_data["lat"], hub_data["lng"])
+                if dist < min_dist:
+                    min_dist = dist
+                    closest_loc = loc_key
+                    closest_hub_data = hub_data
+
+            # Active corridor boundary check (<= 25km of Chennai hubs)
+            if min_dist <= 25000 and closest_hub_data:
+                resolved_loc = locality.strip() if locality.strip() else closest_loc.title()
+                resolved_pin = clean_postal if clean_postal else closest_hub_data["pincode"]
+                return {
+                    "serviceable": True,
+                    "verificationStatus": "VERIFIED",
+                    "message": "Address verified successfully. CareConnect caregivers and clinical managers are active in this zone.",
+                    "latitude": round(latitude, 6),
+                    "longitude": round(longitude, 6),
+                    "locality": resolved_loc,
+                    "city": "Chennai",
+                    "postalCode": resolved_pin,
+                    "assignedHub": closest_hub_data["hub"]
+                }
+            else:
+                return {
+                    "serviceable": False,
+                    "verificationStatus": "NOT_SERVICEABLE",
+                    "message": "Care is not currently available in this area. CareConnect is expanding soon.",
+                    "latitude": round(latitude, 6),
+                    "longitude": round(longitude, 6),
+                    "locality": locality,
+                    "city": city,
+                    "postalCode": clean_postal or "",
+                    "assignedHub": None
+                }
+
+        # If neither coordinates nor postal code provided
+        if not clean_postal:
+            return {
+                "serviceable": False,
+                "verificationStatus": "INVALID_ADDRESS",
+                "message": "Please provide a postal code or location coordinates to check serviceability.",
+                "latitude": 0.0,
+                "longitude": 0.0,
+                "locality": locality,
+                "city": city,
+                "postalCode": "",
                 "assignedHub": None
             }
 
@@ -120,17 +181,26 @@ class GeoService:
 
         norm_loc = locality.strip().lower()
         matched_loc_data = CHENNAI_LOCALITY_HUB_MAP.get(norm_loc)
+        if not matched_loc_data:
+            # Try finding match by pincode in our known map
+            for loc_key, hub_data in CHENNAI_LOCALITY_HUB_MAP.items():
+                if hub_data.get("pincode") == clean_postal:
+                    matched_loc_data = hub_data
+                    if not norm_loc:
+                        norm_loc = loc_key
+                    break
 
         if not is_chennai_pincode and not matched_loc_data:
+            loc_msg = f" in '{locality}'" if locality else ""
             return {
                 "serviceable": False,
                 "verificationStatus": "NOT_SERVICEABLE",
-                "message": f"Postal code {clean_postal} in '{locality}' is outside our active Chennai service corridors.",
+                "message": f"Postal code {clean_postal}{loc_msg} is outside our active Chennai service corridors.",
                 "latitude": 0.0,
                 "longitude": 0.0,
                 "locality": locality,
                 "city": city,
-                "postalCode": postal_code,
+                "postalCode": clean_postal,
                 "assignedHub": None
             }
 
@@ -139,11 +209,13 @@ class GeoService:
             lat = matched_loc_data["lat"]
             lng = matched_loc_data["lng"]
             hub = matched_loc_data["hub"]
+            resolved_loc = locality.strip() if locality.strip() else norm_loc.title()
         else:
             # Fallback coordinate inside Chennai central corridor
             lat = 13.0400 + ((pincode_int % 100) * 0.001)
             lng = 80.2400 + ((pincode_int % 100) * 0.001)
             hub = "Chennai Metropolitan Care Hub"
+            resolved_loc = locality.strip() if locality.strip() else "Chennai"
 
         return {
             "serviceable": True,
@@ -151,7 +223,7 @@ class GeoService:
             "message": "Address verified successfully. CareConnect caregivers and clinical managers are active in this zone.",
             "latitude": round(lat, 6),
             "longitude": round(lng, 6),
-            "locality": locality.strip(),
+            "locality": resolved_loc,
             "city": "Chennai",
             "postalCode": clean_postal,
             "assignedHub": hub

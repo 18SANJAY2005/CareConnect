@@ -225,17 +225,19 @@ class ApiService {
      ========================================================= */
 
   async verifyLocation(data: {
-    addressLine1: string;
+    addressLine1?: string;
     addressLine2?: string;
-    locality: string;
-    city: string;
-    state: string;
-    postalCode: string;
+    locality?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    latitude?: number;
+    longitude?: number;
     landmark?: string;
     simulateState?: string;
   }): Promise<LocationVerifyResponse> {
     return this.request<LocationVerifyResponse>(
-      "/elder-locations/verify",
+      "/locations/verify",
       {
         method: "POST",
         body: JSON.stringify(data),

@@ -12,12 +12,14 @@ class LocationVerificationStatus:
     PERMISSION_DENIED = "PERMISSION_DENIED"
 
 class LocationVerifyRequest(BaseModel):
-    addressLine1: str
+    addressLine1: Optional[str] = "Residence"
     addressLine2: Optional[str] = None
-    locality: str
-    city: str = "Chennai"
-    state: str = "Tamil Nadu"
-    postalCode: str
+    locality: Optional[str] = ""
+    city: Optional[str] = ""
+    state: Optional[str] = ""
+    postalCode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     landmark: Optional[str] = None
     simulateState: Optional[str] = None  # Optional parameter to simulate edge cases (PERMISSION_DENIED, UNABLE_TO_VERIFY)
 

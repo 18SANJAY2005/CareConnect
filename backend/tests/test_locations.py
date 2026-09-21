@@ -115,3 +115,81 @@ async def test_persist_elder_location(client: AsyncClient, auth_headers: dict):
     assert get_elder.status_code == 200
     assert get_elder.json()["location"]["postalCode"] == "600028"
 
+@pytest.mark.asyncio
+async def test_unauthenticated_pin_verification_succeeds(client: AsyncClient):
+    """Unauthenticated users can verify serviceability via postal code."""
+    response = await client.post("/api/locations/verify", json={
+        "postalCode": "600020"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["serviceable"] is True
+    assert data["verificationStatus"] == "VERIFIED"
+    assert data["postalCode"] == "600020"
+    assert data["assignedHub"] == "South Chennai Hub"
+
+@pytest.mark.asyncio
+async def test_authenticated_pin_verification_succeeds(client: AsyncClient, auth_headers: dict):
+    """Authenticated users can verify serviceability via postal code."""
+    response = await client.post("/api/locations/verify", headers=auth_headers, json={
+        "postalCode": "600004"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["serviceable"] is True
+    assert data["verificationStatus"] == "VERIFIED"
+    assert data["assignedHub"] == "Central Chennai Hub"
+
+@pytest.mark.asyncio
+async def test_invalid_pin_format_returns_error(client: AsyncClient):
+    """Invalid postal code format returns INVALID_ADDRESS without 500 error."""
+    response = await client.post("/api/locations/verify", json={
+        "postalCode": "123"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["serviceable"] is False
+    assert data["verificationStatus"] == "INVALID_ADDRESS"
+
+@pytest.mark.asyncio
+async def test_unserviceable_pin_returns_not_serviceable(client: AsyncClient):
+    """Out-of-corridor postal code returns NOT_SERVICEABLE."""
+    response = await client.post("/api/locations/verify", json={
+        "postalCode": "560038"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["serviceable"] is False
+    assert data["verificationStatus"] == "NOT_SERVICEABLE"
+
+@pytest.mark.asyncio
+async def test_gps_coordinate_serviceability_check(client: AsyncClient):
+    """GPS coordinates check resolves nearest hub and serviceable status."""
+    # Near Adyar coordinates (13.0012, 80.2565)
+    response = await client.post("/api/locations/verify", json={
+        "latitude": 13.0012,
+        "longitude": 80.2565
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["serviceable"] is True
+    assert data["verificationStatus"] == "VERIFIED"
+    assert data["assignedHub"] == "South Chennai Hub"
+    assert data["postalCode"] == "600020"
+
+@pytest.mark.asyncio
+async def test_protected_elder_location_endpoint_requires_auth(client: AsyncClient):
+    """PATCH /api/elders/{elder_id}/location strictly requires authentication."""
+    response = await client.patch("/api/elders/fake-elder-id/location", json={
+        "addressLine1": "Old #14, New #28, 4th Cross Street",
+        "locality": "R.A. Puram",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "postalCode": "600028",
+        "latitude": 13.0270,
+        "longitude": 80.2580
+    })
+    assert response.status_code == 401
+    assert "token" in response.json().get("detail", "").lower()
+
+

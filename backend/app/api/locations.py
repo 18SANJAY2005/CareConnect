@@ -1,9 +1,10 @@
+from typing import Optional
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_optional_current_user
 from app.models.user import User
 from app.models.elder import Elder
 from app.models.location import ElderLocation
@@ -17,13 +18,15 @@ from app.services.persona_service import PersonaService
 router = APIRouter(tags=["Geographic Verification"])
 
 @router.post("/elder-locations/verify", response_model=LocationVerifyResponse)
+@router.post("/locations/verify", response_model=LocationVerifyResponse)
 async def verify_location(
     payload: LocationVerifyRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
-    Validate Chennai locality, postal code, and serviceability.
+    Validate Chennai locality, postal code, GPS coordinates, and serviceability.
     Server acts as sole source of truth; never trusts client-supplied serviceable flag.
+    Supports unauthenticated pre-onboarding serviceability checks and authenticated sessions.
     """
     result = GeoService.verify_address(
         address_line_1=payload.addressLine1,
@@ -31,6 +34,8 @@ async def verify_location(
         postal_code=payload.postalCode,
         city=payload.city,
         state=payload.state,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
         simulate_state=payload.simulateState
     )
     return result

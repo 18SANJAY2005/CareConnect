@@ -16,15 +16,6 @@ interface MobileLocationCheckProps {
   initialPostalCode?: string;
 }
 
-const COMMON_LOCALITIES = [
-  { name: 'Adyar', pincode: '600020' },
-  { name: 'Mylapore', pincode: '600004' },
-  { name: 'Besant Nagar', pincode: '600090' },
-  { name: 'Anna Nagar', pincode: '600040' },
-  { name: 'Velachery', pincode: '600042' },
-  { name: 'T. Nagar', pincode: '600017' },
-];
-
 export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
   onSuccess,
   onBack,
@@ -38,49 +29,67 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
   const [verifyResult, setVerifyResult] = useState<LocationVerifyResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // GPS Location Trigger
+  // GPS Location Trigger - resolves via backend GPS serviceability check
   const handleUseGps = () => {
     if (!navigator.geolocation) {
-      setErrorMessage('Geolocation is not supported by your browser. Please enter your PIN manually.');
+      setErrorMessage("Couldn't access your location. You can enter your Digital PIN manually.");
       return;
     }
 
     setIsGpsLoading(true);
     setErrorMessage(null);
+    setVerifyResult(null);
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         setIsGpsLoading(false);
-        // Default to regional hub PIN if in city corridor or use coords directly
-        const defaultPin = '600020';
-        setPostalCode(defaultPin);
-        setLocality('Adyar');
-        await performVerification(defaultPin, 'Adyar', pos.coords.latitude, pos.coords.longitude);
+        const { latitude, longitude } = pos.coords;
+        await verifyWithCoords(latitude, longitude);
       },
       () => {
         setIsGpsLoading(false);
-        setErrorMessage('Unable to retrieve GPS coordinates. Please enter your 6-digit PIN code manually.');
+        setErrorMessage("Couldn't access your location. You can enter your Digital PIN manually.");
       },
-      { timeout: 8000 }
+      { timeout: 10000, enableHighAccuracy: true }
     );
   };
 
-  const performVerification = async (pin: string, locName?: string, _lat?: number, _lng?: number) => {
+  const verifyWithCoords = async (latitude: number, longitude: number) => {
+    setIsVerifying(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await api.verifyLocation({
+        latitude,
+        longitude,
+      });
+
+      setVerifyResult(res);
+      if (res.postalCode) {
+        setPostalCode(res.postalCode);
+      }
+      if (res.locality) {
+        setLocality(res.locality);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Couldn't verify location. Please enter your Digital PIN manually.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const verifyWithPin = async (pin: string) => {
     if (pin.length !== 6) return;
     setIsVerifying(true);
     setErrorMessage(null);
 
     try {
       const res = await api.verifyLocation({
-        addressLine1: addressLine1 || 'Elder Residence',
-        locality: locName || locality || 'Care Corridor',
-        city: 'Chennai',
-        state: 'Tamil Nadu',
         postalCode: pin,
       });
 
       setVerifyResult(res);
-      if (res.locality && !locality) {
+      if (res.locality) {
         setLocality(res.locality);
       }
     } catch (err: any) {
@@ -92,15 +101,17 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
 
   const handleManualCheck = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    performVerification(postalCode);
+    if (postalCode.length === 6) {
+      verifyWithPin(postalCode);
+    }
   };
 
   const handleProceed = () => {
     if (!verifyResult || !verifyResult.serviceable) return;
     onSuccess({
       addressLine1: addressLine1 || 'Verified Residence',
-      locality: verifyResult.locality || locality || 'Local Corridor',
-      city: verifyResult.city || 'Metropolitan Area',
+      locality: verifyResult.locality || locality || '',
+      city: verifyResult.city || '',
       postalCode: verifyResult.postalCode || postalCode,
       latitude: verifyResult.latitude,
       longitude: verifyResult.longitude,
@@ -176,10 +187,10 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
                 setPostalCode(val);
                 setVerifyResult(null);
                 if (val.length === 6) {
-                  performVerification(val);
+                  verifyWithPin(val);
                 }
               }}
-              placeholder="Enter 6-digit PIN code (e.g. 600020)"
+              placeholder="Enter 6-digit PIN code"
               className="w-full h-14 pl-12 pr-28 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
             />
             <button
@@ -189,33 +200,6 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
             >
               {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Check'}
             </button>
-          </div>
-
-          {/* Quick chip selector for fast selection */}
-          <div>
-            <span className="text-[11px] text-slate-400 block mb-1.5 font-medium">
-              Popular Serviceable Areas:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {COMMON_LOCALITIES.map((loc) => (
-                <button
-                  key={loc.pincode}
-                  type="button"
-                  onClick={() => {
-                    setPostalCode(loc.pincode);
-                    setLocality(loc.name);
-                    performVerification(loc.pincode, loc.name);
-                  }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition ${
-                    postalCode === loc.pincode
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  {loc.name} ({loc.pincode})
-                </button>
-              ))}
-            </div>
           </div>
         </form>
 
@@ -250,8 +234,8 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
                 </div>
                 <div className="text-xs text-slate-700 leading-relaxed">
                   {verifyResult.serviceable
-                    ? `Active care hub assigned: ${verifyResult.assignedHub || 'Primary Care Hub'} (${verifyResult.locality || locality}). Verified attendants available for match.`
-                    : `We are currently not active in PIN ${postalCode}. We have noted your request and will notify you as soon as corridors open near you.`}
+                    ? `Active care hub assigned: ${verifyResult.assignedHub || 'Primary Care Hub'}${verifyResult.locality ? ` (${verifyResult.locality})` : ''}. Verified caregivers available for match.`
+                    : (verifyResult.message || `We are currently not active in PIN ${postalCode}. We have noted your request and will notify you as soon as corridors open near you.`)}
                 </div>
               </div>
             </div>
