@@ -45,7 +45,7 @@ const DEFAULT_API_BASE = Capacitor.isNativePlatform()
   : "/api";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE || DEFAULT_API_BASE;
+  import.meta.env?.VITE_API_BASE || DEFAULT_API_BASE;
 
 class ApiService {
   /* =========================================================

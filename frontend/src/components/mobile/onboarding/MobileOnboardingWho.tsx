@@ -57,7 +57,7 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
             <User className="w-7 h-7" />
           </div>
           <div className="flex-1">
-            <div className="text-base font-bold text-slate-900">For Me</div>
+            <div className="text-base font-bold text-slate-900">Myself</div>
             <div className="text-xs text-slate-500 mt-0.5">
               I am looking for personal care assistance or companionship at home.
             </div>

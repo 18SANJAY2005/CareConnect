@@ -393,7 +393,11 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
               </p>
             ) : (
               chatMessages.map((m) => {
-                const isFamily = m.senderRole === 'FAMILY_SPONSOR' || m.channel === 'FAMILY_COORDINATOR';
+                const isFamily =
+                  m.senderRole === 'FAMILY_SPONSOR' ||
+                  m.senderRole === 'FAMILY' ||
+                  m.senderRole === 'CLIENT' ||
+                  m.senderRole === 'SPONSOR';
                 return (
                   <div key={m.id} className={`flex flex-col ${isFamily ? 'items-end' : 'items-start'}`}>
                     <div className={`max-w-[75%] p-3 rounded-2xl text-xs ${

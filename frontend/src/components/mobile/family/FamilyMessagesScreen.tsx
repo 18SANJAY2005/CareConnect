@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, ShieldCheck, Loader2 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Elder } from '../../../types';
+import type { Elder, User } from '../../../types';
 import type { ChatMessage } from '../../../types/phaseC';
 
 interface FamilyMessagesScreenProps {
   elder: Elder;
+  currentUser?: User | null;
 }
 
-export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elder }) => {
+export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elder, currentUser }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -69,30 +70,62 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 py-1">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 py-1">
         {messages.length === 0 ? (
           <div className="p-8 text-center text-xs text-slate-400">
             Send a message to your assigned Care Coordinator for any assistance or schedule updates.
           </div>
         ) : (
           messages.map((m) => {
-            const isMe = m.senderRole === 'FAMILY' || m.senderRole === 'SPONSOR';
+            const isSystem = m.senderRole === 'SYSTEM';
+            const isMe =
+              !isSystem &&
+              ((currentUser && m.senderId === currentUser.id) ||
+                m.senderRole === 'FAMILY' ||
+                m.senderRole === 'FAMILY_SPONSOR' ||
+                m.senderRole === 'CLIENT' ||
+                m.senderRole === 'SPONSOR');
 
+            if (isSystem) {
+              return (
+                <div key={m.id} className="flex justify-center my-2">
+                  <div className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded-full text-[10px] font-medium text-center max-w-[85%]">
+                    {m.content}
+                  </div>
+                </div>
+              );
+            }
+
+            if (isMe) {
+              // User's own messages -> ALIGNED RIGHT
+              return (
+                <div key={m.id} className="flex flex-col items-end my-1">
+                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-xs bg-primary text-white text-xs leading-relaxed shadow-sm">
+                    <p>{m.content}</p>
+                  </div>
+                  <span className="text-[9px] text-slate-400 mt-1 mr-1">
+                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              );
+            }
+
+            // Other participant (Caregiver, Care Coordinator) -> ALIGNED LEFT
             return (
-              <div
-                key={m.id}
-                className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed ${
-                    isMe
-                      ? 'bg-primary text-white rounded-br-none shadow-sm'
-                      : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none shadow-sm'
-                  }`}
-                >
+              <div key={m.id} className="flex flex-col items-start my-1">
+                <div className="flex items-center gap-1.5 mb-1 ml-1 text-[11px] font-bold text-slate-700">
+                  <span>
+                    {m.senderName ||
+                      (m.senderRole === 'COORDINATOR' ? 'Care Coordinator' : 'Attendant')}
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200/60 font-semibold">
+                    {m.senderRole === 'COORDINATOR' ? 'Desk' : 'Caregiver'}
+                  </span>
+                </div>
+                <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-bl-xs bg-white text-slate-800 border border-slate-200 text-xs leading-relaxed shadow-sm">
                   <p>{m.content}</p>
                 </div>
-                <span className="text-[9px] text-slate-400 mt-1 px-1">
+                <span className="text-[9px] text-slate-400 mt-1 ml-1">
                   {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

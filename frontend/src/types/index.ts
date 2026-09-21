@@ -30,7 +30,8 @@ export type PersonaStatus =
 export type ShiftPreference =
   | "EIGHT_HOUR_DAY"
   | "TWELVE_HOUR_DAY_NIGHT"
-  | "TWENTY_FOUR_HOUR_LIVE_IN";
+  | "TWENTY_FOUR_HOUR_LIVE_IN"
+  | "FLEXIBLE";
 
 export type LocationVerificationStatus =
   | "PENDING"

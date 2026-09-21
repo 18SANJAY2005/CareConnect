@@ -351,6 +351,26 @@ def calculate_match_score(
     rating_points = (caregiver.rating / 5.0) * 5.0
     score += exp_points + rating_points
 
+    # 5. Schedule & Shift Compatibility
+    elder_shift = (getattr(elder, "shiftPreference", "") or getattr(elder, "shift_preference", "") or "").upper()
+
+    if "FLEXIBLE" in elder_shift:
+        routine = getattr(elder, "dailyRoutine", None) or {}
+        if isinstance(routine, str):
+            try:
+                routine = json.loads(routine)
+            except Exception:
+                routine = {}
+        start_t = routine.get("preferredStartTime") or "09:00"
+        end_t = routine.get("preferredEndTime") or "17:00"
+        reasons.append(f"Available for flexible schedule ({start_t} - {end_t})")
+    elif "TWENTY_FOUR" in elder_shift or "24" in elder_shift:
+        reasons.append("Aligned with 24-Hour live-in companion care")
+    elif "TWELVE" in elder_shift or "12" in elder_shift:
+        reasons.append("Aligned with 12-Hour day/night shift coverage")
+    elif "EIGHT" in elder_shift or "8" in elder_shift:
+        reasons.append("Aligned with 8-Hour day shift care")
+
     final_score = min(99.0, max(65.0, round(score, 1)))
     rationale = " - ".join(reasons)
 

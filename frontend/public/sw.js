@@ -1,5 +1,5 @@
 // CareConnect Service Worker - Mobile PWA App Shell Cache
-const CACHE_NAME = 'careconnect-pwa-v1';
+const CACHE_NAME = 'careconnect-pwa-v2';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -9,10 +9,11 @@ const PRECACHE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -31,8 +32,17 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Bypass API requests to let network / offlineQueue handle them
-  if (requestUrl.pathname.startsWith('/api') || requestUrl.port === '8000') {
+  // Bypass API requests, Vite dev server, localhost, and modules
+  if (
+    requestUrl.pathname.startsWith('/api') ||
+    requestUrl.pathname.startsWith('/src') ||
+    requestUrl.pathname.startsWith('/@') ||
+    requestUrl.pathname.includes('node_modules') ||
+    requestUrl.port === '8000' ||
+    requestUrl.port === '5173' ||
+    requestUrl.hostname === 'localhost' ||
+    requestUrl.hostname === '127.0.0.1'
+  ) {
     return;
   }
 
@@ -46,13 +56,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static Assets (Cache-First with Network fallback)
+  // Network-first for static assets in production
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
+    fetch(event.request)
+      .then((networkResponse) => {
         if (
           !networkResponse ||
           networkResponse.status !== 200 ||
@@ -65,8 +72,7 @@ self.addEventListener('fetch', (event) => {
           cache.put(event.request, responseToCache);
         });
         return networkResponse;
-      });
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
-

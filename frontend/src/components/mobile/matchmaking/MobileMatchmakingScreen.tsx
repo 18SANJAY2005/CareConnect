@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CreditCard,
   FileCheck,
+  Edit2,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type {
@@ -22,18 +23,32 @@ import type {
   PaymentOrder,
   SLAVersion,
 } from '../../../types';
+import {
+  ElderSectionEditorModal,
+} from '../profile/ElderSectionEditorModal';
+import type { EditableSection } from '../profile/ElderSectionEditorModal';
 
 interface MobileMatchmakingScreenProps {
   elder: Elder;
   onBookingConfirmed: () => void;
   onBack: () => void;
+  onUpdateElder?: (updatedElder: Elder) => void;
 }
 
 export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = ({
   elder,
   onBookingConfirmed,
   onBack,
+  onUpdateElder,
 }) => {
+  const [currentElder, setCurrentElder] = useState<Elder>(elder);
+  const [editingSection, setEditingSection] = useState<EditableSection | null>(null);
+  const [showElderSummary, setShowElderSummary] = useState(false);
+
+  useEffect(() => {
+    setCurrentElder(elder);
+  }, [elder]);
+
   const [matchesData, setMatchesData] = useState<CuratedMatchesResponse | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<CaregiverMatchItem | null>(null);
   const [assignmentId, setAssignmentId] = useState<number | null>(null);
@@ -55,9 +70,9 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
     if (assignmentId) return assignmentId;
     try {
       const asg = await api.createAssignment({
-        elder_id: elder.id,
+        elder_id: currentElder.id,
         caregiver_id: Number(cgId) || 1,
-        sponsor_id: elder.familyId || 'sponsor',
+        sponsor_id: currentElder.familyId || 'sponsor',
         shift_type: '12_HOURS_DAY',
       });
       const id = Number(asg.id) || 1;
@@ -77,12 +92,13 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
   };
 
   // Load matches & SLA template
-  const loadMatches = async () => {
+  const loadMatches = async (targetElderId?: string) => {
     setIsLoading(true);
     setErrorMessage(null);
+    const idToUse = targetElderId || currentElder.id || elder.id;
     try {
       const [matchesRes, slaRes] = await Promise.all([
-        api.getCuratedMatches(elder.id).catch(() => null),
+        api.getCuratedMatches(idToUse).catch(() => null),
         api.getCurrentSLA().catch(() => null),
       ]);
 
@@ -113,9 +129,9 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         };
         setSelectedMatch(fallbackMatch);
         setMatchesData({
-          elder_id: elder.id,
-          elder_name: elder.name,
-          elder_locality: 'Adyar',
+          elder_id: currentElder.id,
+          elder_name: currentElder.name,
+          elder_locality: currentElder.location?.locality || 'Adyar',
           required_care_tier: 'Standard 12-Hour Assisted Care',
           total_candidates: 1,
           matches: [fallbackMatch],
@@ -132,9 +148,15 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
     }
   };
 
+  const handleSavedSection = (updated: Elder) => {
+    setCurrentElder(updated);
+    onUpdateElder?.(updated);
+    loadMatches(updated.id);
+  };
+
   useEffect(() => {
-    loadMatches();
-  }, [elder.id]);
+    loadMatches(currentElder.id);
+  }, [currentElder.id]);
 
   // Step 1: Schedule Video Call
   const handleScheduleCall = async () => {
@@ -289,7 +311,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
             </div>
           </div>
           <span className="text-xs font-semibold text-slate-500">
-            For {elder.name}
+            For {currentElder.name}
           </span>
         </div>
 
@@ -300,6 +322,124 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           {flowStep === 'SLA' && 'Service Agreement'}
           {flowStep === 'SUCCESS' && 'Care Activated!'}
         </h2>
+
+        {/* Quick Profile Summary Bar with Section Edit Drawer */}
+        <div className="mt-2.5 p-2.5 bg-teal-50/70 rounded-2xl border border-teal-200/60 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="font-extrabold text-slate-900">{currentElder.name}</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-600 font-medium">{currentElder.age} yrs</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-600 font-medium">{currentElder.primaryLanguage || 'English'}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowElderSummary(!showElderSummary)}
+            className="px-2.5 py-1 rounded-xl bg-white border border-teal-200 text-primary text-[11px] font-bold shrink-0 hover:bg-teal-50 transition shadow-2xs flex items-center gap-1"
+          >
+            <Edit2 className="w-3 h-3" />
+            <span>{showElderSummary ? 'Hide Details' : 'Edit Details'}</span>
+          </button>
+        </div>
+
+        {/* Expandable Section Editor Drawer */}
+        {showElderSummary && (
+          <div className="mt-2 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2 text-xs animate-fadeIn">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Care Profile & Requirements (Tap Edit to update without restarting)
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Name</span>
+                <span className="font-bold text-slate-800">{currentElder.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('NAME')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Age & Gender</span>
+                <span className="font-bold text-slate-800">{currentElder.age} yrs • {currentElder.gender}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('AGE_GENDER')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Language</span>
+                <span className="font-bold text-slate-800">{currentElder.primaryLanguage || 'English'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('LANGUAGE')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Care Duration</span>
+                <span className="font-bold text-slate-800">
+                  {(currentElder.shiftPreference as string) === 'EIGHT_HOUR_DAY' ? '8 Hours' : (currentElder.shiftPreference as string) === 'TWENTY_FOUR_HOUR_LIVE_IN' ? '24 Hours' : (currentElder.shiftPreference as string) === 'FLEXIBLE' ? 'Flexible' : '12 Hours'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('DURATION')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Care Requirements</span>
+                <span className="font-bold text-slate-800">
+                  {currentElder.careRequirements?.join(', ') || 'Assisted Care'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('REQUIREMENTS')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">Preferences</span>
+                <span className="font-bold text-slate-800 truncate max-w-[200px] block">
+                  {currentElder.additionalNotes || 'Standard preferences'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection('PREFERENCES')}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {errorMessage && (
@@ -615,6 +755,16 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           </button>
         )}
       </div>
+
+      {/* Section Editor Modal for independent editing */}
+      {editingSection && (
+        <ElderSectionEditorModal
+          section={editingSection}
+          elder={currentElder}
+          onSave={handleSavedSection}
+          onClose={() => setEditingSection(null)}
+        />
+      )}
     </div>
   );
 };

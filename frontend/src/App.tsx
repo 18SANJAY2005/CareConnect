@@ -88,14 +88,16 @@ const AppContent: React.FC = () => {
   const [draftPreferences, setDraftPreferences] = useState<{
     languages: string[];
     primaryLanguage: string;
-    shiftDuration: string;
-    startTime: string;
+    careDuration: "EIGHT_HOUR_DAY" | "TWELVE_HOUR_DAY_NIGHT" | "TWENTY_FOUR_HOUR_LIVE_IN" | "FLEXIBLE";
+    preferredStartTime?: string;
+    preferredEndTime?: string;
     additionalPreferences: string;
   }>({
     languages: ["Tamil", "English"],
     primaryLanguage: "Tamil",
-    shiftDuration: "12_HOURS_DAY",
-    startTime: "08:00",
+    careDuration: "TWELVE_HOUR_DAY_NIGHT",
+    preferredStartTime: "09:00",
+    preferredEndTime: "17:00",
     additionalPreferences: "Patient is soft-spoken, prefers vegetarian diet.",
   });
   const [draftIntake, setDraftIntake] = useState<{
@@ -121,7 +123,10 @@ const AppContent: React.FC = () => {
   }, [user?.role]);
 
   // Persist elder draft into backend
-  const finalizeElderOnboarding = async (intakeOverride?: typeof draftIntake) => {
+  const finalizeElderOnboarding = async (
+    intakeOverride?: typeof draftIntake,
+    preferencesOverride?: typeof draftPreferences
+  ) => {
     if (!user) {
       // Need login before final persistence
       setIsAuthOpen(true);
@@ -132,6 +137,9 @@ const AppContent: React.FC = () => {
     setActionError(null);
 
     try {
+      const effectivePrefs = preferencesOverride || draftPreferences;
+      const effectiveIntake = intakeOverride || draftIntake;
+
       // 1. Create Elder record
       const created = await api.createElder({
         name: draftBasic.name || "Elder",
@@ -154,21 +162,34 @@ const AppContent: React.FC = () => {
       }
 
       // 3. Persist Persona Requirements & Preferences
-      const effectiveIntake = intakeOverride || draftIntake;
+      const mappedShift = effectivePrefs.careDuration;
+
+      // Build daily routine including preferred flexible hours if set
+      const dailyRoutineObj: Record<string, any> = {
+        wakeTime: effectiveIntake?.wakeTime || "07:00",
+        bedTime: effectiveIntake?.bedTime || "21:00",
+        shiftType: effectivePrefs.careDuration,
+      };
+      if (effectivePrefs.careDuration === "FLEXIBLE") {
+        dailyRoutineObj.preferredStartTime = effectivePrefs.preferredStartTime || "09:00";
+        dailyRoutineObj.preferredEndTime = effectivePrefs.preferredEndTime || "17:00";
+      }
+
+      const formattedNotes = effectivePrefs.careDuration === "FLEXIBLE" && effectivePrefs.preferredStartTime && effectivePrefs.preferredEndTime
+        ? `${effectivePrefs.additionalPreferences || ''}${effectivePrefs.additionalPreferences ? ' | ' : ''}Preferred Care Hours: ${effectivePrefs.preferredStartTime} - ${effectivePrefs.preferredEndTime}`
+        : effectivePrefs.additionalPreferences;
+
       const updated = await api.updateElder(created.id, {
         mobilityLevel: (draftMobility as any),
         careRequirements: draftRequirements,
-        languages: draftPreferences.languages,
-        primaryLanguage: draftPreferences.primaryLanguage,
-        shiftPreference: (draftPreferences.shiftDuration as any),
+        languages: effectivePrefs.languages,
+        primaryLanguage: effectivePrefs.primaryLanguage,
+        shiftPreference: mappedShift as any,
         medicalConditions: effectiveIntake?.medicalConditions || ["Hypertension"],
         medicalDevices: effectiveIntake?.medicalDevices || [],
         dietaryPreferences: effectiveIntake?.dietaryPreferences || ["Vegetarian"],
-        dailyRoutine: {
-          wakeTime: effectiveIntake?.wakeTime || "07:00",
-          bedTime: effectiveIntake?.bedTime || "21:00",
-        },
-        additionalNotes: draftPreferences.additionalPreferences,
+        dailyRoutine: dailyRoutineObj,
+        additionalNotes: formattedNotes,
         personaStatus: "SAVED",
       });
 
@@ -334,9 +355,12 @@ const AppContent: React.FC = () => {
               initialPreferences={draftPreferences}
               onProceedToMatches={async (prefs) => {
                 setDraftPreferences(prefs);
-                await finalizeElderOnboarding();
+                await finalizeElderOnboarding(undefined, prefs);
               }}
-              onWantDetailedIntake={() => setOnboardingStep("DETAILED_INTAKE")}
+              onWantDetailedIntake={(currentPrefs) => {
+                if (currentPrefs) setDraftPreferences(currentPrefs);
+                setOnboardingStep("DETAILED_INTAKE");
+              }}
               onBack={() => setOnboardingStep("REQUIREMENTS")}
             />
           )}
@@ -363,6 +387,10 @@ const AppContent: React.FC = () => {
                 refreshElders();
               }}
               onBack={() => setOnboardingStep("PREFERENCES")}
+              onUpdateElder={(updated) => {
+                setDraftElder(updated);
+                setActiveElder(updated);
+              }}
             />
           )}
         </div>
@@ -479,7 +507,11 @@ const AppContent: React.FC = () => {
               {activeFamilyTab === "MY_CARE" && (
                 <FamilyMyCareScreen
                   elder={activeElder}
-                  onEditProfile={() => setOnboardingStep("REQUIREMENTS")}
+                  onUpdateElder={(updated) => {
+                    setActiveElder(updated);
+                    setDraftElder(updated);
+                    refreshElders(updated.id);
+                  }}
                 />
               )}
 
@@ -488,7 +520,7 @@ const AppContent: React.FC = () => {
               )}
 
               {activeFamilyTab === "MESSAGES" && (
-                <FamilyMessagesScreen elder={activeElder} />
+                <FamilyMessagesScreen elder={activeElder} currentUser={user} />
               )}
 
               {activeFamilyTab === "MORE" && (
