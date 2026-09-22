@@ -13,7 +13,7 @@ class PersonaService:
             select(Elder).where(Elder.id == elder_id)
         )
         elder = result.scalar_one_or_none()
-        if not elder:
+        if not elder or elder.personaStatus == "DELETED":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Elder profile not found"

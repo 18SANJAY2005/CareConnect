@@ -11,8 +11,13 @@ import {
   Heart,
   Activity,
   FileText,
+  Trash2,
+  AlertTriangle,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import type { Elder } from '../../../types';
+import { api } from '../../../services/api';
 import {
   ElderSectionEditorModal,
 } from '../profile/ElderSectionEditorModal';
@@ -21,15 +26,20 @@ import type { EditableSection } from '../profile/ElderSectionEditorModal';
 interface FamilyMyCareScreenProps {
   elder: Elder;
   onUpdateElder?: (updatedElder: Elder) => void;
+  onDeleteElder?: (elderId: string) => void;
   onEditProfile?: () => void;
 }
 
 export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   elder,
   onUpdateElder,
+  onDeleteElder,
 }) => {
   const [currentElder, setCurrentElder] = useState<Elder>(elder);
   const [editingSection, setEditingSection] = useState<EditableSection | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentElder(elder);
@@ -38,6 +48,20 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   const handleSaved = (updated: Elder) => {
     setCurrentElder(updated);
     onUpdateElder?.(updated);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteElder(currentElder.id);
+      setIsDeleteModalOpen(false);
+      onDeleteElder?.(currentElder.id);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete elder. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getShiftLabel = (pref?: string) => {
@@ -190,6 +214,29 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
             <span>Edit</span>
           </button>
         </div>
+
+        {/* Manage / Delete Elder Option */}
+        <div className="flex items-center justify-between py-2 border-t border-slate-100/80">
+          <div>
+            <span className="text-[10px] text-rose-500 block font-semibold uppercase tracking-wider">
+              Manage Profile
+            </span>
+            <span className="font-bold text-slate-800 text-xs">
+              Elder Account Removal
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null);
+              setIsDeleteModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[11px] font-bold text-rose-700 transition active:scale-98"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>Delete Elder</span>
+          </button>
+        </div>
       </div>
 
       {/* 3. Care Requirements & Mobility */}
@@ -340,7 +387,71 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           elder={currentElder}
           onSave={handleSaved}
           onClose={() => setEditingSection(null)}
+          onTriggerDelete={() => {
+            setDeleteError(null);
+            setIsDeleteModalOpen(true);
+          }}
         />
+      )}
+
+      {/* Delete Elder Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-fadeIn">
+          <div className="w-full max-w-[420px] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 space-y-4 animate-slideUp text-slate-900">
+            {/* Modal Header */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold font-heading text-slate-900">
+                  Delete this elder?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Are you sure you want to delete this elder? This action may remove the elder from your active CareConnect profile.
+                </p>
+              </div>
+            </div>
+
+            {/* Error Message Display if Active Care blocks deletion */}
+            {deleteError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 leading-relaxed flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+                className="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-bold text-xs rounded-xl shadow-sm flex items-center justify-center gap-2 transition"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <span>Delete Elder</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

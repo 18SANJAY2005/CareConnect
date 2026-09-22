@@ -220,34 +220,18 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
           </form>
         )}
 
-        {/* 1-Tap Quick Demo Switcher */}
+        {/* 1-Tap Quick Demo Client */}
         <div className="pt-4 border-t border-slate-100 space-y-2">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
-            One-Tap Demo Switcher
+            Demo Account
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('9876543210', 'Family Client')}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold text-center transition"
-            >
-              Family
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('9876543220', 'Priya Caregiver')}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold text-center transition"
-            >
-              Caregiver
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('9876543230', 'Ops Manager')}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold text-center transition"
-            >
-              Operations
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleQuickDemoLogin('9876543210', 'Family Client')}
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold text-center transition flex items-center justify-center gap-1.5"
+          >
+            <span>One-Tap Sign In (Family Demo Client)</span>
+          </button>
         </div>
       </div>
 

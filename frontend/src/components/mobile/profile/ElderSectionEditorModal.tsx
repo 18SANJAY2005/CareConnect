@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Loader2, AlertCircle, Clock, Globe, Heart, FileText } from 'lucide-react';
+import { X, Check, Loader2, AlertCircle, Clock, Globe, Heart, FileText, Trash2 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Elder } from '../../../types';
 
@@ -17,6 +17,7 @@ interface ElderSectionEditorModalProps {
   elder: Elder;
   onSave: (updatedElder: Elder) => void;
   onClose: () => void;
+  onTriggerDelete?: () => void;
 }
 
 const ALL_LANGUAGES = [
@@ -70,6 +71,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
   elder,
   onSave,
   onClose,
+  onTriggerDelete,
 }) => {
   // Local state for Name
   const [name, setName] = useState(elder.name || '');
@@ -226,17 +228,39 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
 
           {/* 1. NAME SECTION */}
           {section === 'NAME' && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. S. Ramanathan"
-                className="w-full h-12 px-3.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold text-sm focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
-                autoFocus
-                required
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. S. Ramanathan"
+                  className="w-full h-12 px-3.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold text-sm focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              {onTriggerDelete && (
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold text-rose-700 block">Manage Profile</span>
+                    <span className="text-[11px] text-slate-400">Remove elder from account</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onTriggerDelete();
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition active:scale-98"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Delete Elder</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

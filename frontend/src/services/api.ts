@@ -220,6 +220,12 @@ class ApiService {
     });
   }
 
+  async deleteElder(id: string): Promise<{ message: string; id: string }> {
+    return this.request<{ message: string; id: string }>(`/elders/${id}`, {
+      method: "DELETE",
+    });
+  }
+
   /* =========================================================
      PHASE A ÔÇö LOCATION VERIFICATION
      ========================================================= */

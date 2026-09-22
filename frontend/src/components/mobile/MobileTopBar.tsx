@@ -1,11 +1,10 @@
 import React from 'react';
 import { CareConnectLogo } from '../common/CareConnectLogo';
-import { AlertCircle, User, Users, ChevronDown } from 'lucide-react';
+import { AlertCircle, ChevronDown } from 'lucide-react';
 import type { Elder } from '../../types';
 
 interface MobileTopBarProps {
-  activePortal: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS';
-  onPortalChange?: (portal: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS') => void;
+  activePortal?: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS';
   elders?: Elder[];
   activeElder?: Elder | null;
   onSelectElder?: (elderId: string) => void;
@@ -15,8 +14,7 @@ interface MobileTopBarProps {
 }
 
 export const MobileTopBar: React.FC<MobileTopBarProps> = ({
-  activePortal,
-  onPortalChange,
+  activePortal = 'FAMILY',
   elders = [],
   activeElder,
   onSelectElder,
@@ -85,31 +83,6 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
             <AlertCircle className="w-3.5 h-3.5" />
             <span>SOS</span>
           </button>
-
-          {/* Quick Role Switcher (For demo and multi-role testing) */}
-          {onPortalChange && (
-            <button
-              onClick={() => {
-                const next: ('FAMILY' | 'CAREGIVER' | 'OPERATIONS') =
-                  activePortal === 'FAMILY'
-                    ? 'CAREGIVER'
-                    : activePortal === 'CAREGIVER'
-                    ? 'OPERATIONS'
-                    : 'FAMILY';
-                onPortalChange(next);
-              }}
-              title={`Switch role (Current: ${activePortal})`}
-              className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
-            >
-              {activePortal === 'FAMILY' ? (
-                <Users className="w-4 h-4 text-primary" />
-              ) : activePortal === 'CAREGIVER' ? (
-                <User className="w-4 h-4 text-emerald-700" />
-              ) : (
-                <span className="text-[10px] font-extrabold text-blue-700 px-0.5">OPS</span>
-              )}
-            </button>
-          )}
         </div>
       </div>
     </header>

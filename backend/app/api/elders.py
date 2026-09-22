@@ -1,5 +1,5 @@
-from typing import List
-from fastapi import APIRouter, Depends, status
+from typing import List, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -8,6 +8,8 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.elder import Elder
 from app.models.location import ElderLocation
+from app.models.assignment import CareAssignment
+from app.models.shift import CareShift
 from app.schemas.elder import ElderCreate, ElderUpdate, ElderResponse
 from app.services.persona_service import PersonaService
 
@@ -38,10 +40,10 @@ async def list_elders(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all elders associated with authenticated family sponsor."""
+    """List all elders associated with authenticated family sponsor, excluding deleted profiles."""
     result = await db.execute(
         select(Elder)
-        .where(Elder.familyId == current_user.id)
+        .where(Elder.familyId == current_user.id, Elder.personaStatus != "DELETED")
         .options(selectinload(Elder.location))
         .order_by(Elder.createdAt.desc())
     )
@@ -95,3 +97,62 @@ async def update_elder_persona(
     )
     refreshed_elder = result.scalar_one()
     return refreshed_elder
+
+@router.delete("/{elder_id}", status_code=status.HTTP_200_OK)
+async def delete_elder(
+    elder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """
+    Safely delete / archive an elder profile.
+    Prevents deletion if there are active care services (active care assignment or ongoing shift).
+    """
+    # 1. Existence and ownership check
+    result = await db.execute(
+        select(Elder).where(Elder.id == elder_id)
+    )
+    elder = result.scalar_one_or_none()
+    if not elder or elder.personaStatus == "DELETED":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Elder profile not found"
+        )
+    if elder.familyId != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have authorization to manage or delete this elder profile"
+        )
+
+    # 2. Safety check: Active care assignment
+    active_asg_res = await db.execute(
+        select(CareAssignment).where(
+            CareAssignment.elder_id == elder_id,
+            CareAssignment.status.in_(["ACTIVE", "CONFIRMED", "IN_PROGRESS"])
+        )
+    )
+    if active_asg_res.first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This elder currently has active care services and cannot be deleted from the active profile. Please contact CareConnect support to close the active service first."
+        )
+
+    # 3. Safety check: Active care shift
+    active_shift_res = await db.execute(
+        select(CareShift).where(
+            CareShift.elderId == elder_id,
+            CareShift.status.in_(["ACTIVE", "CHECKED_IN"])
+        )
+    )
+    if active_shift_res.first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This elder currently has active care services and cannot be deleted from the active profile. Please contact CareConnect support to close the active service first."
+        )
+
+    # 4. Soft-delete by setting personaStatus = "DELETED"
+    elder.personaStatus = "DELETED"
+    await db.commit()
+
+    return {"message": "Elder profile deleted successfully", "id": elder_id}
+

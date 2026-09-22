@@ -225,6 +225,24 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Handle elder deletion from Family Care Screen
+  const handleDeleteElder = async (deletedElderId: string) => {
+    try {
+      const updatedList = await refreshElders();
+      if (updatedList && updatedList.length > 0) {
+        const next = updatedList.find((e) => e.id !== deletedElderId) || updatedList[0];
+        setActiveElder(next);
+        setDraftElder(next);
+      } else {
+        setActiveElder(null);
+        setDraftElder(null);
+      }
+    } catch (err: any) {
+      console.error("Failed to refresh elders after deletion:", err);
+      setActionError(err.message || "Failed to update elder list after deletion.");
+    }
+  };
+
   // Loading Screen
   if (isAuthLoading) {
     return (
@@ -427,7 +445,6 @@ const AppContent: React.FC = () => {
         {/* Top App Bar */}
         <MobileTopBar
           activePortal={activePortal}
-          onPortalChange={setActivePortal}
           elders={elders}
           activeElder={activeElder}
           onSelectElder={(id) => {
@@ -449,7 +466,7 @@ const AppContent: React.FC = () => {
         {/* Main Body */}
         <main className="flex-1 flex flex-col overflow-y-auto">
           {elders.length === 0 ? (
-            /* Empty State: No Elder Registered */
+            /* Empty State: No Elders Added */
             <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 text-center space-y-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-3xl bg-teal-50 border border-teal-200 flex items-center justify-center text-primary shadow-sm">
                 <Heart className="w-8 h-8 fill-teal-100" />
@@ -457,10 +474,10 @@ const AppContent: React.FC = () => {
 
               <div className="space-y-2">
                 <h2 className="text-xl font-extrabold font-heading text-slate-900">
-                  Welcome to CareConnect
+                  No elders added yet.
                 </h2>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  Start your care journey with verified attendants, 24/7 care desk oversight, and real-time health monitoring.
+                  Start your care journey by adding an elder profile with verified attendants, 24/7 care desk oversight, and real-time health monitoring.
                 </p>
               </div>
 
@@ -470,7 +487,7 @@ const AppContent: React.FC = () => {
                   className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
                 >
                   <UserPlus className="w-4 h-4" />
-                  <span>Find Care for Elder (3 Min)</span>
+                  <span>Add Elder</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </button>
 
@@ -512,6 +529,7 @@ const AppContent: React.FC = () => {
                     setDraftElder(updated);
                     refreshElders(updated.id);
                   }}
+                  onDeleteElder={handleDeleteElder}
                 />
               )}
 
