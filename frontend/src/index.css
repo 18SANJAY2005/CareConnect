@@ -13,6 +13,8 @@
       "Segoe UI",
       Roboto,
       sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
   }
 
   h1,

@@ -41,7 +41,6 @@ class Settings(BaseSettings):
         "http://192.168.29.24:5173",
         "http://192.168.29.24:3000",
         "http://192.168.29.24:8000",
-        "capacitor://localhost",
         "https://localhost",
         "http://localhost",
     ]

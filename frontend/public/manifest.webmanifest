@@ -1,17 +1,38 @@
 {
   "name": "CareConnect Elder Care",
   "short_name": "CareConnect",
-  "description": "Mobile-First Managed Elder Care Platform",
+  "description": "Mobile-First Managed Elder Care Platform connecting Families, Caregivers, and Care Managers in Chennai.",
   "start_url": "/",
+  "scope": "/",
   "id": "/",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "background_color": "#f8fafc",
   "theme_color": "#004340",
   "orientation": "portrait",
+  "categories": ["medical", "health", "lifestyle"],
   "icons": [
     {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/favicon.svg",
-      "sizes": "192x192 512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
@@ -19,8 +40,23 @@
       "src": "/careconnect-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Family Dashboard",
+      "short_name": "Family",
+      "description": "View daily elder care updates and vitals",
+      "url": "/?portal=family",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Emergency SOS",
+      "short_name": "SOS",
+      "description": "Trigger urgent care coordination",
+      "url": "/?action=sos",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
-

@@ -1,11 +1,15 @@
-// CareConnect Service Worker - Mobile PWA App Shell Cache
-const CACHE_NAME = 'careconnect-pwa-v2';
+// CareConnect Service Worker - Mobile PWA App Shell & Offline Cache
+const CACHE_NAME = 'careconnect-pwa-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/favicon.svg',
   '/careconnect-logo.svg',
-  '/manifest.webmanifest'
+  '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png',
+  '/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,9 +34,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
+  const request = event.request;
+  const requestUrl = new URL(request.url);
 
-  // Bypass API requests, Vite dev server, localhost, and modules
+  // Non-GET requests (e.g. POST, PUT, DELETE) bypass service worker
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Bypass API requests, Vite dev server, localhost ports
   if (
     requestUrl.pathname.startsWith('/api') ||
     requestUrl.pathname.startsWith('/src') ||
@@ -46,33 +56,49 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation requests (HTML)
-  if (event.request.mode === 'navigate') {
+  // 1. Navigation requests (HTML SPA routing)
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(request).catch(() => {
         return caches.match('/index.html') || caches.match('/');
       })
     );
     return;
   }
 
-  // Network-first for static assets in production
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (
-          !networkResponse ||
-          networkResponse.status !== 200 ||
-          networkResponse.type !== 'basic'
-        ) {
+  // 2. Cache-first strategy for static icons and fonts
+  if (
+    requestUrl.pathname.startsWith('/icons/') ||
+    requestUrl.pathname.endsWith('.svg') ||
+    requestUrl.pathname.endsWith('.png') ||
+    requestUrl.hostname.includes('fonts.gstatic.com') ||
+    requestUrl.hostname.includes('fonts.googleapis.com')
+  ) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
           return networkResponse;
-        }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
         });
+      })
+    );
+    return;
+  }
+
+  // 3. Network-first strategy with cache fallback for other assets
+  event.respondWith(
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
         return networkResponse;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(request))
   );
 });

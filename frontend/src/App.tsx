@@ -9,6 +9,7 @@ import { CareConnectLogo } from "./components/common/CareConnectLogo";
 import { MobileTopBar } from "./components/mobile/MobileTopBar";
 import { MobileBottomNav, type FamilyTab } from "./components/mobile/MobileBottomNav";
 import { MobileSosModal } from "./components/mobile/MobileSosModal";
+import { PwaInstallBanner } from "./components/mobile/PwaInstallBanner";
 
 // Mobile Entry & Auth
 import { MobileEntryScreen } from "./components/mobile/MobileEntryScreen";
@@ -284,6 +285,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+          <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => setOnboardingStep("WHO")}
             onSignIn={() => setIsAuthOpen(true)}
@@ -421,6 +423,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col">
+          <PwaInstallBanner />
           <CaregiverMobileApp onSwitchPortal={setActivePortal} />
         </div>
       </div>
@@ -432,6 +435,7 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col">
+          <PwaInstallBanner />
           <MobileOperationsApp onSwitchPortal={setActivePortal} />
         </div>
       </div>
@@ -442,6 +446,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
       <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col relative overflow-hidden">
+        <PwaInstallBanner />
         {/* Top App Bar */}
         <MobileTopBar
           activePortal={activePortal}
