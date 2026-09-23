@@ -42,27 +42,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Bypass API requests, Vite dev server, localhost ports
-  if (
-    requestUrl.pathname.startsWith('/api') ||
-    requestUrl.pathname.startsWith('/src') ||
-    requestUrl.pathname.startsWith('/@') ||
-    requestUrl.pathname.includes('node_modules') ||
-    requestUrl.port === '8000' ||
-    requestUrl.port === '5173' ||
-    requestUrl.hostname === 'localhost' ||
-    requestUrl.hostname === '127.0.0.1'
-  ) {
-    return;
-  }
-
-  // 1. Navigation requests (HTML SPA routing)
+  // 1. Navigation requests (HTML SPA routing) - required by Chrome PWA installability
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => {
         return caches.match('/index.html') || caches.match('/');
       })
     );
+    return;
+  }
+
+  // 2. Bypass API requests and Vite internal dev modules
+  if (
+    requestUrl.pathname.startsWith('/api') ||
+    requestUrl.pathname.startsWith('/src') ||
+    requestUrl.pathname.startsWith('/@') ||
+    requestUrl.pathname.includes('node_modules') ||
+    requestUrl.port === '8000'
+  ) {
     return;
   }
 
