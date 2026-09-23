@@ -57,6 +57,10 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.pb-safe-nav {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+
 .mobile-canvas {
   width: 100%;
   max-width: 440px;

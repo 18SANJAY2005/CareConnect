@@ -136,7 +136,7 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
       </div>
 
       {/* Bottom Input Field */}
-      <form onSubmit={handleSend} className="pt-2 pb-16 flex items-center gap-2 shrink-0">
+      <form onSubmit={handleSend} className="pt-2 pb-safe-nav flex items-center gap-2 shrink-0">
         <input
           type="text"
           value={inputText}

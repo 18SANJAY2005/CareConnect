@@ -64,7 +64,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
   const isOnDuty = shiftStatus?.status === 'ACTIVE' || shiftStatus?.status === 'CHECKED_IN';
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-20 animate-fadeIn text-slate-900">
+    <div className="space-y-4 px-4 py-4 pb-safe-nav animate-fadeIn text-slate-900">
       {/* Elder Greeting Banner */}
       <div className="p-4 rounded-3xl bg-gradient-to-r from-primary to-primary-container text-white shadow-md flex items-center justify-between">
         <div>

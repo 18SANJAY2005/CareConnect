@@ -44,7 +44,7 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({ elder 
   }, [elder.id]);
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-20 animate-fadeIn text-slate-900">
+    <div className="space-y-4 px-4 py-4 pb-safe-nav animate-fadeIn text-slate-900">
       <div>
         <h2 className="text-xl font-bold font-heading text-slate-900">Daily Updates</h2>
         <p className="text-xs text-slate-500">Live timeline, vitals logs, and daily photos</p>

@@ -33,6 +33,8 @@ interface MobileMatchmakingScreenProps {
   onBookingConfirmed: () => void;
   onBack: () => void;
   onUpdateElder?: (updatedElder: Elder) => void;
+  editingSection?: EditableSection | null;
+  onEditingSectionChange?: (section: EditableSection | null) => void;
 }
 
 export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = ({
@@ -40,10 +42,22 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
   onBookingConfirmed,
   onBack,
   onUpdateElder,
+  editingSection: controlledEditingSection,
+  onEditingSectionChange,
 }) => {
   const [currentElder, setCurrentElder] = useState<Elder>(elder);
-  const [editingSection, setEditingSection] = useState<EditableSection | null>(null);
+  const [localEditingSection, setLocalEditingSection] = useState<EditableSection | null>(null);
   const [showElderSummary, setShowElderSummary] = useState(false);
+
+  const editingSection =
+    controlledEditingSection !== undefined ? controlledEditingSection : localEditingSection;
+  const setEditingSection = (sec: EditableSection | null) => {
+    if (onEditingSectionChange) {
+      onEditingSectionChange(sec);
+    } else {
+      setLocalEditingSection(sec);
+    }
+  };
 
   useEffect(() => {
     setCurrentElder(elder);

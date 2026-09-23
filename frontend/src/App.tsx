@@ -44,27 +44,32 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-
-type MobileOnboardingStep =
-  | "WHO"
-  | "BASIC"
-  | "LOCATION"
-  | "REQUIREMENTS"
-  | "PREFERENCES"
-  | "DETAILED_INTAKE"
-  | "MATCHMAKING";
+import { usePwaNavigation } from "./hooks/usePwaNavigation";
 
 const AppContent: React.FC = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
   const { elders, activeElder, setActiveElder, refreshElders } = useOnboarding();
 
   const [activePortal, setActivePortal] = useState<"FAMILY" | "CAREGIVER" | "OPERATIONS">("FAMILY");
-  const [activeFamilyTab, setActiveFamilyTab] = useState<FamilyTab>("HOME");
-  const [isSosOpen, setIsSosOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Onboarding flow state
-  const [onboardingStep, setOnboardingStep] = useState<MobileOnboardingStep | null>(null);
+  // Centralized PWA Navigation & Browser History synchronization
+  const {
+    onboardingStep,
+    activeFamilyTab,
+    isAuthOpen,
+    isSosOpen,
+    editingSection,
+    isDeleteModalOpen,
+    activeMoreModal,
+    setOnboardingStep,
+    setActiveFamilyTab,
+    setIsAuthOpen,
+    setIsSosOpen,
+    setEditingSection,
+    setIsDeleteModalOpen,
+    setActiveMoreModal,
+    goBack,
+  } = usePwaNavigation(Boolean(user));
   const [draftRecipient, setDraftRecipient] = useState<"ME" | "SOMEONE_ELSE">("SOMEONE_ELSE");
   const [draftBasic, setDraftBasic] = useState<{
     name: string;
@@ -326,7 +331,7 @@ const AppContent: React.FC = () => {
                 setDraftRecipient(recipient);
                 setOnboardingStep("BASIC");
               }}
-              onBack={() => setOnboardingStep(null)}
+              onBack={() => goBack(() => setOnboardingStep(null))}
             />
           )}
 
@@ -338,7 +343,7 @@ const AppContent: React.FC = () => {
                 setDraftBasic(data);
                 setOnboardingStep("LOCATION");
               }}
-              onBack={() => setOnboardingStep("WHO")}
+              onBack={() => goBack(() => setOnboardingStep("WHO"))}
             />
           )}
 
@@ -353,7 +358,7 @@ const AppContent: React.FC = () => {
                   setOnboardingStep("REQUIREMENTS");
                 }
               }}
-              onBack={() => setOnboardingStep("BASIC")}
+              onBack={() => goBack(() => setOnboardingStep("BASIC"))}
             />
           )}
 
@@ -366,7 +371,7 @@ const AppContent: React.FC = () => {
                 setDraftMobility(mob);
                 setOnboardingStep("PREFERENCES");
               }}
-              onBack={() => setOnboardingStep("LOCATION")}
+              onBack={() => goBack(() => setOnboardingStep("LOCATION"))}
             />
           )}
 
@@ -381,7 +386,7 @@ const AppContent: React.FC = () => {
                 if (currentPrefs) setDraftPreferences(currentPrefs);
                 setOnboardingStep("DETAILED_INTAKE");
               }}
-              onBack={() => setOnboardingStep("REQUIREMENTS")}
+              onBack={() => goBack(() => setOnboardingStep("REQUIREMENTS"))}
             />
           )}
 
@@ -394,7 +399,7 @@ const AppContent: React.FC = () => {
               onSkip={async () => {
                 await finalizeElderOnboarding();
               }}
-              onBack={() => setOnboardingStep("PREFERENCES")}
+              onBack={() => goBack(() => setOnboardingStep("PREFERENCES"))}
             />
           )}
 
@@ -406,11 +411,13 @@ const AppContent: React.FC = () => {
                 setActiveFamilyTab("HOME");
                 refreshElders();
               }}
-              onBack={() => setOnboardingStep("PREFERENCES")}
+              onBack={() => goBack(() => setOnboardingStep("PREFERENCES"))}
               onUpdateElder={(updated) => {
                 setDraftElder(updated);
                 setActiveElder(updated);
               }}
+              editingSection={editingSection}
+              onEditingSectionChange={setEditingSection}
             />
           )}
         </div>
@@ -535,6 +542,10 @@ const AppContent: React.FC = () => {
                     refreshElders(updated.id);
                   }}
                   onDeleteElder={handleDeleteElder}
+                  editingSection={editingSection}
+                  onEditingSectionChange={setEditingSection}
+                  isDeleteModalOpen={isDeleteModalOpen}
+                  onDeleteModalOpenChange={setIsDeleteModalOpen}
                 />
               )}
 
@@ -547,7 +558,11 @@ const AppContent: React.FC = () => {
               )}
 
               {activeFamilyTab === "MORE" && (
-                <FamilyMoreScreen elder={activeElder} />
+                <FamilyMoreScreen
+                  elder={activeElder}
+                  activeModal={activeMoreModal}
+                  onActiveModalChange={setActiveMoreModal}
+                />
               )}
             </>
           ) : null}

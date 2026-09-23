@@ -14,17 +14,32 @@ import type { Elder } from '../../../types';
 
 interface FamilyMoreScreenProps {
   elder: Elder;
+  activeModal?: 'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null;
+  onActiveModalChange?: (modal: 'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null) => void;
 }
 
-export const FamilyMoreScreen: React.FC<FamilyMoreScreenProps> = ({ elder }) => {
+export const FamilyMoreScreen: React.FC<FamilyMoreScreenProps> = ({
+  elder,
+  activeModal: controlledActiveModal,
+  onActiveModalChange,
+}) => {
   const { logout } = useAuth();
 
   const [assignmentId, setAssignmentId] = useState<string | number>(1);
-  const [activeModal, setActiveModal] = useState<'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null>(null);
+  const [localActiveModal, setLocalActiveModal] = useState<'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null>(null);
   const [replacementReason, setReplacementReason] = useState('SCHEDULE_MISMATCH');
   const [replacementNotes, setReplacementNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const activeModal = controlledActiveModal !== undefined ? controlledActiveModal : localActiveModal;
+  const setActiveModal = (modal: 'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null) => {
+    if (onActiveModalChange) {
+      onActiveModalChange(modal);
+    } else {
+      setLocalActiveModal(modal);
+    }
+  };
 
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackComment, setFeedbackComment] = useState('');
@@ -79,7 +94,7 @@ export const FamilyMoreScreen: React.FC<FamilyMoreScreenProps> = ({ elder }) => 
   };
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-20 animate-fadeIn text-slate-900">
+    <div className="space-y-4 px-4 py-4 pb-safe-nav animate-fadeIn text-slate-900">
       <div>
         <h2 className="text-xl font-bold font-heading text-slate-900">Account & Services</h2>
         <p className="text-xs text-slate-500">Service management, billing, and settings</p>

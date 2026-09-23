@@ -28,18 +28,48 @@ interface FamilyMyCareScreenProps {
   onUpdateElder?: (updatedElder: Elder) => void;
   onDeleteElder?: (elderId: string) => void;
   onEditProfile?: () => void;
+  editingSection?: EditableSection | null;
+  onEditingSectionChange?: (section: EditableSection | null) => void;
+  isDeleteModalOpen?: boolean;
+  onDeleteModalOpenChange?: (open: boolean) => void;
 }
 
 export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   elder,
   onUpdateElder,
   onDeleteElder,
+  editingSection: controlledEditingSection,
+  onEditingSectionChange,
+  isDeleteModalOpen: controlledIsDeleteModalOpen,
+  onDeleteModalOpenChange,
 }) => {
   const [currentElder, setCurrentElder] = useState<Elder>(elder);
-  const [editingSection, setEditingSection] = useState<EditableSection | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [localEditingSection, setLocalEditingSection] = useState<EditableSection | null>(null);
+  const [localIsDeleteModalOpen, setLocalIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const editingSection =
+    controlledEditingSection !== undefined ? controlledEditingSection : localEditingSection;
+  const setEditingSection = (sec: EditableSection | null) => {
+    if (onEditingSectionChange) {
+      onEditingSectionChange(sec);
+    } else {
+      setLocalEditingSection(sec);
+    }
+  };
+
+  const isDeleteModalOpen =
+    controlledIsDeleteModalOpen !== undefined
+      ? controlledIsDeleteModalOpen
+      : localIsDeleteModalOpen;
+  const setIsDeleteModalOpen = (open: boolean) => {
+    if (onDeleteModalOpenChange) {
+      onDeleteModalOpenChange(open);
+    } else {
+      setLocalIsDeleteModalOpen(open);
+    }
+  };
 
   useEffect(() => {
     setCurrentElder(elder);
@@ -93,7 +123,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   };
 
   return (
-    <div className="space-y-4 px-4 py-4 pb-20 animate-fadeIn text-slate-900">
+    <div className="space-y-4 px-4 py-4 pb-safe-nav animate-fadeIn text-slate-900">
       {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div>
