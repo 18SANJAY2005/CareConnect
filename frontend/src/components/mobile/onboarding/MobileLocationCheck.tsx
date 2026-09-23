@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, CheckCircle2, XCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { 
+  MapPin, 
+  Navigation, 
+  CheckCircle2, 
+  XCircle, 
+  ArrowLeft, 
+  ArrowRight, 
+  Loader2,
+  Map as MapIcon,
+  Search
+} from 'lucide-react';
 import { api } from '../../../services/api';
 import type { LocationVerifyResponse } from '../../../types';
+import { PreciseLocationPicker, type PreciseLocationData } from '../../common/PreciseLocationPicker';
 
 interface MobileLocationCheckProps {
   onSuccess: (locationData: {
@@ -21,77 +32,70 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
   onBack,
   initialPostalCode = '',
 }) => {
+  const [activeTab, setActiveTab] = useState<'MAP' | 'PIN'>('MAP');
   const [postalCode, setPostalCode] = useState(initialPostalCode);
   const [locality, setLocality] = useState('');
-  const [addressLine1] = useState('');
-  const [isGpsLoading, setIsGpsLoading] = useState(false);
+  const [addressLine1, setAddressLine1] = useState('');
+  const [city, setCity] = useState('Chennai');
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
+
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<LocationVerifyResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // GPS Location Trigger - resolves via backend GPS serviceability check
-  const handleUseGps = () => {
-    if (!navigator.geolocation) {
-      setErrorMessage("Couldn't access your location. You can enter your Digital PIN manually.");
-      return;
-    }
+  // Handle location chosen from the precise interactive map picker
+  const handlePreciseLocationSelected = async (data: PreciseLocationData) => {
+    setLatitude(data.latitude);
+    setLongitude(data.longitude);
+    setAddressLine1(data.addressLine1);
+    setLocality(data.locality);
+    setCity(data.city);
+    setPostalCode(data.postalCode);
 
-    setIsGpsLoading(true);
-    setErrorMessage(null);
-    setVerifyResult(null);
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        setIsGpsLoading(false);
-        const { latitude, longitude } = pos.coords;
-        await verifyWithCoords(latitude, longitude);
-      },
-      () => {
-        setIsGpsLoading(false);
-        setErrorMessage("Couldn't access your location. You can enter your Digital PIN manually.");
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  };
-
-  const verifyWithCoords = async (latitude: number, longitude: number) => {
     setIsVerifying(true);
     setErrorMessage(null);
 
     try {
       const res = await api.verifyLocation({
-        latitude,
-        longitude,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        postalCode: data.postalCode,
+        locality: data.locality,
+        city: data.city,
+        addressLine1: data.addressLine1,
       });
 
+      const isMunicipalZone = (val?: string) => Boolean(val && /^zone\s*\d+/i.test(val.trim()));
       setVerifyResult(res);
-      if (res.postalCode) {
-        setPostalCode(res.postalCode);
-      }
-      if (res.locality) {
+      if (res.postalCode) setPostalCode(res.postalCode);
+      if (res.locality && !isMunicipalZone(res.locality) && !data.locality) {
         setLocality(res.locality);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || "Couldn't verify location. Please enter your Digital PIN manually.");
+      setErrorMessage(err.message || "Couldn't verify location coverage. Please verify your address or PIN.");
     } finally {
       setIsVerifying(false);
     }
   };
 
+  // Verify directly with PIN
   const verifyWithPin = async (pin: string) => {
     if (pin.length !== 6) return;
     setIsVerifying(true);
     setErrorMessage(null);
 
     try {
+      const isMunicipalZone = (val?: string) => Boolean(val && /^zone\s*\d+/i.test(val.trim()));
       const res = await api.verifyLocation({
         postalCode: pin,
       });
 
       setVerifyResult(res);
-      if (res.locality) {
-        setLocality(res.locality);
-      }
+      if (res.locality && !isMunicipalZone(res.locality)) setLocality(res.locality);
+      if (res.city && !isMunicipalZone(res.city)) setCity(res.city);
+      if (res.latitude) setLatitude(res.latitude);
+      if (res.longitude) setLongitude(res.longitude);
     } catch (err: any) {
       setErrorMessage(err.message || 'Unable to verify postal code.');
     } finally {
@@ -110,19 +114,19 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
     if (!verifyResult || !verifyResult.serviceable) return;
     onSuccess({
       addressLine1: addressLine1 || 'Verified Residence',
-      locality: verifyResult.locality || locality || '',
-      city: verifyResult.city || '',
-      postalCode: verifyResult.postalCode || postalCode,
-      latitude: verifyResult.latitude,
-      longitude: verifyResult.longitude,
+      locality: locality || verifyResult.locality || 'Care Corridor',
+      city: city || verifyResult.city || 'Chennai',
+      postalCode: postalCode || verifyResult.postalCode || '600020',
+      latitude: verifyResult.latitude ?? latitude,
+      longitude: verifyResult.longitude ?? longitude,
     });
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between px-5 py-6 animate-fadeIn text-slate-900">
+    <div className="flex-1 flex flex-col justify-between px-4 py-5 animate-fadeIn text-slate-900 overflow-y-auto">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <button
             onClick={onBack}
             className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition"
@@ -138,72 +142,91 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
           Where is care needed?
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Check whether CareConnect is available near your home.
+          Pinpoint your exact doorstep on the map or check coverage by PIN code.
         </p>
+
+        {/* View Mode Toggle */}
+        <div className="flex bg-slate-200/80 p-1 rounded-xl mt-3 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setActiveTab('MAP')}
+            className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition ${
+              activeTab === 'MAP'
+                ? 'bg-white text-teal-800 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+            <span>Interactive Map</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('PIN')}
+            className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition ${
+              activeTab === 'PIN'
+                ? 'bg-white text-teal-800 shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Enter PIN Code</span>
+          </button>
+        </div>
       </div>
 
-      {/* Center Actions */}
-      <div className="my-auto py-4 space-y-4">
-        {/* GPS Button */}
-        <button
-          type="button"
-          onClick={handleUseGps}
-          disabled={isGpsLoading || isVerifying}
-          className="w-full min-h-[56px] p-4 bg-teal-50 hover:bg-teal-100 border-2 border-primary/30 rounded-2xl flex items-center justify-center gap-2.5 text-primary font-bold text-sm transition active:scale-98"
-        >
-          {isGpsLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Detecting your location...</span>
-            </>
-          ) : (
-            <>
-              <Navigation className="w-5 h-5 text-primary fill-primary/20" />
-              <span>Use My Current Location</span>
-            </>
-          )}
-        </button>
-
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span>or enter PIN manually</span>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
-
-        {/* PIN Input Form */}
-        <form onSubmit={handleManualCheck} className="space-y-3">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={postalCode}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                setPostalCode(val);
-                setVerifyResult(null);
-                if (val.length === 6) {
-                  verifyWithPin(val);
-                }
-              }}
-              placeholder="Enter 6-digit PIN code"
-              className="w-full h-14 pl-12 pr-28 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+      {/* Main Content Area */}
+      <div className="my-3 space-y-3">
+        {activeTab === 'MAP' ? (
+          /* Interactive Ola/Uber Precise Location Picker */
+          <div className="space-y-3">
+            <PreciseLocationPicker
+              initialLatitude={latitude}
+              initialLongitude={longitude}
+              initialAddress={addressLine1}
+              initialPostalCode={postalCode}
+              onLocationSelect={handlePreciseLocationSelected}
+              confirmButtonLabel={isVerifying ? 'Verifying Serviceability...' : 'Verify This Doorstep Pin'}
+              compact={true}
             />
-            <button
-              type="submit"
-              disabled={isVerifying || postalCode.length < 6}
-              className="absolute right-2 top-2 bottom-2 px-4 bg-primary hover:bg-primary-hover disabled:opacity-40 text-white font-bold text-xs rounded-xl transition"
-            >
-              {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Check'}
-            </button>
           </div>
-        </form>
+        ) : (
+          /* PIN Input Form Tab */
+          <div className="space-y-4 py-2">
+            <form onSubmit={handleManualCheck} className="space-y-3">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={postalCode}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setPostalCode(val);
+                    setVerifyResult(null);
+                    if (val.length === 6) {
+                      verifyWithPin(val);
+                    }
+                  }}
+                  placeholder="Enter 6-digit PIN code (e.g. 600020)"
+                  className="w-full h-14 pl-12 pr-28 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={isVerifying || postalCode.length < 6}
+                  className="absolute right-2 top-2 bottom-2 px-4 bg-teal-700 hover:bg-teal-800 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition"
+                >
+                  {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Check'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
-        {/* Error message */}
+        {/* Global Error Banner */}
         {errorMessage && (
           <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
             <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
@@ -214,7 +237,7 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
         {/* Verification Result Card */}
         {verifyResult && (
           <div
-            className={`p-4 rounded-2xl border ${
+            className={`p-4 rounded-2xl border animate-fadeIn ${
               verifyResult.serviceable
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                 : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -227,16 +250,29 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
                 <XCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               )}
               <div className="space-y-1">
-                <div className="text-xs font-extrabold">
-                  {verifyResult.serviceable
-                    ? 'CareConnect is Available!'
-                    : 'Service Not Yet Available'}
+                <div className="text-xs font-extrabold flex items-center gap-1.5">
+                  <span>
+                    {verifyResult.serviceable
+                      ? 'Care Corridor Verified & Active!'
+                      : 'Outside Active Care Corridor'}
+                  </span>
                 </div>
                 <div className="text-xs text-slate-700 leading-relaxed">
                   {verifyResult.serviceable
-                    ? `Active care hub assigned: ${verifyResult.assignedHub || 'Primary Care Hub'}${verifyResult.locality ? ` (${verifyResult.locality})` : ''}. Verified caregivers available for match.`
-                    : (verifyResult.message || `We are currently not active in PIN ${postalCode}. We have noted your request and will notify you as soon as corridors open near you.`)}
+                    ? `Assigned Hub: ${verifyResult.assignedHub || 'Primary Care Hub'}${
+                        verifyResult.locality ? ` (${verifyResult.locality})` : ''
+                      }. Verified healthcare attendants and supervisors are on standby for this address.`
+                    : (verifyResult.message ||
+                      `We are currently not active in PIN ${postalCode}. You can join our priority expansion waitlist.`)}
                 </div>
+                {verifyResult.serviceable && (
+                  <div className="pt-1.5 text-[11px] font-mono text-emerald-800 flex items-center gap-2">
+                    <Navigation className="w-3 h-3 text-emerald-600" />
+                    <span>
+                      GPS: {verifyResult.latitude ?? latitude?.toFixed(4)}, {verifyResult.longitude ?? longitude?.toFixed(4)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -244,11 +280,11 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
       </div>
 
       {/* Continue Button */}
-      <div className="pt-4">
+      <div className="pt-2 pb-1">
         <button
           onClick={handleProceed}
           disabled={!verifyResult || !verifyResult.serviceable}
-          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover disabled:opacity-50 active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+          className="w-full min-h-[52px] bg-teal-700 hover:bg-teal-800 disabled:opacity-50 active:scale-98 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
         >
           <span>Continue to Care Needs</span>
           <ArrowRight className="w-5 h-5" />
@@ -257,3 +293,5 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
     </div>
   );
 };
+
+export default MobileLocationCheck;

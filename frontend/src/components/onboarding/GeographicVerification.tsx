@@ -13,6 +13,7 @@ import {
 import { api } from '../../services/api';
 import { useOnboarding } from '../../context/OnboardingContext';
 import type { LocationVerifyResponse } from '../../types';
+import { PreciseLocationPicker, type PreciseLocationData } from '../common/PreciseLocationPicker';
 
 interface LocalityOption {
   name: string;
@@ -116,6 +117,45 @@ export const GeographicVerification: React.FC = () => {
     }
   };
 
+  const handlePickerSelect = async (locData: PreciseLocationData) => {
+    setAddressLine1(locData.addressLine1);
+    if (locData.addressLine2) setAddressLine2(locData.addressLine2);
+    setLocality(locData.locality);
+    setCity(locData.city);
+    setState(locData.state);
+    setPostalCode(locData.postalCode);
+
+    setErrorMessage('');
+    setIsVerifying(true);
+    try {
+      const res = await api.verifyLocation({
+        addressLine1: locData.addressLine1,
+        addressLine2: locData.addressLine2,
+        locality: locData.locality,
+        city: locData.city,
+        state: locData.state,
+        postalCode: locData.postalCode,
+        latitude: locData.latitude,
+        longitude: locData.longitude,
+      });
+      const sanitized = {
+        ...res,
+        message: res.message
+          ? res.message
+              .replace(/Chennai metropolitan region/gi, 'active care network')
+              .replace(/in Chennai/gi, '')
+              .replace(/across Chennai/gi, 'across our network')
+              .replace(/active Chennai service corridors/gi, 'active service corridors')
+          : res.message
+      };
+      setVerifyResult(sanitized);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Geographic verification failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleVerifyLocation = async (simulateState?: string) => {
     setErrorMessage('');
     setIsVerifying(true);
@@ -171,10 +211,10 @@ export const GeographicVerification: React.FC = () => {
       await api.persistElderLocation(currentElder.id, {
         addressLine1,
         addressLine2,
-        locality: verifyResult.locality,
-        city: verifyResult.city,
-        state,
-        postalCode: verifyResult.postalCode,
+        locality: locality || verifyResult.locality,
+        city: city || verifyResult.city,
+        state: state || 'Tamil Nadu',
+        postalCode: postalCode || verifyResult.postalCode,
         landmark,
         latitude: verifyResult.latitude,
         longitude: verifyResult.longitude,
@@ -474,36 +514,21 @@ export const GeographicVerification: React.FC = () => {
               </div>
             )}
 
-            {/* Interactive Simulated Map Widget */}
-            <div className="mt-5 border border-slate-200 rounded-xl overflow-hidden bg-slate-100 relative">
-              <div className="h-44 w-full bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] flex flex-col items-center justify-center text-center p-4">
-                {verifyResult?.serviceable ? (
-                  <div className="flex flex-col items-center animate-fade-in">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-lg animate-bounce">
-                        <MapPin className="w-6 h-6" />
-                      </div>
-                      <div className="w-12 h-3 rounded-full bg-slate-400/30 blur-xs mt-1"></div>
-                    </div>
-                    <span className="mt-2 text-xs font-bold text-slate-800 bg-white/90 px-3 py-1 rounded-full shadow-xs border border-slate-200">
-                      {verifyResult.locality} ({verifyResult.postalCode})
-                    </span>
-                    <span className="text-[10px] text-teal-700 font-mono mt-0.5">
-                      Lat: {verifyResult.latitude}° N, Lng: {verifyResult.longitude}° E
-                    </span>
-                  </div>
-                ) : (
-                  <div className="text-slate-400 text-xs flex flex-col items-center">
-                    <Compass className="w-8 h-8 text-slate-300 mb-1" />
-                    <span>Map Coordinates Preview</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">Verify address to center map pin</span>
-                  </div>
-                )}
-              </div>
-              <div className="bg-white px-3 py-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
-                <span>Google Maps / PostGIS Grid</span>
-                <span className="font-semibold text-teal-700">Core Care Corridor</span>
-              </div>
+            {/* Interactive Ola/Uber-Style Precise Location Picker */}
+            <div className="mt-5 space-y-2">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                <span>Precise Doorstep Pin & Map Picker</span>
+              </h4>
+              <PreciseLocationPicker
+                initialLatitude={verifyResult?.latitude}
+                initialLongitude={verifyResult?.longitude}
+                initialAddress={addressLine1}
+                initialPostalCode={postalCode}
+                onLocationSelect={handlePickerSelect}
+                confirmButtonLabel="Apply Coordinates & Check Serviceability"
+                compact={true}
+              />
             </div>
 
             {/* Proceed Action Button */}
