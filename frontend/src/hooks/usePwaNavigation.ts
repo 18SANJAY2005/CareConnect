@@ -12,11 +12,13 @@ export type MobileOnboardingStep =
   | 'MATCHMAKING';
 
 export type MoreModalType = 'REPLACEMENT' | 'FEEDBACK' | 'BILLING' | null;
+export type AuthSubStep = 'PHONE' | 'OTP';
 
 export interface PwaNavState {
   tab: FamilyTab;
   step: MobileOnboardingStep | null;
   auth: boolean;
+  authStep: AuthSubStep;
   sos: boolean;
   edit: EditableSection | null;
   del: boolean;
@@ -27,6 +29,7 @@ const DEFAULT_STATE: PwaNavState = {
   tab: 'HOME',
   step: null,
   auth: false,
+  authStep: 'PHONE',
   sos: false,
   edit: null,
   del: false,
@@ -35,7 +38,9 @@ const DEFAULT_STATE: PwaNavState = {
 
 function stateToHash(state: PwaNavState): string {
   if (state.sos) return '#sos';
-  if (state.auth) return '#auth';
+  if (state.auth) {
+    return state.authStep === 'OTP' ? '#auth/otp' : '#auth';
+  }
   if (state.step) {
     return `#onboarding/${state.step.toLowerCase()}`;
   }
@@ -56,9 +61,10 @@ function stateToHash(state: PwaNavState): string {
 
 function hashToState(hash: string): Partial<PwaNavState> {
   const clean = hash.replace(/^#\/?/, '').toLowerCase();
-  if (!clean || clean === 'home') return { tab: 'HOME', step: null };
+  if (!clean || clean === 'home') return { tab: 'HOME', step: null, auth: false };
   if (clean === 'sos') return { sos: true };
-  if (clean === 'auth') return { auth: true };
+  if (clean === 'auth' || clean === 'auth/phone') return { auth: true, authStep: 'PHONE' };
+  if (clean === 'auth/otp') return { auth: true, authStep: 'OTP' };
 
   if (clean.startsWith('onboarding/')) {
     const stepPart = clean.replace('onboarding/', '').toUpperCase();
@@ -72,7 +78,7 @@ function hashToState(hash: string): Partial<PwaNavState> {
       'MATCHMAKING',
     ];
     if (validSteps.includes(stepPart as MobileOnboardingStep)) {
-      return { step: stepPart as MobileOnboardingStep };
+      return { step: stepPart as MobileOnboardingStep, auth: false };
     }
   }
 
@@ -108,7 +114,7 @@ function hashToState(hash: string): Partial<PwaNavState> {
   if (clean === 'messages') return { tab: 'MESSAGES', step: null };
   if (clean === 'more') return { tab: 'MORE', step: null };
 
-  return { tab: 'HOME', step: null };
+  return { tab: 'HOME', step: null, auth: false };
 }
 
 function areStatesEqual(a: PwaNavState, b: PwaNavState): boolean {
@@ -116,6 +122,7 @@ function areStatesEqual(a: PwaNavState, b: PwaNavState): boolean {
     a.tab === b.tab &&
     a.step === b.step &&
     a.auth === b.auth &&
+    a.authStep === b.authStep &&
     a.sos === b.sos &&
     a.edit === b.edit &&
     a.del === b.del &&
@@ -139,16 +146,24 @@ export function usePwaNavigation(_hasUser?: boolean) {
 
   const [navState, setNavState] = useState<PwaNavState>(getInitialState);
 
-  // References to prevent popstate loops and track history stack depth
+  // References to prevent popstate loops
   const isPopStateRef = useRef(false);
   const stateRef = useRef<PwaNavState>(navState);
   stateRef.current = navState;
 
-  // Track if we have pushed states in this window session
-  const historyDepthRef = useRef(0);
-
-  // Synchronize on mount with replaceState
+  // Synchronize on mount and handle popstate / hashchange
   useEffect(() => {
+    const syncFromUrl = (stateFromEvent?: any) => {
+      let nextState: PwaNavState = DEFAULT_STATE;
+      if (stateFromEvent && typeof stateFromEvent === 'object' && 'tab' in stateFromEvent) {
+        nextState = { ...DEFAULT_STATE, ...stateFromEvent };
+      } else {
+        const fromHash = hashToState(window.location.hash);
+        nextState = { ...DEFAULT_STATE, ...fromHash };
+      }
+      setNavState(nextState);
+    };
+
     const initial = getInitialState();
     const hash = stateToHash(initial);
     try {
@@ -159,30 +174,23 @@ export function usePwaNavigation(_hasUser?: boolean) {
 
     const handlePopState = (event: PopStateEvent) => {
       isPopStateRef.current = true;
-
-      let nextState: PwaNavState = DEFAULT_STATE;
-      if (event.state && typeof event.state === 'object' && 'tab' in event.state) {
-        nextState = { ...DEFAULT_STATE, ...event.state };
-      } else {
-        const fromHash = hashToState(window.location.hash);
-        nextState = { ...DEFAULT_STATE, ...fromHash };
-      }
-
-      if (historyDepthRef.current > 0) {
-        historyDepthRef.current -= 1;
-      }
-
-      setNavState(nextState);
-
-      // Reset popstate flag after React completes render cycle
+      syncFromUrl(event.state);
       setTimeout(() => {
         isPopStateRef.current = false;
       }, 50);
     };
 
+    const handleHashChange = () => {
+      if (!isPopStateRef.current) {
+        syncFromUrl();
+      }
+    };
+
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
     };
   }, []);
 
@@ -202,7 +210,6 @@ export function usePwaNavigation(_hasUser?: boolean) {
           const hash = stateToHash(next);
           try {
             window.history.pushState(next, '', hash);
-            historyDepthRef.current += 1;
           } catch {
             // Fallback for sandboxed frames
           }
@@ -215,46 +222,55 @@ export function usePwaNavigation(_hasUser?: boolean) {
   );
 
   // In-app back navigation handler
-  const goBack = useCallback((fallback?: () => void) => {
-    if (historyDepthRef.current > 0) {
+  // Single clean back action: performs window.history.back(), or in-place replaceState when no history exists
+  const goBack = useCallback((_fallback?: () => void) => {
+    if (typeof window === 'undefined') return;
+
+    if (window.history.length > 1) {
       window.history.back();
-    } else if (fallback) {
-      fallback();
-    } else {
-      // Intelligent fallback based on current state
-      const current = stateRef.current;
-      if (current.edit) {
-        updateNavState({ edit: null });
-      } else if (current.del) {
-        updateNavState({ del: false });
-      } else if (current.more) {
-        updateNavState({ more: null });
-      } else if (current.sos) {
-        updateNavState({ sos: false });
-      } else if (current.auth) {
-        updateNavState({ auth: false });
-      } else if (current.step) {
-        // Step back in onboarding
-        const stepOrder: MobileOnboardingStep[] = [
-          'WHO',
-          'BASIC',
-          'LOCATION',
-          'REQUIREMENTS',
-          'PREFERENCES',
-          'DETAILED_INTAKE',
-          'MATCHMAKING',
-        ];
-        const idx = stepOrder.indexOf(current.step);
-        if (idx > 0) {
-          updateNavState({ step: stepOrder[idx - 1] });
-        } else {
-          updateNavState({ step: null });
-        }
-      } else if (current.tab !== 'HOME') {
-        updateNavState({ tab: 'HOME' });
-      }
+      return;
     }
-  }, [updateNavState]);
+
+    // Direct entry fallback if user opened directly in a new tab without prior history:
+    // Uses replaceState to avoid pushing extra history entries
+    const current = stateRef.current;
+    let next: PwaNavState = { ...DEFAULT_STATE };
+    if (current.step === 'REQUIREMENTS') {
+      next = { ...DEFAULT_STATE, auth: true, authStep: 'OTP', step: 'LOCATION' };
+    } else if (current.auth) {
+      if (current.authStep === 'OTP') {
+        next = { ...DEFAULT_STATE, auth: true, authStep: 'PHONE', step: current.step || 'LOCATION' };
+      } else {
+        next = { ...DEFAULT_STATE, auth: false, step: current.step || 'LOCATION' };
+      }
+    } else if (current.step) {
+      const stepOrder: MobileOnboardingStep[] = [
+        'WHO',
+        'BASIC',
+        'LOCATION',
+        'REQUIREMENTS',
+        'PREFERENCES',
+        'DETAILED_INTAKE',
+        'MATCHMAKING',
+      ];
+      const idx = stepOrder.indexOf(current.step);
+      if (idx > 0) {
+        next = { ...DEFAULT_STATE, step: stepOrder[idx - 1] };
+      } else {
+        next = { ...DEFAULT_STATE, step: null, tab: 'HOME' };
+      }
+    } else if (current.tab !== 'HOME') {
+      next = { ...DEFAULT_STATE, tab: 'HOME' };
+    }
+
+    const hash = stateToHash(next);
+    try {
+      window.history.replaceState(next, '', hash);
+    } catch {
+      // Fallback
+    }
+    setNavState(next);
+  }, []);
 
   // Convenience state setters
   const setOnboardingStep = useCallback(
@@ -263,6 +279,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
         step,
         // Reset sub-modals when changing onboarding step
         auth: false,
+        authStep: 'PHONE',
         sos: false,
         edit: null,
         del: false,
@@ -287,19 +304,22 @@ export function usePwaNavigation(_hasUser?: boolean) {
   );
 
   const setIsAuthOpen = useCallback(
-    (auth: boolean) => {
-      if (!auth && stateRef.current.auth && historyDepthRef.current > 0) {
-        window.history.back();
-      } else {
-        updateNavState({ auth });
-      }
+    (auth: boolean, authStep: AuthSubStep = 'PHONE') => {
+      updateNavState({ auth, authStep });
+    },
+    [updateNavState]
+  );
+
+  const setAuthStep = useCallback(
+    (authStep: AuthSubStep) => {
+      updateNavState({ auth: true, authStep });
     },
     [updateNavState]
   );
 
   const setIsSosOpen = useCallback(
     (sos: boolean) => {
-      if (!sos && stateRef.current.sos && historyDepthRef.current > 0) {
+      if (!sos && stateRef.current.sos && window.history.length > 1) {
         window.history.back();
       } else {
         updateNavState({ sos });
@@ -310,7 +330,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
 
   const setEditingSection = useCallback(
     (edit: EditableSection | null) => {
-      if (!edit && stateRef.current.edit && historyDepthRef.current > 0) {
+      if (!edit && stateRef.current.edit && window.history.length > 1) {
         window.history.back();
       } else {
         updateNavState({ edit });
@@ -321,7 +341,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
 
   const setIsDeleteModalOpen = useCallback(
     (del: boolean) => {
-      if (!del && stateRef.current.del && historyDepthRef.current > 0) {
+      if (!del && stateRef.current.del && window.history.length > 1) {
         window.history.back();
       } else {
         updateNavState({ del });
@@ -332,7 +352,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
 
   const setActiveMoreModal = useCallback(
     (more: MoreModalType) => {
-      if (!more && stateRef.current.more && historyDepthRef.current > 0) {
+      if (!more && stateRef.current.more && window.history.length > 1) {
         window.history.back();
       } else {
         updateNavState({ more });
@@ -346,6 +366,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
     onboardingStep: navState.step,
     activeFamilyTab: navState.tab,
     isAuthOpen: navState.auth,
+    authStep: navState.authStep,
     isSosOpen: navState.sos,
     editingSection: navState.edit,
     isDeleteModalOpen: navState.del,
@@ -353,6 +374,7 @@ export function usePwaNavigation(_hasUser?: boolean) {
     setOnboardingStep,
     setActiveFamilyTab,
     setIsAuthOpen,
+    setAuthStep,
     setIsSosOpen,
     setEditingSection,
     setIsDeleteModalOpen,

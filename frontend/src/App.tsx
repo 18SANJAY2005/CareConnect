@@ -57,6 +57,7 @@ const AppContent: React.FC = () => {
     onboardingStep,
     activeFamilyTab,
     isAuthOpen,
+    authStep,
     isSosOpen,
     editingSection,
     isDeleteModalOpen,
@@ -64,6 +65,7 @@ const AppContent: React.FC = () => {
     setOnboardingStep,
     setActiveFamilyTab,
     setIsAuthOpen,
+    setAuthStep,
     setIsSosOpen,
     setEditingSection,
     setIsDeleteModalOpen,
@@ -85,6 +87,7 @@ const AppContent: React.FC = () => {
     latitude?: number;
     longitude?: number;
   } | null>(null);
+  const [draftPhone, setDraftPhone] = useState("9876543210");
   const [draftRequirements, setDraftRequirements] = useState<string[]>([
     "MOBILITY",
     "MEDICATION",
@@ -135,7 +138,7 @@ const AppContent: React.FC = () => {
   ) => {
     if (!user) {
       // Need login before final persistence
-      setIsAuthOpen(true);
+      setIsAuthOpen(true, 'PHONE');
       return;
     }
 
@@ -263,20 +266,23 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 1. Unauthenticated Auth Screen Modal
+  // 1. Auth Screen Modal (renders when isAuthOpen is true, at /#auth)
   if (isAuthOpen) {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
           <MobileAuthScreen
-            onBack={() => setIsAuthOpen(false)}
+            authStep={authStep}
+            onStepChange={(step) => setAuthStep(step)}
+            savedPhone={draftPhone}
+            onPhoneChange={(p) => setDraftPhone(p)}
+            onBack={goBack}
             onSuccess={() => {
-              setIsAuthOpen(false);
-              // If was at LOCATION step when auth triggered, advance directly to REQUIREMENTS
-              if (onboardingStep === "LOCATION") {
+              if (onboardingStep) {
+                // Immediately route directly to REQUIREMENTS
                 setOnboardingStep("REQUIREMENTS");
-              } else if (onboardingStep === "PREFERENCES" || onboardingStep === "DETAILED_INTAKE") {
-                finalizeElderOnboarding();
+              } else {
+                setIsAuthOpen(false);
               }
             }}
           />
@@ -293,10 +299,10 @@ const AppContent: React.FC = () => {
           <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => setOnboardingStep("WHO")}
-            onSignIn={() => setIsAuthOpen(true)}
+            onSignIn={() => setIsAuthOpen(true, 'PHONE')}
             onSelectRole={(role) => {
               setActivePortal(role);
-              setIsAuthOpen(true);
+              setIsAuthOpen(true, 'PHONE');
             }}
           />
         </div>
@@ -324,6 +330,7 @@ const AppContent: React.FC = () => {
             </div>
           )}
 
+          {/* Step 1: WHO */}
           {!isCreatingElder && onboardingStep === "WHO" && (
             <MobileOnboardingWho
               initialValue={draftRecipient}
@@ -331,10 +338,11 @@ const AppContent: React.FC = () => {
                 setDraftRecipient(recipient);
                 setOnboardingStep("BASIC");
               }}
-              onBack={() => goBack(() => setOnboardingStep(null))}
+              onBack={goBack}
             />
           )}
 
+          {/* Step 2: BASIC */}
           {!isCreatingElder && onboardingStep === "BASIC" && (
             <MobileOnboardingBasic
               recipient={draftRecipient}
@@ -343,25 +351,27 @@ const AppContent: React.FC = () => {
                 setDraftBasic(data);
                 setOnboardingStep("LOCATION");
               }}
-              onBack={() => goBack(() => setOnboardingStep("WHO"))}
+              onBack={goBack}
             />
           )}
 
+          {/* Step 3: LOCATION */}
           {!isCreatingElder && onboardingStep === "LOCATION" && (
             <MobileLocationCheck
               initialPostalCode={draftLocation?.postalCode || ""}
               onSuccess={(locData) => {
                 setDraftLocation(locData);
-                if (!user) {
-                  setIsAuthOpen(true);
-                } else {
+                if (user) {
                   setOnboardingStep("REQUIREMENTS");
+                } else {
+                  setIsAuthOpen(true, 'PHONE');
                 }
               }}
-              onBack={() => goBack(() => setOnboardingStep("BASIC"))}
+              onBack={goBack}
             />
           )}
 
+          {/* Step 6: REQUIREMENTS */}
           {!isCreatingElder && onboardingStep === "REQUIREMENTS" && (
             <MobileCareRequirements
               initialRequirements={draftRequirements}
@@ -371,7 +381,7 @@ const AppContent: React.FC = () => {
                 setDraftMobility(mob);
                 setOnboardingStep("PREFERENCES");
               }}
-              onBack={() => goBack(() => setOnboardingStep("LOCATION"))}
+              onBack={goBack}
             />
           )}
 
@@ -386,7 +396,7 @@ const AppContent: React.FC = () => {
                 if (currentPrefs) setDraftPreferences(currentPrefs);
                 setOnboardingStep("DETAILED_INTAKE");
               }}
-              onBack={() => goBack(() => setOnboardingStep("REQUIREMENTS"))}
+              onBack={goBack}
             />
           )}
 
@@ -399,7 +409,7 @@ const AppContent: React.FC = () => {
               onSkip={async () => {
                 await finalizeElderOnboarding();
               }}
-              onBack={() => goBack(() => setOnboardingStep("PREFERENCES"))}
+              onBack={goBack}
             />
           )}
 
@@ -411,7 +421,7 @@ const AppContent: React.FC = () => {
                 setActiveFamilyTab("HOME");
                 refreshElders();
               }}
-              onBack={() => goBack(() => setOnboardingStep("PREFERENCES"))}
+              onBack={goBack}
               onUpdateElder={(updated) => {
                 setDraftElder(updated);
                 setActiveElder(updated);

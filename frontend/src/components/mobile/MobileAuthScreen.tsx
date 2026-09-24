@@ -7,19 +7,39 @@ import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
 interface MobileAuthScreenProps {
   onBack: () => void;
   onSuccess: () => void;
+  authStep?: 'PHONE' | 'OTP';
+  onStepChange?: (step: 'PHONE' | 'OTP') => void;
+  savedPhone?: string;
+  onPhoneChange?: (phone: string) => void;
 }
 
 export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
   onBack,
   onSuccess,
+  authStep = 'PHONE',
+  onStepChange,
+  savedPhone = '9876543210',
+  onPhoneChange,
 }) => {
   const { loginWithOtp } = useAuth();
 
-  const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
-  const [phone, setPhone] = useState('9876543210');
+  const [step, setStep] = useState<'PHONE' | 'OTP'>(authStep);
+  const [phone, setPhone] = useState(savedPhone);
   const [fullName, setFullName] = useState('');
   const [otp, setOtp] = useState('');
   const [devOtp, setDevOtp] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (authStep && authStep !== step) {
+      setStep(authStep);
+    }
+  }, [authStep]);
+
+  React.useEffect(() => {
+    if (savedPhone && savedPhone !== phone) {
+      setPhone(savedPhone);
+    }
+  }, [savedPhone]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,6 +61,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
         setOtp(res.dev_otp); // Auto-fill for convenience in test/demo mode
       }
       setStep('OTP');
+      onStepChange?.('OTP');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -89,7 +110,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
       {/* Top Bar with Back Button */}
       <div className="flex items-center justify-between">
         <button
-          onClick={step === 'OTP' ? () => setStep('PHONE') : onBack}
+          onClick={onBack}
           className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -134,7 +155,11 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                   pattern="[0-9]*"
                   maxLength={10}
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setPhone(val);
+                    onPhoneChange?.(val);
+                  }}
                   placeholder="98765 43210"
                   className="w-full h-14 pl-14 pr-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
                   required
