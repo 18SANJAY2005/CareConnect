@@ -3,7 +3,6 @@ import {
   UserCheck,
   Star,
   Shield,
-  LogOut,
   ChevronRight,
   CheckCircle2,
   ReceiptIndianRupee,

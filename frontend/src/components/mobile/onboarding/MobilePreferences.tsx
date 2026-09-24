@@ -61,7 +61,7 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
   initialPreferences,
 }) => {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
-    initialPreferences?.languages || ['Tamil', 'English']
+    initialPreferences?.languages || []
   );
   const [otherLanguageText, setOtherLanguageText] = useState('');
   const [hasOther, setHasOther] = useState(false);

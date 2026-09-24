@@ -66,8 +66,8 @@ const CARE_OPTIONS: CareOption[] = [
 export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
   onNext,
   onBack,
-  initialRequirements = ['MOBILITY', 'MEDICATION', 'DAILY_ASSISTANCE'],
-  initialMobility = 'ASSISTED_WALK',
+  initialRequirements = [],
+  initialMobility = '',
 }) => {
   const [selectedReqs, setSelectedReqs] = useState<string[]>(initialRequirements);
   const [mobility, setMobility] = useState<string>(initialMobility);

@@ -18,7 +18,7 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
 
   const [name, setName] = useState(initialData?.name || '');
   const [ageStr, setAgeStr] = useState(initialData?.age ? String(initialData.age) : '');
-  const [gender, setGender] = useState<'FEMALE' | 'MALE' | 'OTHER'>(initialData?.gender || 'FEMALE');
+  const [gender, setGender] = useState<'FEMALE' | 'MALE' | 'OTHER' | null>(initialData?.gender || null);
   const [showDob, setShowDob] = useState(Boolean(initialData?.dob));
   const [dob, setDob] = useState(initialData?.dob || '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,6 +33,11 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
     const ageNum = parseInt(ageStr, 10);
     if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
       setErrorMessage('Please enter a valid age between 18 and 120.');
+      return;
+    }
+
+    if (!gender) {
+      setErrorMessage('Please select a gender.');
       return;
     }
 

@@ -43,6 +43,7 @@ import {
   UserPlus,
   ArrowRight,
   Loader2,
+  RotateCw,
 } from "lucide-react";
 import { usePwaNavigation } from "./hooks/usePwaNavigation";
 
@@ -51,6 +52,11 @@ const AppContent: React.FC = () => {
   const { elders, activeElder, setActiveElder, refreshElders } = useOnboarding();
 
   const [activePortal, setActivePortal] = useState<"FAMILY" | "CAREGIVER" | "OPERATIONS">("FAMILY");
+
+  // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
+  const isKnownAuthenticated =
+    Boolean(user) ||
+    (typeof window !== "undefined" && Boolean(localStorage.getItem("careconnect_token")));
 
   // Centralized PWA Navigation & Browser History synchronization
   const {
@@ -63,6 +69,9 @@ const AppContent: React.FC = () => {
     isDeleteModalOpen,
     activeMoreModal,
     setOnboardingStep,
+    replaceOnboardingStep,
+    resetToHome,
+    backNotice,
     setActiveFamilyTab,
     setIsAuthOpen,
     setAuthStep,
@@ -71,14 +80,14 @@ const AppContent: React.FC = () => {
     setIsDeleteModalOpen,
     setActiveMoreModal,
     goBack,
-  } = usePwaNavigation(Boolean(user));
-  const [draftRecipient, setDraftRecipient] = useState<"ME" | "SOMEONE_ELSE">("SOMEONE_ELSE");
+  } = usePwaNavigation(isKnownAuthenticated, refreshElders);
+  const [draftRecipient, setDraftRecipient] = useState<"ME" | "SOMEONE_ELSE" | null>(null);
   const [draftBasic, setDraftBasic] = useState<{
     name: string;
     age: number;
     gender: "FEMALE" | "MALE" | "OTHER";
     dob?: string;
-  }>({ name: "Kalyani Ammal", age: 74, gender: "FEMALE" });
+  }>({ name: "", age: 0, gender: "FEMALE" });
   const [draftLocation, setDraftLocation] = useState<{
     addressLine1: string;
     locality: string;
@@ -87,13 +96,9 @@ const AppContent: React.FC = () => {
     latitude?: number;
     longitude?: number;
   } | null>(null);
-  const [draftPhone, setDraftPhone] = useState("9876543210");
-  const [draftRequirements, setDraftRequirements] = useState<string[]>([
-    "MOBILITY",
-    "MEDICATION",
-    "COMPANIONSHIP",
-  ]);
-  const [draftMobility, setDraftMobility] = useState<string>("ASSISTED_WALKER");
+  const [draftPhone, setDraftPhone] = useState("");
+  const [draftRequirements, setDraftRequirements] = useState<string[]>([]);
+  const [draftMobility, setDraftMobility] = useState<string>("");
   const [draftPreferences, setDraftPreferences] = useState<{
     languages: string[];
     primaryLanguage: string;
@@ -102,12 +107,12 @@ const AppContent: React.FC = () => {
     preferredEndTime?: string;
     additionalPreferences: string;
   }>({
-    languages: ["Tamil", "English"],
-    primaryLanguage: "Tamil",
+    languages: [],
+    primaryLanguage: "",
     careDuration: "TWELVE_HOUR_DAY_NIGHT",
-    preferredStartTime: "09:00",
-    preferredEndTime: "17:00",
-    additionalPreferences: "Patient is soft-spoken, prefers vegetarian diet.",
+    preferredStartTime: "",
+    preferredEndTime: "",
+    additionalPreferences: "",
   });
   const [draftIntake, setDraftIntake] = useState<{
     medicalConditions: string[];
@@ -224,8 +229,7 @@ const AppContent: React.FC = () => {
       if (updatedList && updatedList.length > 0) {
         setActiveElder(updatedList[0]);
       }
-      setOnboardingStep(null);
-      setActiveFamilyTab("HOME");
+      resetToHome();
     } catch (err: any) {
       console.error("Failed to seed demo scenario:", err);
       setActionError(err.message || "Failed to load demo scenario.");
@@ -252,6 +256,23 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Floating Toast for Double-Back to Exit and 1-Press Refresh on Home Dashboard
+  const renderBackNotice = () => {
+    if (!backNotice?.visible) return null;
+    return (
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 w-full max-w-[430px] flex justify-center animate-fadeIn">
+        <div className="bg-slate-900/95 backdrop-blur-md text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl border border-slate-700/60 flex items-center gap-2.5">
+          {backNotice.isRefreshing ? (
+            <RotateCw className="w-4 h-4 text-teal-400 animate-spin shrink-0" />
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping shrink-0" />
+          )}
+          <span>{backNotice.message}</span>
+        </div>
+      </div>
+    );
+  };
+
   // Loading Screen
   if (isAuthLoading) {
     return (
@@ -266,8 +287,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 1. Auth Screen Modal (renders when isAuthOpen is true, at /#auth)
-  if (isAuthOpen) {
+  // 1. Auth Screen Modal (renders when isAuthOpen is true and user is not yet logged in)
+  if (isAuthOpen && !user) {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
@@ -279,10 +300,10 @@ const AppContent: React.FC = () => {
             onBack={goBack}
             onSuccess={() => {
               if (onboardingStep) {
-                // Immediately route directly to REQUIREMENTS
-                setOnboardingStep("REQUIREMENTS");
+                // Immediately route directly to REQUIREMENTS, replacing #auth in history
+                replaceOnboardingStep("REQUIREMENTS");
               } else {
-                setIsAuthOpen(false);
+                resetToHome();
               }
             }}
           />
@@ -333,7 +354,7 @@ const AppContent: React.FC = () => {
           {/* Step 1: WHO */}
           {!isCreatingElder && onboardingStep === "WHO" && (
             <MobileOnboardingWho
-              initialValue={draftRecipient}
+              initialValue={draftRecipient || undefined}
               onSelect={(recipient) => {
                 setDraftRecipient(recipient);
                 setOnboardingStep("BASIC");
@@ -345,8 +366,8 @@ const AppContent: React.FC = () => {
           {/* Step 2: BASIC */}
           {!isCreatingElder && onboardingStep === "BASIC" && (
             <MobileOnboardingBasic
-              recipient={draftRecipient}
-              initialData={draftBasic}
+              recipient={draftRecipient || "SOMEONE_ELSE"}
+              initialData={draftBasic.name ? draftBasic : undefined}
               onNext={(data) => {
                 setDraftBasic(data);
                 setOnboardingStep("LOCATION");
@@ -417,8 +438,7 @@ const AppContent: React.FC = () => {
             <MobileMatchmakingScreen
               elder={draftElder || activeElder || { id: "draft", name: draftBasic.name } as Elder}
               onBookingConfirmed={() => {
-                setOnboardingStep(null);
-                setActiveFamilyTab("HOME");
+                resetToHome();
                 refreshElders();
               }}
               onBack={goBack}
@@ -439,9 +459,10 @@ const AppContent: React.FC = () => {
   if (activePortal === "CAREGIVER") {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col">
+        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
           <PwaInstallBanner />
           <CaregiverMobileApp onSwitchPortal={setActivePortal} />
+          {renderBackNotice()}
         </div>
       </div>
     );
@@ -451,9 +472,10 @@ const AppContent: React.FC = () => {
   if (activePortal === "OPERATIONS") {
     return (
       <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col">
+        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
           <PwaInstallBanner />
           <MobileOperationsApp onSwitchPortal={setActivePortal} />
+          {renderBackNotice()}
         </div>
       </div>
     );
@@ -599,6 +621,9 @@ const AppContent: React.FC = () => {
           elderId={activeElder?.id}
           elderName={activeElder?.name}
         />
+
+        {/* Home Double-Back & Refresh Toast Notification */}
+        {renderBackNotice()}
       </div>
     </div>
   );

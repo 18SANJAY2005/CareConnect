@@ -18,7 +18,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
   onSuccess,
   authStep = 'PHONE',
   onStepChange,
-  savedPhone = '9876543210',
+  savedPhone = '',
   onPhoneChange,
 }) => {
   const { loginWithOtp } = useAuth();

@@ -10,9 +10,9 @@ interface MobileOnboardingWhoProps {
 export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
   onSelect,
   onBack,
-  initialValue = 'SOMEONE_ELSE',
+  initialValue,
 }) => {
-  const [recipient, setRecipient] = useState<'ME' | 'SOMEONE_ELSE'>(initialValue);
+  const [recipient, setRecipient] = useState<'ME' | 'SOMEONE_ELSE' | null>(initialValue || null);
 
   return (
     <div className="flex-1 flex flex-col justify-between px-5 py-6 animate-fadeIn text-slate-900">
@@ -92,8 +92,9 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
       {/* Primary Action Button */}
       <div className="pt-4">
         <button
-          onClick={() => onSelect(recipient)}
-          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+          onClick={() => { if (recipient) onSelect(recipient); }}
+          disabled={!recipient}
+          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover disabled:opacity-50 active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
         >
           <span>Continue</span>
           <ArrowRight className="w-5 h-5" />
