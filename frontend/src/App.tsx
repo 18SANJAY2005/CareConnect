@@ -532,12 +532,12 @@ const AppContent: React.FC = () => {
                 </button>
               </div>
             </div>
-          ) : activeElder ? (
+          ) : (activeElder || elders[0]) ? (
             /* Active Family Tabs */
             <>
               {activeFamilyTab === "HOME" && (
                 <FamilyHomeScreen
-                  elder={activeElder}
+                  elder={activeElder || elders[0]}
                   onOpenTab={(tab) => setActiveFamilyTab(tab as FamilyTab)}
                   onOpenSos={() => setIsSosOpen(true)}
                 />
@@ -545,7 +545,7 @@ const AppContent: React.FC = () => {
 
               {activeFamilyTab === "MY_CARE" && (
                 <FamilyMyCareScreen
-                  elder={activeElder}
+                  elder={activeElder || elders[0]}
                   onUpdateElder={(updated) => {
                     setActiveElder(updated);
                     setDraftElder(updated);
@@ -560,22 +560,27 @@ const AppContent: React.FC = () => {
               )}
 
               {activeFamilyTab === "UPDATES" && (
-                <FamilyUpdatesScreen elder={activeElder} />
+                <FamilyUpdatesScreen elder={activeElder || elders[0]} />
               )}
 
               {activeFamilyTab === "MESSAGES" && (
-                <FamilyMessagesScreen elder={activeElder} currentUser={user} />
+                <FamilyMessagesScreen elder={activeElder || elders[0]} currentUser={user} />
               )}
 
               {activeFamilyTab === "MORE" && (
                 <FamilyMoreScreen
-                  elder={activeElder}
+                  elder={activeElder || elders[0]}
                   activeModal={activeMoreModal}
                   onActiveModalChange={setActiveMoreModal}
                 />
               )}
             </>
-          ) : null}
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-3">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <span className="text-xs text-slate-500">Preparing care portal...</span>
+            </div>
+          )}
         </main>
 
         {/* Bottom Navigation (Sticky at bottom) */}
