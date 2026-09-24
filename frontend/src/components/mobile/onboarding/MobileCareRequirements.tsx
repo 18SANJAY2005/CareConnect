@@ -8,7 +8,6 @@ import {
   Users,
   Utensils,
   Eye,
-  Check,
 } from 'lucide-react';
 
 interface MobileCareRequirementsProps {
@@ -114,10 +113,10 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
               key={opt.id}
               type="button"
               onClick={() => toggleReq(opt.id)}
-              className={`w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between gap-3.5 transition active:scale-98 ${
+              className={`w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between gap-3.5 transition-all duration-200 active:scale-98 ${
                 isSelected
-                  ? 'border-primary bg-teal-50/60 shadow-sm'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-teal-700 bg-gradient-to-r from-teal-50 to-emerald-50/70 shadow-md ring-2 ring-teal-600/20 translate-y-[-1px]'
+                  : 'border-slate-200 bg-white hover:border-slate-300 opacity-80 hover:opacity-100 shadow-none'
               }`}
             >
               <div className="flex items-center gap-3.5 flex-1">
@@ -136,14 +135,15 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
                 </div>
               </div>
 
+              {/* Status indicator differentiated purely by border & color palette, NO tick/check */}
               <div
-                className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition ${
+                className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wide uppercase transition-all ${
                   isSelected
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-slate-300 bg-white text-transparent'
+                    ? 'border-2 border-teal-700 bg-teal-700 text-white shadow-xs'
+                    : 'border border-slate-200 bg-slate-100 text-slate-400'
                 }`}
               >
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                {isSelected ? 'Selected' : 'Add'}
               </div>
             </button>
           );

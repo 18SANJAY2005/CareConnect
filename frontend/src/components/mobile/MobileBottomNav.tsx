@@ -38,7 +38,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     { id: 'HOME', label: 'Home', icon: Home },
     { id: 'MY_CARE', label: 'My Care', icon: Heart },
     { id: 'UPDATES', label: 'Updates', icon: Activity },
-    { id: 'MESSAGES', label: 'Messages', icon: MessageSquare, badge: unreadCount },
+    { id: 'MESSAGES', label: 'Chat', icon: MessageSquare, badge: unreadCount },
     { id: 'MORE', label: 'More', icon: Menu },
   ];
 
@@ -47,7 +47,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     { id: 'TASKS', label: 'Tasks', icon: CheckSquare },
     { id: 'ELDER', label: 'Elder', icon: User },
     { id: 'LOGS', label: 'Logs', icon: ClipboardList },
-    { id: 'MESSAGES', label: 'Messages', icon: MessageSquare, badge: unreadCount },
+    { id: 'MESSAGES', label: 'Chat', icon: MessageSquare, badge: unreadCount },
   ];
 
   const opsTabs = [
@@ -72,23 +72,31 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex-1 flex flex-col items-center justify-center py-1 relative min-h-[48px] rounded-xl transition ${
-                isActive ? 'text-primary font-bold' : 'text-slate-400 hover:text-slate-600'
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 relative min-h-[50px] rounded-xl transition-all duration-200 active:scale-95 group ${
+                isActive ? 'text-primary' : 'text-slate-400 hover:text-teal-700 hover:bg-teal-50/50'
               }`}
             >
-              <div className="relative">
-                <Icon className={`w-5 h-5 transition-transform ${isActive ? 'scale-110' : ''}`} />
+              <div className="relative flex items-center justify-center">
+                <Icon
+                  className={`w-5 h-5 transition-all duration-200 group-hover:scale-110 group-hover:stroke-teal-700 ${
+                    isActive ? 'scale-110 stroke-[2.5] text-primary' : 'stroke-[1.8]'
+                  }`}
+                />
                 {Boolean(tab.badge && tab.badge > 0) && (
-                  <span className="absolute -top-1 -right-2 bg-rose-600 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-bounce">
+                  <span className="absolute -top-1 -right-2 bg-rose-600 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-bounce shadow-xs">
                     {tab.badge}
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] mt-1 tracking-tight ${isActive ? 'font-extrabold text-primary' : 'font-medium'}`}>
+              <span
+                className={`text-[10px] mt-1 tracking-tight transition-colors duration-200 group-hover:text-teal-800 ${
+                  isActive ? 'font-extrabold text-primary scale-105' : 'font-medium text-slate-500'
+                }`}
+              >
                 {tab.label}
               </span>
               {isActive && (
-                <span className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
+                <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-primary shadow-xs" />
               )}
             </button>
           );

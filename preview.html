@@ -1,0 +1,2198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>CareConnect — Mobile Application Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --primary: #004340;
+      --primary-container: #0d5c58;
+      --primary-hover: #0a4e4a;
+      --secondary: #0e658c;
+      --secondary-container: #d1e5f0;
+      --secondary-light: #e0f2fe;
+      --tertiary: #004525;
+      --tertiary-container: #cbebd5;
+      --tertiary-light: #dcfce7;
+      --error: #ba1a1a;
+      --error-container: #ffdad6;
+      --error-light: #fee2e2;
+      --surface: #f9f9ff;
+      --surface-container: #e7eeff;
+      --surface-highest: #d8e3fb;
+      --surface-card: #ffffff;
+      --on-surface: #111c2d;
+      --on-surface-variant: #3f4947;
+      --outline: #6f7978;
+      --outline-light: #cbd5e1;
+      
+      --teal-50: #f0fdfa;
+      --teal-100: #ccfbf1;
+      --teal-200: #99f6e4;
+      --teal-500: #14b8a6;
+      --teal-600: #0d9488;
+      --teal-700: #0f766e;
+      --teal-800: #115e59;
+      --teal-900: #134e4a;
+      
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      
+      --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-body: 'Inter', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--slate-900);
+      color: var(--on-surface);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (min-width: 640px) {
+      body {
+        padding: 24px 0;
+      }
+    }
+
+    .mobile-canvas {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      background-color: var(--slate-50);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+      transition: box-shadow 0.3s ease;
+    }
+
+    @media (min-width: 640px) {
+      .mobile-canvas {
+        min-height: 844px;
+        height: 844px;
+        border-radius: 40px;
+        border: 8px solid #1e293b;
+      }
+    }
+
+/* ==========================================================================
+       RICH FLUID NAVIGATION & DYNAMIC MICRO-INTERACTIONS
+       ========================================================================== */
+
+    :root {
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    /* Sleek Custom Scrollbar */
+    .screen-view::-webkit-scrollbar {
+      width: 4px;
+    }
+    .screen-view::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .screen-view::-webkit-scrollbar-thumb {
+      background: rgba(0, 67, 64, 0.2);
+      border-radius: 999px;
+    }
+    .screen-view::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 67, 64, 0.45);
+    }
+
+    /* Screen Views & Richest Fluid Slide Navigation */
+    .screen-view {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    /* Mobile Native Touch Acceleration & Zero Tap Delay */
+    button, .interactive-card, .clickable-row, .vital-stat-box, .btn-small-pill, .icon-action-btn, .prompt-chip, .nav-tab-item {
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .screen-view.active {
+      display: flex;
+      animation: fluidScreenEnter 0.36s var(--ease-fluid) forwards;
+    }
+
+    @keyframes fluidScreenEnter {
+      0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+        filter: blur(2px);
+      }
+      65% {
+        opacity: 1;
+        transform: translateY(-2px) scale(1.003);
+        filter: blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+      }
+    }
+
+    /* Staggered Waterfall Card Entry with Spring Physics */
+    .screen-view.active .stagger-1 {
+      animation: itemFluidCascade 0.42s var(--ease-spring) 0.04s both;
+    }
+    .screen-view.active .stagger-2 {
+      animation: itemFluidCascade 0.42s var(--ease-spring) 0.09s both;
+    }
+    .screen-view.active .stagger-3 {
+      animation: itemFluidCascade 0.42s var(--ease-spring) 0.14s both;
+    }
+    .screen-view.active .stagger-4 {
+      animation: itemFluidCascade 0.42s var(--ease-spring) 0.19s both;
+    }
+
+    @keyframes itemFluidCascade {
+      0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.97);
+      }
+      70% {
+        transform: translateY(-2px) scale(1.008);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ==========================================================================
+       BACKGROUND-ADAPTIVE RICH ICON SYSTEM & VISUAL REPRESENTATION
+       ========================================================================== */
+
+    /* 1. Icons on Light Cards (White / Canvas) -> Jewel-Cut Frosted Jade Badges */
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected) div[style*="border-radius:12px"],
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected) div[style*="border-radius:16px"],
+    div[style*="border-radius:12px; background:#f0fdfa"] {
+      background: linear-gradient(145deg, #ffffff 0%, #f0fdfa 55%, #ccfbf1 100%) !important;
+      border: 1.5px solid rgba(20, 184, 166, 0.45) !important;
+      box-shadow: 0 4px 14px rgba(0, 67, 64, 0.1), inset 0 1px 2px #ffffff !important;
+      color: #004340 !important;
+      transition: all 0.28s var(--ease-spring) !important;
+      position: relative;
+    }
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected) svg {
+      color: #004340 !important;
+      stroke: #004340 !important;
+      filter: drop-shadow(0 2px 5px rgba(0, 67, 64, 0.32)) !important;
+      transition: all 0.25s var(--ease-spring) !important;
+    }
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected):hover div[style*="border-radius:12px"],
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected):hover div[style*="border-radius:16px"] {
+      transform: scale(1.15) rotate(4deg) !important;
+      border-color: #0d9488 !important;
+      box-shadow: 0 8px 22px rgba(0, 67, 64, 0.22), inset 0 1px 3px #ffffff !important;
+    }
+    .interactive-card:not([style*="background:linear-gradient"]):not([style*="background:#004340"]):not(.selected):hover svg {
+      transform: scale(1.12);
+      filter: drop-shadow(0 3px 8px rgba(0, 67, 64, 0.45)) !important;
+    }
+
+    /* 2. Icons on Dark Teal / Gradient Backgrounds -> Iridescent Luminescent Glow */
+    [style*="background:linear-gradient(135deg, #004340"],
+    [style*="background:#004340"],
+    .btn-primary-exact {
+      position: relative;
+    }
+    [style*="background:linear-gradient(135deg, #004340"] svg,
+    [style*="background:#004340"] svg,
+    .btn-primary-exact svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+      filter: drop-shadow(0 0 6px rgba(153, 246, 228, 0.85)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) !important;
+      transition: all 0.24s var(--ease-spring) !important;
+    }
+    .btn-primary-exact:hover svg {
+      filter: drop-shadow(0 0 10px rgba(94, 234, 212, 1)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4)) !important;
+    }
+
+    /* 3. Icons on Selected / Active Cards -> Deep Gemstone Contrast with Halo */
+    .req-item-exact.selected div[style*="border-radius:12px"],
+    #who-card-someone div[style*="border-radius:16px"] {
+      background: linear-gradient(135deg, #004340 0%, #0d5c58 100%) !important;
+      border: 1.5px solid #2dd4bf !important;
+      box-shadow: 0 4px 14px rgba(0, 67, 64, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+      transition: all 0.26s var(--ease-spring) !important;
+    }
+    .req-item-exact.selected svg,
+    #who-card-someone svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+      filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.85)) !important;
+    }
+    .req-item-exact.selected div[style*="border-radius:50%; background:#004340"] {
+      background: linear-gradient(135deg, #004340 0%, #14b8a6 100%) !important;
+      box-shadow: 0 0 10px rgba(20, 184, 166, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
+    }
+
+    /* 4. Icons on Emergency / SOS Backgrounds -> Radiant Ruby Beacon */
+    .sos-pulse-effect svg,
+    [style*="background:#e11d48"] svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 12px rgba(225, 29, 72, 0.9)) !important;
+    }
+
+    /* 5. Icons on Duty Green Status -> Vivid Emerald Radar */
+    .duty-dot-pulse {
+      filter: drop-shadow(0 0 5px rgba(22, 163, 74, 0.9)) !important;
+    }
+    span[style*="background:#dcfce7"] {
+      border: 1px solid rgba(22, 163, 74, 0.3) !important;
+      box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15) !important;
+    }
+
+    /* 6. Navigation Bar Icons -> Dual-Tone Luminous Glass */
+    .nav-tab-item svg {
+      color: #64748b;
+      stroke: #64748b;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+    }
+    .nav-tab-item.active svg {
+      color: #004340 !important;
+      stroke: #004340 !important;
+      filter: drop-shadow(0 2px 6px rgba(0, 67, 64, 0.45)) drop-shadow(0 0 5px rgba(45, 212, 191, 0.75)) !important;
+      transform: scale(1.12);
+    }
+
+    /* Visual Contextual Badges via CSS Pseudo-elements */
+    #who-card-me {
+      position: relative;
+    }
+    #who-card-me::after {
+      content: '👴 Senior Care';
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #0f766e;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      padding: 3px 8px;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(0, 67, 64, 0.08);
+      transition: all 0.24s var(--ease-spring);
+    }
+    #who-card-me:hover::after {
+      transform: scale(1.08);
+      border-color: #14b8a6;
+      box-shadow: 0 4px 10px rgba(0, 67, 64, 0.16);
+    }
+
+    #who-card-someone {
+      position: relative;
+    }
+    #who-card-someone::after {
+      content: '👨‍👩‍👧 Family Assisted';
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #004340;
+      background: #ccfbf1;
+      border: 1px solid #5eead4;
+      padding: 3px 8px;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(0, 67, 64, 0.1);
+      transition: all 0.24s var(--ease-spring);
+    }
+    #who-card-someone:hover::after {
+      transform: scale(1.08);
+      border-color: #004340;
+      box-shadow: 0 4px 12px rgba(0, 67, 64, 0.2);
+    }
+
+    /* Requirement Selection Cards with Rich Visual Badges */
+    .req-item-exact {
+      position: relative;
+      transition: all 0.25s var(--ease-spring) !important;
+    }
+    .req-item-exact:hover {
+      transform: translateY(-2.5px) scale(1.01) !important;
+      border-color: #2dd4bf !important;
+      box-shadow: 0 10px 22px rgba(0, 67, 64, 0.12) !important;
+    }
+    .req-item-exact:nth-child(1)::after {
+      content: '🚶 Mobility';
+      font-size: 10px;
+      font-weight: 800;
+      color: #004340;
+      background: #ccfbf1;
+      border: 1px solid #5eead4;
+      padding: 2px 8px;
+      border-radius: 999px;
+      box-shadow: 0 1px 4px rgba(0, 67, 64, 0.08);
+      margin-left: auto;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .req-item-exact:nth-child(2)::after {
+      content: '💊 Meds';
+      font-size: 10px;
+      font-weight: 800;
+      color: #004340;
+      background: #ccfbf1;
+      border: 1px solid #5eead4;
+      padding: 2px 8px;
+      border-radius: 999px;
+      box-shadow: 0 1px 4px rgba(0, 67, 64, 0.08);
+      margin-left: auto;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .req-item-exact:nth-child(3)::after {
+      content: '🍲 Hygiene';
+      font-size: 10px;
+      font-weight: 800;
+      color: #004340;
+      background: #ccfbf1;
+      border: 1px solid #5eead4;
+      padding: 2px 8px;
+      border-radius: 999px;
+      box-shadow: 0 1px 4px rgba(0, 67, 64, 0.08);
+      margin-left: auto;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       LIVING INDICATORS & VITALS VISUALIZATION
+       ========================================================================== */
+
+    /* Subtle pulsing badge */
+    @keyframes softPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 67, 64, 0);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 67, 64, 0.16);
+      }
+    }
+    .animate-soft-pulse {
+      animation: softPulse 3.2s ease-in-out infinite;
+    }
+
+    /* Green Live Duty dot multi-radar ripple */
+    @keyframes livePulseDot {
+      0% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.8), 0 0 0 0 rgba(22, 163, 74, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 8px rgba(22, 163, 74, 0), 0 0 0 4px rgba(22, 163, 74, 0.25);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0), 0 0 0 0 rgba(22, 163, 74, 0);
+      }
+    }
+    .duty-dot-pulse {
+      animation: livePulseDot 2s infinite;
+    }
+
+    /* SOS emergency alert pulse */
+    @keyframes sosGlow {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.6), 0 2px 8px rgba(225, 29, 72, 0.25);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 0 9px rgba(225, 29, 72, 0), 0 8px 22px rgba(225, 29, 72, 0.48);
+        transform: scale(1.03);
+      }
+    }
+    .sos-pulse-effect {
+      animation: sosGlow 2.2s ease-in-out infinite;
+    }
+
+    /* Authentic Lub-Dub Heartbeat Rhythm with Drop Shadow */
+    @keyframes heartBeatAnim {
+      0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(225, 29, 72, 0));
+      }
+      14% {
+        transform: scale(1.28);
+        filter: drop-shadow(0 0 8px rgba(225, 29, 72, 0.65));
+        color: #e11d48;
+      }
+      28% {
+        transform: scale(1.04);
+      }
+      42% {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 6px rgba(225, 29, 72, 0.5));
+        color: #e11d48;
+      }
+      56% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(225, 29, 72, 0));
+      }
+    }
+    .heart-beat-pulse {
+      display: inline-block;
+      animation: heartBeatAnim 1.6s ease-in-out infinite;
+    }
+
+    /* Vital Stat Box with Glowing Health Bar and Emojis */
+    .vital-stat-box {
+      transition: all 0.24s var(--ease-spring);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .vital-stat-box::after {
+      content: '';
+      display: block;
+      height: 3px;
+      width: 60%;
+      margin: 6px auto 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #10b981, #14b8a6);
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+      animation: vitalGlow 2.5s ease-in-out infinite;
+    }
+    @keyframes vitalGlow {
+      0%, 100% { opacity: 0.7; transform: scaleX(0.9); }
+      50% { opacity: 1; transform: scaleX(1.1); box-shadow: 0 0 10px rgba(20, 184, 166, 0.7); }
+    }
+    .vital-stat-box:hover {
+      transform: translateY(-4px) scale(1.03);
+      border-color: #14b8a6 !important;
+      background: linear-gradient(180deg, #f0fdfa 0%, #e6fffa 100%) !important;
+      box-shadow: 0 12px 24px rgba(15, 118, 110, 0.18) !important;
+    }
+    .vital-stat-box:active {
+      transform: scale(0.96);
+    }
+
+    .font-heading { font-family: var(--font-heading); }
+    .font-sans { font-family: var(--font-body); }
+
+    /* ==========================================================================
+       BUTTONS & MICRO-INTERACTIONS
+       ========================================================================== */
+
+    /* Magnetic Primary Button with Silky Sheen Sweep */
+    .btn-primary-exact {
+      width: 100%;
+      min-height: 56px;
+      background: linear-gradient(135deg, #004340 0%, #0a524e 50%, #004340 100%);
+      color: #ffffff;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px -2px rgba(0, 67, 64, 0.25), 0 2px 4px -1px rgba(0, 67, 64, 0.12);
+      transition: all 0.24s var(--ease-spring);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary-exact::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -130%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+      transition: left 0.7s var(--ease-fluid);
+    }
+    .btn-primary-exact:hover {
+      background: linear-gradient(135deg, #0a4e4a 0%, #0d5c58 50%, #0a4e4a 100%);
+      transform: translateY(-2.5px);
+      box-shadow: 0 16px 30px -4px rgba(0, 67, 64, 0.46), 0 6px 14px -2px rgba(0, 67, 64, 0.22);
+    }
+    .btn-primary-exact:hover::after {
+      left: 130%;
+    }
+    .btn-primary-exact:hover svg {
+      transform: translateX(4px);
+    }
+    .btn-primary-exact svg {
+      transition: transform 0.22s var(--ease-spring);
+    }
+    .btn-primary-exact:active {
+      transform: scale(0.965) translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 67, 64, 0.25);
+    }
+    .btn-primary-exact:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Secondary Button */
+    .btn-secondary-exact {
+      width: 100%;
+      min-height: 48px;
+      background-color: #ffffff;
+      color: var(--slate-700);
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--slate-200);
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      transition: all 0.22s var(--ease-spring);
+    }
+    .btn-secondary-exact:hover {
+      background-color: #f8fafc;
+      border-color: #004340;
+      color: #004340;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0, 67, 64, 0.08);
+    }
+    .btn-secondary-exact:active {
+      transform: scale(0.965);
+    }
+
+    /* Action Pills */
+    .btn-small-pill {
+      transition: all 0.22s var(--ease-spring);
+      cursor: pointer;
+    }
+    .btn-small-pill:hover {
+      transform: translateY(-1.5px) scale(1.05);
+      filter: brightness(0.96);
+      box-shadow: 0 6px 14px rgba(0, 67, 64, 0.18);
+    }
+    .btn-small-pill:active {
+      transform: scale(0.94);
+    }
+
+    /* Action Buttons */
+    .icon-action-btn {
+      transition: all 0.22s var(--ease-spring);
+      cursor: pointer;
+    }
+    .icon-action-btn:hover {
+      background-color: var(--slate-200);
+      transform: scale(1.14);
+    }
+    .icon-action-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Input Field Highlights */
+    .input-exact {
+      width: 100%;
+      height: 56px;
+      background-color: #ffffff;
+      border: 1px solid var(--slate-300);
+      border-radius: 16px;
+      padding: 0 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--slate-900);
+      outline: none;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s var(--ease-spring);
+    }
+    .input-exact:hover {
+      border-color: var(--teal-500);
+    }
+    .input-exact:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.28), 0 4px 12px rgba(0, 67, 64, 0.08);
+      transform: translateY(-1px);
+    }
+
+    /* 3D Elevated Cards */
+    .interactive-card {
+      transition: transform 0.25s var(--ease-spring), box-shadow 0.25s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+    .interactive-card:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: #2dd4bf !important;
+      box-shadow: 0 16px 32px -4px rgba(0, 67, 64, 0.14), 0 6px 12px -2px rgba(0, 67, 64, 0.06) !important;
+    }
+    .interactive-card:active {
+      transform: scale(0.975) translateY(1px);
+      border-color: #2dd4bf !important;
+      box-shadow: 0 4px 14px rgba(0, 67, 64, 0.22) !important;
+    }
+    .interactive-card:active div[style*="border-radius:12px"],
+    .interactive-card:active div[style*="border-radius:16px"] {
+      transform: scale(1.12) rotate(3deg) !important;
+      border-color: #0d9488 !important;
+    }
+    .clickable-row:active {
+      transform: scale(0.98) translateX(2px);
+      background-color: #f0fdfa !important;
+      border-color: #99f6e4 !important;
+    }
+
+    /* Clickable Rows with Illuminated Left Accent */
+    .clickable-row {
+      transition: all 0.22s var(--ease-spring);
+      position: relative;
+    }
+    .clickable-row:hover {
+      background-color: #f0fdfa !important;
+      border-color: #99f6e4 !important;
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0, 67, 64, 0.06);
+    }
+    .clickable-row:hover svg {
+      transform: translateX(3px);
+    }
+
+    /* Profile Avatar with Shimmer Ring & Interactive Zoom */
+    .avatar-photo-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      flex-shrink: 0;
+      transition: all 0.26s var(--ease-spring);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .avatar-photo-wrap:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 22px rgba(0, 67, 64, 0.26);
+    }
+    .avatar-photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+    .avatar-photo-wrap:hover .avatar-photo-img {
+      transform: scale(1.12);
+    }
+
+    /* Care Photo Gallery Zoom */
+    .care-photo-box {
+      position: relative;
+      overflow: hidden;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: all 0.26s var(--ease-spring);
+    }
+    .care-photo-box:hover {
+      transform: translateY(-3.5px) scale(1.02);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+    }
+    .care-photo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+    .care-photo-box:hover .care-photo-img {
+      transform: scale(1.08);
+    }
+
+    /* Prompt Chips */
+    .prompt-chip {
+      transition: all 0.22s var(--ease-spring);
+      cursor: pointer;
+    }
+    .prompt-chip:hover {
+      background-color: #004340 !important;
+      color: #ffffff !important;
+      border-color: #004340 !important;
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 6px 16px rgba(0, 67, 64, 0.22);
+    }
+    .prompt-chip:active {
+      transform: scale(0.95);
+    }
+
+    /* ==========================================================================
+       BOTTOM NAVIGATION & FLUID APP TABS
+       ========================================================================== */
+
+    .mobile-bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 66px;
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
+      z-index: 40;
+    }
+    .nav-tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 0;
+      position: relative;
+      min-height: 48px;
+      border-radius: 14px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--slate-400);
+      transition: all 0.24s var(--ease-spring);
+    }
+    .nav-tab-item:hover {
+      color: var(--primary);
+    }
+    .nav-tab-item:hover svg {
+      transform: translateY(-4px) scale(1.2) rotate(-2deg);
+      filter: drop-shadow(0 3px 8px rgba(0, 67, 64, 0.3));
+    }
+    .nav-tab-item:active {
+      transform: scale(0.92);
+    }
+    .nav-tab-item.active {
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .nav-tab-item.active svg {
+      filter: drop-shadow(0 2px 6px rgba(0, 67, 64, 0.25));
+    }
+    .nav-tab-item svg {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2.2;
+      transition: transform 0.24s var(--ease-spring), filter 0.2s ease;
+    }
+    .nav-tab-item span {
+      font-size: 10px;
+      margin-top: 4px;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+    }
+    .nav-indicator-dot {
+      position: absolute;
+      bottom: 4px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      box-shadow: 0 0 8px rgba(0, 67, 64, 0.6);
+      animation: navDotPop 0.3s var(--ease-spring) forwards;
+    }
+
+    @keyframes navDotPop {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.6); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Modals with Fluid Sheet Slide */
+    .modal-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+      animation: modalFadeIn 0.22s ease-out forwards;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-bottom-sheet {
+      width: 100%;
+      max-height: 85%;
+      background: #ffffff;
+      border-radius: 28px 28px 0 0;
+      padding: 24px 20px 32px 20px;
+      overflow-y: auto;
+      box-shadow: 0 -14px 45px rgba(0, 0, 0, 0.28);
+      animation: slideSheetUp 0.32s var(--ease-spring) forwards;
+    }
+    @keyframes slideSheetUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    /* Workflow Switcher Floating Pill */
+    .workflow-switcher-pill {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      transition: all 0.24s var(--ease-spring);
+    }
+    .workflow-switcher-pill:hover {
+      background: #0f172a;
+      transform: translateY(-2.5px) scale(1.02);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+      border-color: #2dd4bf;
+    }
+    .workflow-switcher-pill:active {
+      transform: scale(0.96);
+    }
+
+    .workflow-menu-drawer {
+      display: none;
+      position: fixed;
+      bottom: 65px;
+      right: 20px;
+      width: 250px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 10px;
+      z-index: 999;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.6);
+      color: #e2e8f0;
+      flex-direction: column;
+      gap: 5px;
+      animation: drawerSlide 0.24s var(--ease-spring) forwards;
+    }
+    .workflow-menu-drawer.open {
+      display: flex;
+    }
+    @keyframes drawerSlide {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .drawer-item {
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.18s var(--ease-spring);
+    }
+    .drawer-item:hover {
+      background: #334155;
+      transform: translateX(4px);
+    }
+    .drawer-item.active {
+      background: rgba(0, 67, 64, 0.85);
+      color: #99f6e4;
+      font-weight: 800;
+    }
+
+    /* Chat bubble dynamic entry */
+    .chat-bubble-pop {
+      animation: bubbleIn 0.28s var(--ease-spring) forwards;
+    }
+    @keyframes bubbleIn {
+      0% { opacity: 0; transform: translateY(10px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    /* ==========================================================================
+       CARE REQUIREMENTS CARDS (Selected vs Deselected High-Contrast Palette)
+       ========================================================================== */
+    .req-card {
+      padding: 14px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .req-card.is-selected {
+      border: 2.5px solid #004340 !important;
+      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%) !important;
+      box-shadow: 0 6px 20px rgba(0, 67, 64, 0.14), inset 0 1px 1px #ffffff !important;
+      transform: translateY(-2px);
+    }
+    .req-card:not(.is-selected) {
+      border: 2px solid #e2e8f0 !important;
+      background: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+      opacity: 0.85;
+    }
+    .req-card:not(.is-selected):hover {
+      border-color: #94a3b8 !important;
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+    .req-card:active {
+      transform: scale(0.97);
+    }
+    .req-card.is-selected .req-icon-box {
+      background: linear-gradient(135deg, #004340 0%, #0d5c58 100%) !important;
+      color: #ffffff !important;
+      border: 1.5px solid #2dd4bf !important;
+      box-shadow: 0 4px 12px rgba(0, 67, 64, 0.35) !important;
+    }
+    .req-card:not(.is-selected) .req-icon-box {
+      background: #f1f5f9 !important;
+      color: #64748b !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: none !important;
+    }
+    .req-card.is-selected svg {
+      color: #ffffff !important;
+      stroke: #ffffff !important;
+      filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.8)) !important;
+    }
+    .req-card:not(.is-selected) svg {
+      color: #64748b !important;
+      stroke: #64748b !important;
+      filter: none !important;
+    }
+    .req-card.is-selected .req-title {
+      color: #004340 !important;
+      font-weight: 800 !important;
+    }
+    .req-card:not(.is-selected) .req-title {
+      color: #334155 !important;
+      font-weight: 600 !important;
+    }
+    .req-card.is-selected .req-desc {
+      color: #0f766e !important;
+    }
+    .req-card:not(.is-selected) .req-desc {
+      color: #94a3b8 !important;
+    }
+    .req-card .req-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      padding: 5px 12px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+    .req-card.is-selected .req-badge {
+      background: #004340;
+      color: #ffffff;
+      border: 1.5px solid #004340;
+      box-shadow: 0 2px 8px rgba(0, 67, 64, 0.3);
+    }
+    .req-card:not(.is-selected) .req-badge {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1.5px solid #cbd5e1;
+    }
+
+    /* ==========================================================================
+       NAV BAR WITH TOUCH COLOR & HOVER GLOW EFFECTS
+       ========================================================================== */
+    .mobile-bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 6px;
+      z-index: 40;
+    }
+    .nav-tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 4px;
+      position: relative;
+      min-height: 52px;
+      border-radius: 16px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .nav-tab-item:hover {
+      background: rgba(0, 67, 64, 0.05);
+      color: #004340;
+      transform: translateY(-2px);
+    }
+    .nav-tab-item:active {
+      transform: scale(0.93);
+      background: rgba(0, 67, 64, 0.12);
+    }
+    .nav-tab-item svg {
+      width: 22px;
+      height: 22px;
+      stroke-width: 2;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      color: currentColor;
+    }
+    .nav-tab-item span {
+      font-size: 10.5px;
+      margin-top: 3px;
+      letter-spacing: -0.01em;
+      font-weight: 600;
+      color: currentColor;
+      transition: all 0.22s ease;
+    }
+    /* Touch / Hover color effects */
+    .nav-tab-item:hover span,
+    .nav-tab-item:active span {
+      color: #004340 !important;
+      font-weight: 800 !important;
+    }
+    .nav-tab-item:hover svg,
+    .nav-tab-item:active svg {
+      color: #004340 !important;
+      stroke: #004340 !important;
+      transform: scale(1.12);
+      filter: drop-shadow(0 2px 6px rgba(0, 67, 64, 0.35));
+    }
+    /* Active State */
+    .nav-tab-item.active {
+      color: #004340 !important;
+    }
+    .nav-tab-item.active svg {
+      color: #004340 !important;
+      stroke: #004340 !important;
+      stroke-width: 2.6;
+      transform: scale(1.14);
+      filter: drop-shadow(0 3px 8px rgba(0, 67, 64, 0.4)) drop-shadow(0 0 6px rgba(45, 212, 191, 0.6));
+    }
+    .nav-tab-item.active span {
+      color: #004340 !important;
+      font-weight: 800 !important;
+      transform: scale(1.05);
+    }
+    .nav-tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 18px;
+      height: 3px;
+      border-radius: 999px;
+      background: #004340;
+      box-shadow: 0 0 8px rgba(0, 67, 64, 0.5);
+      animation: navDotPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="mobile-canvas" id="app-canvas">
+
+    <!-- PWA Install Notice Bar -->
+    <div id="pwa-banner" style="background:#ffffff; border-bottom:1px solid #e2e8f0; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; z-index:30;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #004340 0%, #0d5c58 100%); display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12px; font-weight:800; color:#0f172a;">CareConnect App</div>
+          <div style="font-size:10px; color:#64748b;">Fast, full-screen mobile access</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button onclick="alert('CareConnect installed on your device!')" class="btn-small-pill" style="padding:5px 12px; background:#004340; color:#ffffff; font-size:11px; font-weight:800; border:none; border-radius:999px;">Install</button>
+        <button onclick="document.getElementById('pwa-banner').style.display='none'" class="icon-action-btn" style="background:none; border:none; color:#94a3b8; font-size:14px; padding:4px; border-radius:50%;">✕</button>
+      </div>
+    </div>
+
+    <!-- 1. SCREEN: ENTRY HERO -->
+    <section id="view-entry" class="screen-view active" style="justify-content:space-between; padding:20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:36px; height:36px; border-radius:12px; background:#f0fdfa; border:1px solid #ccfbf1; display:flex; align-items:center; justify-content:center; color:#004340;" class="animate-soft-pulse">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          </div>
+          <div>
+            <div class="font-heading" style="font-size:16px; font-weight:800; color:#004340; letter-spacing:-0.02em;">CareConnect</div>
+            <div style="font-size:9px; font-weight:700; color:#0f766e; text-transform:uppercase; letter-spacing:0.05em;">Chennai Geriatric Care</div>
+          </div>
+        </div>
+        <button onclick="navScreen('view-auth')" class="btn-small-pill" style="font-size:12px; font-weight:700; color:#004340; background:#f0fdfa; border:1px solid #ccfbf1; padding:6px 14px; border-radius:999px;">
+          Sign In
+        </button>
+      </div>
+
+      <div style="margin:auto 0; padding:20px 0; display:flex; flex-direction:column; gap:16px;">
+        <div class="stagger-1" style="align-self:flex-start; display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; background:#f0fdfa; border:1px solid rgba(153, 246, 228, 0.6); color:#004340; font-size:11px; font-weight:700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Managed Elder Care at Home</span>
+        </div>
+
+        <div class="stagger-2">
+          <h1 class="font-heading" style="font-size:28px; font-weight:800; color:#0f172a; line-height:1.2; letter-spacing:-0.03em;">
+            Compassionate care for the ones who cared for you.
+          </h1>
+          <p style="font-size:13px; color:#475569; margin-top:8px; line-height:1.5;">
+            Verified, trained attendants with real-time health monitoring, daily vitals tracking, and 24/7 care desk supervision.
+          </p>
+        </div>
+
+        <div class="stagger-3" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+          <div class="interactive-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 3px rgba(0,0,0,0.02); cursor:pointer;">
+            <div style="width:38px; height:38px; border-radius:12px; background:#f0fdfa; display:flex; align-items:center; justify-content:center; color:#004340; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+            </div>
+            <div>
+              <div style="font-size:12px; font-weight:700; color:#1e293b;">Verified & Trained Attendants</div>
+              <div style="font-size:11px; color:#64748b;">Background checked with hospital-grade skill training</div>
+            </div>
+          </div>
+
+          <div class="interactive-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 3px rgba(0,0,0,0.02); cursor:pointer;">
+            <div style="width:38px; height:38px; border-radius:12px; background:#f0fdfa; display:flex; align-items:center; justify-content:center; color:#004340; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div>
+              <div style="font-size:12px; font-weight:700; color:#1e293b;">Daily Health Vitals Tracking</div>
+              <div style="font-size:11px; color:#64748b;">BP, blood sugar, medication logs, and photo updates</div>
+            </div>
+          </div>
+
+          <div class="interactive-card" style="display:flex; align-items:center; gap:12px; padding:12px; background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 1px 3px rgba(0,0,0,0.02); cursor:pointer;">
+            <div style="width:38px; height:38px; border-radius:12px; background:#f0fdfa; display:flex; align-items:center; justify-content:center; color:#004340; flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:12px; font-weight:700; color:#1e293b;">24/7 Care Coordination</div>
+              <div style="font-size:11px; color:#64748b;">Dedicated care managers and emergency SOS response</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stagger-4">
+        <button onclick="navScreen('view-onboarding-who')" class="btn-primary-exact">
+          <span>Find Suitable Care</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <div style="text-align:center; margin-top:12px;">
+          <span style="font-size:12px; color:#64748b;">
+            Already have an account? 
+            <a href="javascript:void(0)" onclick="navScreen('view-auth')" style="font-weight:700; color:#004340; text-decoration:none; margin-left:3px; transition:color 0.15s ease;">Sign In</a>
+          </span>
+        </div>
+        <div style="font-size:10px; color:#94a3b8; text-align:center; margin-top:10px; line-height:1.4;">
+          Non-emergency elder home assistance • DPDP Act 2023 protected • 24/7 Care Manager support
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SCREEN: AUTH / SIGN IN -->
+    <section id="view-auth" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-entry')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span class="font-heading" style="font-size:15px; font-weight:800; color:#004340;">CareConnect</span>
+          <div style="width:36px;"></div>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">Sign in with Mobile</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">We will send a one-time verification code to verify your mobile number.</p>
+
+        <div style="margin-top:24px; display:flex; flex-direction:column; gap:16px;">
+          <div class="stagger-1">
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:6px;">Mobile Number</label>
+            <div style="display:flex; gap:8px;">
+              <div style="height:56px; padding:0 14px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:16px; display:flex; align-items:center; font-weight:700; color:#475569; font-size:15px;">+91</div>
+              <input type="tel" id="login-phone" class="input-exact" value="9876543210" maxlength="10" placeholder="98765 43210" />
+            </div>
+          </div>
+
+          <div class="stagger-2">
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:6px;">Your Name <span style="font-weight:400; color:#94a3b8;">(optional)</span></label>
+            <input type="text" id="login-name" class="input-exact" value="Ramesh Kumar" placeholder="e.g. Ramesh Kumar" style="height:48px; font-size:14px;" />
+          </div>
+        </div>
+      </div>
+
+      <div class="stagger-3" style="display:flex; flex-direction:column; gap:10px;">
+        <button onclick="navScreen('view-portal')" class="btn-primary-exact">
+          <span>Get Verification Code</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+
+        <button onclick="navScreen('view-portal')" class="btn-secondary-exact" style="background:#f1f5f9; border-color:#cbd5e1; color:#334155;">
+          <span>One-Tap Sign In (Family Demo Client)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. ONBOARDING STEP 1: WHO -->
+    <section id="view-onboarding-who" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-entry')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span style="font-size:11px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:4px 10px; border-radius:999px;">Step 1 of 4</span>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">Who is care for?</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">Tell us who will be receiving care so we can tailor the questions.</p>
+
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:24px;">
+          <div id="who-card-me" class="interactive-card" onclick="setWhoCard('ME')" style="padding:18px; border-radius:24px; border:2px solid #e2e8f0; background:#ffffff; cursor:pointer; display:flex; align-items:center; gap:14px;">
+            <div style="width:48px; height:48px; border-radius:16px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#475569; flex-shrink:0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div style="font-size:15px; font-weight:700; color:#0f172a;">Myself</div>
+              <div style="font-size:12px; color:#64748b; margin-top:2px;">I am looking for personal care assistance or companionship at home.</div>
+            </div>
+          </div>
+
+          <div id="who-card-someone" class="interactive-card" onclick="setWhoCard('SOMEONE')" style="padding:18px; border-radius:24px; border:2px solid #004340; background:rgba(240, 253, 250, 0.7); cursor:pointer; display:flex; align-items:center; gap:14px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
+            <div style="width:48px; height:48px; border-radius:16px; background:#004340; display:flex; align-items:center; justify-content:center; color:#ffffff; flex-shrink:0;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div style="font-size:15px; font-weight:700; color:#0f172a;">Someone else</div>
+              <div style="font-size:12px; color:#64748b; margin-top:2px;">For a parent, spouse, grandparent, or relative who needs daily support.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="navScreen('view-onboarding-basic')" class="btn-primary-exact">
+        <span>Continue</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </section>
+
+    <!-- 4. ONBOARDING STEP 2: BASIC PROFILE -->
+    <section id="view-onboarding-basic" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-onboarding-who')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span style="font-size:11px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:4px 10px; border-radius:999px;">Step 2 of 4</span>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">Who will be receiving care?</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">Enter basic details to personalize the caregiver match.</p>
+
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:20px;">
+          <div class="stagger-1">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Elder's Full Name</label>
+            <input type="text" id="elder-input-name" class="input-exact" value="Kalyani Ammal" placeholder="e.g. Meenakshi Ammal" />
+          </div>
+
+          <div class="stagger-2">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Age <span style="font-weight:400; color:#94a3b8;">(Years)</span></label>
+            <input type="number" id="elder-input-age" class="input-exact" value="74" placeholder="74" />
+          </div>
+
+          <div class="stagger-3">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Gender</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+              <button type="button" id="g-female" onclick="setGenderOption('FEMALE')" class="btn-small-pill" style="height:48px; border-radius:14px; border:2px solid #004340; background:#f0fdfa; color:#004340; font-weight:700; font-size:13px;">Female</button>
+              <button type="button" id="g-male" onclick="setGenderOption('MALE')" class="btn-small-pill" style="height:48px; border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-weight:700; font-size:13px;">Male</button>
+              <button type="button" id="g-other" onclick="setGenderOption('OTHER')" class="btn-small-pill" style="height:48px; border-radius:14px; border:1px solid #cbd5e1; background:#ffffff; color:#334155; font-weight:700; font-size:13px;">Other</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="navScreen('view-onboarding-location')" class="btn-primary-exact">
+        <span>Continue</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </section>
+
+    <!-- 5. ONBOARDING STEP 3: LOCATION -->
+    <section id="view-onboarding-location" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-onboarding-basic')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span style="font-size:11px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:4px 10px; border-radius:999px;">Step 3 of 4</span>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">Where is care needed?</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">We check doorstep coverage from our active Chennai care hubs.</p>
+
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:20px;">
+          <div class="stagger-1">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Postal PIN Code</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="location-pin" class="input-exact" value="600028" maxlength="6" />
+              <button type="button" onclick="alert('PIN 600028 verified! Adyar/Besant Nagar care corridor is active.')" class="btn-small-pill" style="padding:0 16px; border-radius:16px; border:1px solid #004340; background:#f0fdfa; color:#004340; font-weight:700; font-size:13px; flex-shrink:0;">Verify</button>
+            </div>
+          </div>
+
+          <div class="stagger-2 interactive-card" style="padding:14px; border-radius:18px; background:#f0fdfa; border:1px solid #ccfbf1; display:flex; align-items:flex-start; gap:10px;">
+            <div style="color:#0f766e; margin-top:2px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#004340;">Active Corridor: Adyar & R.A. Puram Hub</div>
+              <div style="font-size:11px; color:#115e59; margin-top:2px;">3 Standby attendants available within 2.4 km</div>
+            </div>
+          </div>
+
+          <div class="stagger-3">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Address Line 1</label>
+            <input type="text" class="input-exact" value="14/2, 2nd Main Road, Bishop Garden" style="height:48px; font-size:13px;" />
+          </div>
+
+          <div class="stagger-4">
+            <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:6px;">Locality / Area</label>
+            <input type="text" class="input-exact" value="R.A. Puram, Chennai" style="height:48px; font-size:13px;" />
+          </div>
+        </div>
+      </div>
+
+      <button onclick="navScreen('view-onboarding-reqs')" class="btn-primary-exact">
+        <span>Continue</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </section>
+
+    <!-- 6. ONBOARDING STEP 4: REQS -->
+    <section id="view-onboarding-reqs" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-onboarding-location')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span style="font-size:11px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:4px 10px; border-radius:999px;">Step 4 of 4</span>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">What care is needed?</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">Select all areas where assistance is required.</p>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px; max-height:44vh; overflow-y:auto; padding-right:4px;">
+          <div class="req-card is-selected" onclick="handleToggleCard(this)">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="req-icon-box" style="width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <div class="req-title" style="font-size:13.5px;">Mobility Assistance</div>
+                <div class="req-desc" style="font-size:11px; margin-top:1px;">Support with walking and bed transfers</div>
+              </div>
+            </div>
+            <div class="req-badge">Selected</div>
+          </div>
+
+          <div class="req-card is-selected" onclick="handleToggleCard(this)">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="req-icon-box" style="width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+              </div>
+              <div>
+                <div class="req-title" style="font-size:13.5px;">Medication Reminders</div>
+                <div class="req-desc" style="font-size:11px; margin-top:1px;">Timely medicine intake per doctor advice</div>
+              </div>
+            </div>
+            <div class="req-badge">Selected</div>
+          </div>
+
+          <div class="req-card is-selected" onclick="handleToggleCard(this)">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="req-icon-box" style="width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+              </div>
+              <div>
+                <div class="req-title" style="font-size:13.5px;">Daily Assistance</div>
+                <div class="req-desc" style="font-size:11px; margin-top:1px;">Assistance with meals and hygiene</div>
+              </div>
+            </div>
+            <div class="req-badge">Selected</div>
+          </div>
+
+          <div class="req-card" onclick="handleToggleCard(this)">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="req-icon-box" style="width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <div class="req-title" style="font-size:13.5px;">Companionship & Walks</div>
+                <div class="req-desc" style="font-size:11px; margin-top:1px;">Engaging conversations and accompaniment</div>
+              </div>
+            </div>
+            <div class="req-badge">Add</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label style="display:block; font-size:12px; font-weight:700; color:#334155; margin-bottom:8px;">Current Mobility Level</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <button type="button" class="btn-secondary-exact" style="min-height:40px; font-size:11px;">Independent</button>
+            <button type="button" class="btn-secondary-exact" style="min-height:40px; font-size:11px; border-color:#004340; background:#004340; color:#ffffff;">Assisted Walk</button>
+            <button type="button" class="btn-secondary-exact" style="min-height:40px; font-size:11px;">Bedridden</button>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="navScreen('view-matchmaking')" class="btn-primary-exact">
+        <span>Find Matching Attendants</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </section>
+
+    <!-- 7. MATCHMAKING & CONFIRMATION -->
+    <section id="view-matchmaking" class="screen-view" style="justify-content:space-between; padding:20px;">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <button onclick="navScreen('view-onboarding-reqs')" class="icon-action-btn" style="padding:8px; border-radius:50%; border:none; background:none; color:#475569;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span style="font-size:11px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:4px 10px; border-radius:999px;">Curated Matches</span>
+        </div>
+
+        <h2 class="font-heading" style="font-size:24px; font-weight:800; color:#0f172a;">Top Matched Attendant</h2>
+        <p style="font-size:12px; color:#64748b; margin-top:4px;">Verified attendants ready for deployment in R.A. Puram.</p>
+
+        <div class="interactive-card stagger-1" style="margin-top:20px; padding:18px; border-radius:24px; border:2px solid #004340; background:#ffffff; box-shadow:0 10px 25px -5px rgba(0,67,64,0.1); cursor:pointer;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; gap:12px;">
+              <!-- Attendant Avatar with Image and Fallback -->
+              <div class="avatar-photo-wrap" style="width:50px; height:50px; border-radius:16px; background:#ccfbf1; border:1px solid #99f6e4;">
+                <img src="https://images.unsplash.com/photo-1594824813586-258d4a6ec711?auto=format&fit=crop&w=200&q=80" alt="Sundari M." class="avatar-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#004340; font-weight:800; font-size:18px;">SM</div>
+              </div>
+              <div>
+                <h3 class="font-heading" style="font-size:16px; font-weight:800; color:#0f172a;">Sundari M.</h3>
+                <div style="font-size:11px; color:#64748b; margin-top:2px;">6 yrs exp • Apollo Geriatric Trained</div>
+              </div>
+            </div>
+            <span style="font-size:11px; font-weight:800; color:#15803d; background:#dcfce7; padding:3px 8px; border-radius:999px;" class="animate-soft-pulse">98% Match</span>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;">
+            <span style="font-size:10px; font-weight:700; color:#334155; background:#f1f5f9; padding:3px 8px; border-radius:6px;">👮 Police Verified</span>
+            <span style="font-size:10px; font-weight:700; color:#334155; background:#f1f5f9; padding:3px 8px; border-radius:6px;">Tamil, English</span>
+            <span style="font-size:10px; font-weight:700; color:#0f766e; background:#f0fdfa; padding:3px 8px; border-radius:6px;">★ 4.9 (42 reviews)</span>
+          </div>
+
+          <div style="margin-top:14px; padding-top:12px; border-top:1px solid #f1f5f9; font-size:12px; color:#475569; line-height:1.4;">
+            "Experienced in mobility support, post-rehab assistance, and respectful Tamil communication."
+          </div>
+        </div>
+      </div>
+
+      <button onclick="confirmAndGoToPortal()" class="btn-primary-exact">
+        <span>Confirm & Start Care</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    </section>
+
+    <!-- 8. SCREEN: FAMILY CARE PORTAL -->
+    <section id="view-portal" class="screen-view" style="padding-bottom:64px;">
+      <header style="position:sticky; top:0; z-index:40; background:rgba(255,255,255,0.96); backdrop-filter:blur(8px); border-bottom:1px solid #e2e8f0; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <!-- Elder Avatar in Top Bar with Image -->
+          <div class="avatar-photo-wrap" style="width:32px; height:32px; border-radius:10px; background:#f0fdfa; border:1px solid #ccfbf1;">
+            <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=150&q=80" alt="Kalyani Ammal" class="avatar-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#004340;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </div>
+          </div>
+          <div>
+            <div id="topbar-name" class="font-heading" style="font-size:13px; font-weight:800; color:#0f172a;">Kalyani Ammal</div>
+            <div style="font-size:10px; color:#64748b;">R.A. Puram, Chennai</div>
+          </div>
+        </div>
+
+        <button onclick="openModal('modal-sos')" class="sos-pulse-effect" style="display:flex; align-items:center; gap:4px; padding:5px 12px; background:#e11d48; color:#ffffff; border:none; border-radius:999px; font-size:11px; font-weight:800; cursor:pointer; box-shadow:0 2px 6px rgba(225, 29, 72, 0.35);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/></svg>
+          <span>SOS</span>
+        </button>
+      </header>
+
+      <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+        <!-- TAB 1: HOME -->
+        <div id="tab-home" style="display:flex; flex-direction:column; gap:14px;">
+          <div class="stagger-1 interactive-card" style="padding:16px; border-radius:24px; background:linear-gradient(135deg, #004340 0%, #0d5c58 100%); color:#ffffff; box-shadow:0 4px 14px rgba(0, 67, 64, 0.25); display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+            <div>
+              <span style="font-size:10px; font-weight:800; color:#99f6e4; text-transform:uppercase; letter-spacing:0.05em;">Care Dashboard</span>
+              <h2 id="home-elder-name" class="font-heading" style="font-size:19px; font-weight:800; margin-top:2px;">Kalyani Ammal</h2>
+              <div style="font-size:11px; color:rgba(255,255,255,0.85); margin-top:2px;">R.A. Puram Corridor • Age 74</div>
+            </div>
+            <button onclick="openModal('modal-sos')" class="sos-pulse-effect" style="padding:6px 14px; background:#e11d48; color:#ffffff; font-weight:800; font-size:11px; border:none; border-radius:999px; cursor:pointer;">
+              🚨 SOS
+            </button>
+          </div>
+
+          <div class="stagger-2 interactive-card" style="padding:16px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em;">Today's Caregiver</span>
+              <span style="font-size:11px; font-weight:800; color:#15803d; background:#dcfce7; padding:2px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:4px;">
+                <span class="duty-dot-pulse" style="width:6px; height:6px; border-radius:50%; background:#16a34a; display:inline-block;"></span>
+                On Duty Now
+              </span>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px;">
+              <!-- Attendant Avatar with Image and Fallback -->
+              <div class="avatar-photo-wrap" style="width:44px; height:44px; border-radius:16px; background:#f0fdfa; border:1px solid #ccfbf1;">
+                <img src="https://images.unsplash.com/photo-1594824813586-258d4a6ec711?auto=format&fit=crop&w=150&q=80" alt="Sundari M." class="avatar-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:16px; font-weight:800; color:#004340;">
+                  S
+                </div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:14px; font-weight:800; color:#0f172a;">Sundari M.</div>
+                <div style="font-size:11px; color:#64748b; margin-top:1px;">6 yrs exp • Tamil, English</div>
+              </div>
+              <button onclick="alert('Calling Sundari M. (+91 94440 12345)...')" class="btn-small-pill" style="width:38px; height:38px; border-radius:14px; background:#f0fdfa; border:1px solid #ccfbf1; color:#004340; display:flex; align-items:center; justify-content:center;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="stagger-3" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="switchPortalTab('UPDATES')" class="interactive-card" style="padding:14px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; cursor:pointer; text-align:left;">
+              <div style="width:36px; height:36px; border-radius:12px; background:#f0fdfa; color:#004340; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px; font-weight:800; color:#1e293b;">Live Updates</div>
+                <div style="font-size:10px; color:#64748b;">Vitals & activities</div>
+              </div>
+            </button>
+
+            <button onclick="switchPortalTab('MESSAGES')" class="interactive-card" style="padding:14px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0; display:flex; align-items:center; gap:10px; cursor:pointer; text-align:left;">
+              <div style="width:36px; height:36px; border-radius:12px; background:#f0fdfa; color:#004340; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px; font-weight:800; color:#1e293b;">Chat Desk</div>
+                <div style="font-size:10px; color:#64748b;">Attendant & Team</div>
+              </div>
+            </button>
+          </div>
+
+          <div class="stagger-4" style="padding:16px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-size:12px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Today's Care Timeline</span>
+              </div>
+              <button onclick="switchPortalTab('UPDATES')" class="btn-small-pill" style="font-size:11px; font-weight:700; color:#004340; background:none; border:none;">View all →</button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div class="clickable-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f8fafc; border-radius:14px; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="color:#16a34a; font-weight:800;">✓</span>
+                  <span style="font-weight:600; color:#1e293b;">Morning Vitals Logged (BP: 120/80)</span>
+                </div>
+                <span style="font-size:10px; color:#94a3b8; font-family:monospace;">08:30 AM</span>
+              </div>
+
+              <div class="clickable-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f8fafc; border-radius:14px; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="color:#16a34a; font-weight:800;">✓</span>
+                  <span style="font-weight:600; color:#1e293b;">Breakfast & Metformin 500mg</span>
+                </div>
+                <span style="font-size:10px; color:#94a3b8; font-family:monospace;">09:15 AM</span>
+              </div>
+
+              <div class="clickable-row" style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:#f8fafc; border-radius:14px; font-size:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="color:#16a34a; font-weight:800;">✓</span>
+                  <span style="font-weight:600; color:#1e293b;">Assisted Courtyard Walk (200m)</span>
+                </div>
+                <span style="font-size:10px; color:#94a3b8; font-family:monospace;">11:30 AM</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:16px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-size:12px; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                <span>Latest Health Vitals</span>
+              </div>
+              <button onclick="openModal('modal-vitals')" class="btn-small-pill" style="font-size:11px; font-weight:700; color:#004340; background:none; border:none;">+ Record</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+              <div class="vital-stat-box" onclick="openModal('modal-vitals')" style="padding:10px; border-radius:16px; background:#f0fdfa; border:1px solid #ccfbf1; text-align:center;">
+                <div style="font-size:10px; color:#64748b; font-weight:700;">Blood Pressure</div>
+                <div id="v-bp" style="font-size:14px; font-weight:800; color:#0f172a; margin-top:2px;">120/80</div>
+                <div style="font-size:9px; color:#15803d; font-weight:600;">Normal</div>
+              </div>
+              <div class="vital-stat-box" onclick="openModal('modal-vitals')" style="padding:10px; border-radius:16px; background:#f0fdfa; border:1px solid #ccfbf1; text-align:center;">
+                <div style="font-size:10px; color:#64748b; font-weight:700;">Pulse Rate</div>
+                <div id="v-pulse" style="font-size:14px; font-weight:800; color:#0f172a; margin-top:2px;">72 bpm</div>
+                <div style="font-size:9px; color:#15803d; font-weight:600;">Steady</div>
+              </div>
+              <div class="vital-stat-box" onclick="openModal('modal-vitals')" style="padding:10px; border-radius:16px; background:#f0fdfa; border:1px solid #ccfbf1; text-align:center;">
+                <div style="font-size:10px; color:#64748b; font-weight:700;">Blood Sugar</div>
+                <div id="v-sugar" style="font-size:14px; font-weight:800; color:#0f172a; margin-top:2px;">110 mg</div>
+                <div style="font-size:9px; color:#15803d; font-weight:600;">Fasting</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: MY CARE -->
+        <div id="tab-mycare" style="display:none; flex-direction:column; gap:14px;">
+          <div class="stagger-1 interactive-card" style="padding:18px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div style="display:flex; gap:12px; align-items:center;">
+                <!-- Elder Avatar in Profile Card -->
+                <div class="avatar-photo-wrap" style="width:48px; height:48px; border-radius:16px; background:#f0fdfa; border:1px solid #ccfbf1;">
+                  <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=200&q=80" alt="Kalyani Ammal" class="avatar-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                  <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#004340; font-weight:800; font-size:18px;">KA</div>
+                </div>
+                <div>
+                  <h3 id="mycare-name" class="font-heading" style="font-size:17px; font-weight:800; color:#0f172a;">Kalyani Ammal</h3>
+                  <div style="font-size:12px; color:#64748b; margin-top:2px;">Age 74 • Female • Tamil, English</div>
+                  <div style="font-size:11px; color:#0f766e; font-weight:700; margin-top:4px;">📍 14/2, 2nd Main Road, R.A. Puram, Chennai</div>
+                </div>
+              </div>
+              <button onclick="openModal('modal-edit')" class="btn-secondary-exact" style="width:auto; min-height:32px; padding:0 12px; font-size:11px;">Edit</button>
+            </div>
+
+            <hr style="border:none; border-top:1px solid #f1f5f9;" />
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Mobility & Care Plan</span>
+                <button onclick="openModal('modal-edit')" class="btn-small-pill" style="font-size:11px; color:#004340; font-weight:700; background:none; border:none;">Edit</button>
+              </div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                <span class="btn-small-pill" style="font-size:11px; font-weight:700; color:#004340; background:#f0fdfa; padding:3px 8px; border-radius:6px; border:1px solid #ccfbf1;">🩼 Assisted Walking</span>
+                <span class="btn-small-pill" style="font-size:11px; font-weight:700; color:#004340; background:#f0fdfa; padding:3px 8px; border-radius:6px; border:1px solid #ccfbf1;">💊 Medication Reminders</span>
+                <span class="btn-small-pill" style="font-size:11px; font-weight:700; color:#004340; background:#f0fdfa; padding:3px 8px; border-radius:6px; border:1px solid #ccfbf1;">🛁 Daily Hygiene</span>
+              </div>
+            </div>
+
+            <hr style="border:none; border-top:1px solid #f1f5f9;" />
+
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Shift Preference</span>
+                <button onclick="openModal('modal-edit')" class="btn-small-pill" style="font-size:11px; color:#004340; font-weight:700; background:none; border:none;">Edit</button>
+              </div>
+              <div style="font-size:13px; font-weight:700; color:#1e293b; margin-top:4px;">12 Hours Day Care (08:00 AM – 08:00 PM)</div>
+            </div>
+          </div>
+
+          <div class="stagger-2 interactive-card" style="padding:16px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div class="avatar-photo-wrap" style="width:40px; height:40px; border-radius:14px; background:#ccfbf1; border:1px solid #99f6e4;">
+                <img src="https://images.unsplash.com/photo-1594824813586-258d4a6ec711?auto=format&fit=crop&w=150&q=80" alt="Sundari M." class="avatar-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#004340; font-weight:800; font-size:14px;">SM</div>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:800; color:#0f172a;">Assigned Attendant</div>
+                <div style="font-size:11px; color:#64748b;">Sundari M. • Hospital Certified</div>
+              </div>
+            </div>
+            <button onclick="alert('Attendant replacement request submitted to Chennai Care Desk.')" class="btn-small-pill" style="padding:6px 12px; background:#ffffff; border:1px solid #e11d48; color:#e11d48; font-weight:700; font-size:11px; border-radius:12px;">
+              Replace
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 3: UPDATES -->
+        <div id="tab-updates" style="display:none; flex-direction:column; gap:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; background:#e2e8f0; padding:4px; border-radius:14px;">
+            <button id="sub-timeline-btn" onclick="setUpdateSubTab('TIMELINE')" class="btn-small-pill" style="padding:8px 0; border:none; border-radius:10px; font-size:11px; font-weight:700; background:#ffffff; color:#004340;">Timeline</button>
+            <button id="sub-vitals-btn" onclick="setUpdateSubTab('VITALS')" class="btn-small-pill" style="padding:8px 0; border:none; border-radius:10px; font-size:11px; font-weight:700; background:transparent; color:#64748b;">Vitals Graph</button>
+            <button id="sub-photos-btn" onclick="setUpdateSubTab('PHOTOS')" class="btn-small-pill" style="padding:8px 0; border:none; border-radius:10px; font-size:11px; font-weight:700; background:transparent; color:#64748b;">Care Photos</button>
+          </div>
+
+          <div id="view-timeline-content" style="display:flex; flex-direction:column; gap:8px;">
+            <div class="interactive-card stagger-1" style="padding:14px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0; font-size:12px; cursor:pointer;">
+              <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size:10px; font-weight:700;">
+                <span style="color:#004340;">🚶 ACTIVITY</span>
+                <span>11:30 AM</span>
+              </div>
+              <div style="font-weight:700; color:#0f172a; margin-top:4px;">Assisted Courtyard Walk</div>
+              <div style="color:#64748b; margin-top:2px;">Completed 200m walking in courtyard with walker. Mood cheerful and energetic.</div>
+            </div>
+
+            <div class="interactive-card stagger-2" style="padding:14px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0; font-size:12px; cursor:pointer;">
+              <div style="display:flex; justify-content:space-between; color:#94a3b8; font-size:10px; font-weight:700;">
+                <span style="color:#004340;">💊 MEDICATION</span>
+                <span>09:15 AM</span>
+              </div>
+              <div style="font-weight:700; color:#0f172a; margin-top:4px;">Breakfast & Morning Dosage</div>
+              <div style="color:#64748b; margin-top:2px;">Metformin 500mg and Telmisartan 40mg given with 2 idlis & warm water.</div>
+            </div>
+          </div>
+
+          <div id="view-vitals-content" style="display:none; flex-direction:column; gap:10px;">
+            <div class="interactive-card" style="padding:16px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0;">
+              <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:12px;">7-Day Blood Pressure Readings</div>
+              <div style="display:flex; align-items:flex-end; justify-content:space-between; height:100px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+                <div style="text-align:center;"><div style="width:18px; height:58px; background:#99f6e4; border-radius:4px; margin:0 auto; transition:all 0.3s ease;"></div><span style="font-size:9px; color:#94a3b8;">Mon</span></div>
+                <div style="text-align:center;"><div style="width:18px; height:64px; background:#99f6e4; border-radius:4px; margin:0 auto; transition:all 0.3s ease;"></div><span style="font-size:9px; color:#94a3b8;">Tue</span></div>
+                <div style="text-align:center;"><div style="width:18px; height:60px; background:#99f6e4; border-radius:4px; margin:0 auto; transition:all 0.3s ease;"></div><span style="font-size:9px; color:#94a3b8;">Wed</span></div>
+                <div style="text-align:center;"><div style="width:18px; height:70px; background:#99f6e4; border-radius:4px; margin:0 auto; transition:all 0.3s ease;"></div><span style="font-size:9px; color:#94a3b8;">Thu</span></div>
+                <div style="text-align:center;"><div style="width:18px; height:62px; background:#004340; border-radius:4px; margin:0 auto; transition:all 0.3s ease;"></div><span style="font-size:9px; font-weight:800; color:#004340;">Today</span></div>
+              </div>
+            </div>
+            <button onclick="openModal('modal-vitals')" class="btn-primary-exact" style="min-height:46px; font-size:13px;">+ Record Vital Reading</button>
+          </div>
+
+          <div id="view-photos-content" style="display:none; flex-direction:column; gap:10px;">
+            <div class="interactive-card" style="padding:14px; border-radius:18px; background:#ffffff; border:1px solid #e2e8f0;">
+              <div style="font-size:11px; color:#94a3b8; margin-bottom:8px;">Today, 11:35 AM • Verified by Sundari M.</div>
+              <!-- Real Photo of Courtyard Walk with Zoom Hover Effect & Fallback -->
+              <div class="care-photo-box" style="height:140px; background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=600&q=80" alt="Courtyard Morning Walk" class="care-photo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; color:#475569; font-weight:700; font-size:13px;">
+                  🌿 Courtyard Morning Walk (Photo Logged)
+                </div>
+              </div>
+              <div style="font-size:12px; color:#475569; margin-top:8px;">"Amma feeling energetic after the walk and garden sitting."</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: CHAT DESK -->
+        <div id="tab-messages" style="display:none; flex-direction:column; height:58vh;">
+          <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; flex-shrink:0;">
+            <button onclick="sendQuickMessage('Did she take afternoon medicines?')" class="prompt-chip" style="padding:4px 10px; border-radius:999px; background:#ffffff; border:1px solid #cbd5e1; font-size:11px; font-weight:600; color:#334155; white-space:nowrap;">Medicines taken?</button>
+            <button onclick="sendQuickMessage('How is her BP right now?')" class="prompt-chip" style="padding:4px 10px; border-radius:999px; background:#ffffff; border:1px solid #cbd5e1; font-size:11px; font-weight:600; color:#334155; white-space:nowrap;">How is BP?</button>
+            <button onclick="sendQuickMessage('Please send photo update')" class="prompt-chip" style="padding:4px 10px; border-radius:999px; background:#ffffff; border:1px solid #cbd5e1; font-size:11px; font-weight:600; color:#334155; white-space:nowrap;">Send photo</button>
+          </div>
+
+          <div id="chat-stream-box" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px;">
+            <div class="chat-bubble-pop" style="align-self:flex-start; max-width:80%; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:10px 12px; font-size:12px; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                <div class="avatar-photo-wrap" style="width:20px; height:20px; border-radius:50%;">
+                  <img src="https://images.unsplash.com/photo-1594824813586-258d4a6ec711?auto=format&fit=crop&w=80&q=80" alt="Sundari M." class="avatar-photo-img" onerror="this.style.display='none';" />
+                </div>
+                <div style="font-size:10px; font-weight:800; color:#004340;">Sundari M. (Attendant)</div>
+              </div>
+              Good morning Ramesh sir! Amma finished breakfast and took morning medicines on time.
+              <div style="font-size:9px; color:#94a3b8; text-align:right; margin-top:4px;">09:20 AM</div>
+            </div>
+
+            <div class="chat-bubble-pop" style="align-self:flex-end; max-width:80%; background:#004340; color:#ffffff; border-radius:16px; padding:10px 12px; font-size:12px; box-shadow:0 2px 6px rgba(0,67,64,0.2);">
+              Thank you Sundari! Did she have any knee discomfort during the walk?
+              <div style="font-size:9px; color:#99f6e4; text-align:right; margin-top:4px;">09:25 AM</div>
+            </div>
+          </div>
+
+          <form onsubmit="handleSendChat(event)" style="display:flex; gap:8px; margin-top:10px; flex-shrink:0;">
+            <input type="text" id="chat-input" class="input-exact" placeholder="Message Sundari..." style="height:48px; font-size:13px;" />
+            <button type="submit" class="btn-primary-exact" style="width:48px; min-height:48px; padding:0; flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- TAB 5: MORE -->
+        <div id="tab-more" style="display:none; flex-direction:column; gap:12px;">
+          <div class="stagger-1 interactive-card" style="padding:16px; border-radius:24px; background:#ffffff; border:1px solid #e2e8f0; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#1e293b;">App Language</span>
+              <span style="font-size:12px; font-weight:800; color:#004340;">English / தமிழ்</span>
+            </div>
+            <hr style="border:none; border-top:1px solid #f1f5f9;" />
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#1e293b;">Care Desk 24/7 Helpline</span>
+              <span style="font-size:12px; font-weight:800; color:#004340;">1800-CARE-CON</span>
+            </div>
+            <hr style="border:none; border-top:1px solid #f1f5f9;" />
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#1e293b;">Emergency Contact</span>
+              <span style="font-size:12px; color:#64748b;">Ramesh (+91 98401 23456)</span>
+            </div>
+            <hr style="border:none; border-top:1px solid #f1f5f9;" />
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#1e293b;">DPDP Act 2023 Compliance</span>
+              <span style="font-size:11px; font-weight:800; color:#15803d;">Encrypted & Protected</span>
+            </div>
+          </div>
+
+          <button onclick="navScreen('view-entry')" class="btn-secondary-exact stagger-2" style="margin-top:10px;">
+            Sign Out
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MobileBottomNav (Icons with relative text: Home, My Care, Chat, Updates, More with touch/hover colors) -->
+      <nav class="mobile-bottom-nav">
+        <button id="nav-home" onclick="switchPortalTab('HOME')" class="nav-tab-item active" title="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Home</span>
+          <span class="nav-indicator-dot"></span>
+        </button>
+        <button id="nav-mycare" onclick="switchPortalTab('MY_CARE')" class="nav-tab-item" title="My Care">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          <span>My Care</span>
+        </button>
+        <button id="nav-messages" onclick="switchPortalTab('MESSAGES')" class="nav-tab-item" title="Chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Chat</span>
+        </button>
+        <button id="nav-updates" onclick="switchPortalTab('UPDATES')" class="nav-tab-item" title="Updates">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Updates</span>
+        </button>
+        <button id="nav-more" onclick="switchPortalTab('MORE')" class="nav-tab-item" title="More">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span>More</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- MODALS -->
+    <div id="modal-sos" class="modal-overlay">
+      <div class="modal-bottom-sheet" style="border-top:4px solid #e11d48; text-align:center;">
+        <div style="width:40px; height:4px; background:#cbd5e1; border-radius:999px; margin:0 auto 16px auto;"></div>
+        <div class="sos-pulse-effect" style="width:52px; height:52px; border-radius:50%; background:#fee2e2; color:#e11d48; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/></svg>
+        </div>
+        <h3 class="font-heading" style="font-size:20px; font-weight:800; color:#0f172a;">Emergency SOS Alert</h3>
+        <p style="font-size:12px; color:#475569; margin-top:4px;">Connecting to Chennai Central Micro-Hub Care Supervisor & Emergency Services.</p>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+          <button onclick="alert('Connecting to 24/7 Care Coordinator Hotline...'); closeModal('modal-sos');" class="btn-primary-exact" style="background:#e11d48;">
+            📞 Call Care Coordinator Hotline
+          </button>
+          <button onclick="alert('Dispatching 108 Ambulance service...'); closeModal('modal-sos');" class="btn-secondary-exact" style="border-color:#e11d48; color:#e11d48;">
+            🚑 Call 108 Ambulance
+          </button>
+          <button onclick="closeModal('modal-sos')" class="btn-secondary-exact">
+            Cancel Alert
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-vitals" class="modal-overlay">
+      <div class="modal-bottom-sheet">
+        <div style="width:40px; height:4px; background:#cbd5e1; border-radius:999px; margin:0 auto 16px auto;"></div>
+        <h3 class="font-heading" style="font-size:18px; font-weight:800; color:#0f172a;">Record Daily Vitals</h3>
+        <p style="font-size:12px; color:#64748b; margin-top:2px;">Updates dashboard logs in real time.</p>
+
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Blood Pressure (Systolic/Diastolic)</label>
+            <input type="text" id="in-bp" class="input-exact" value="122/78" style="height:48px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Pulse Rate (bpm)</label>
+            <input type="number" id="in-pulse" class="input-exact" value="74" style="height:48px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Blood Glucose (mg/dL)</label>
+            <input type="number" id="in-sugar" class="input-exact" value="114" style="height:48px;" />
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:20px;">
+          <button onclick="saveVitalsModal()" class="btn-primary-exact" style="min-height:48px;">Save Vitals</button>
+          <button onclick="closeModal('modal-vitals')" class="btn-secondary-exact" style="width:auto; padding:0 16px; min-height:48px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-edit" class="modal-overlay">
+      <div class="modal-bottom-sheet">
+        <div style="width:40px; height:4px; background:#cbd5e1; border-radius:999px; margin:0 auto 16px auto;"></div>
+        <h3 class="font-heading" style="font-size:18px; font-weight:800; color:#0f172a;">Edit Care Details</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Elder Full Name</label>
+            <input type="text" id="edit-name" class="input-exact" value="Kalyani Ammal" style="height:48px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:11px; font-weight:700; color:#334155; margin-bottom:4px;">Mobility Level</label>
+            <select id="edit-mob" class="input-exact" style="height:48px;">
+              <option value="Independent">Independent Walking</option>
+              <option value="Assisted" selected>Assisted Walking (Cane/Walker)</option>
+              <option value="Bedridden">Bedridden Care</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:20px;">
+          <button onclick="saveEditProfile()" class="btn-primary-exact" style="min-height:48px;">Update Profile</button>
+          <button onclick="closeModal('modal-edit')" class="btn-secondary-exact" style="width:auto; padding:0 16px; min-height:48px;">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- WORKFLOW SWITCHER DOCK -->
+  <div id="drawer-menu" class="workflow-menu-drawer">
+    <div style="font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; padding:4px 6px;">Jump to Screen</div>
+    <button onclick="navScreen('view-entry')" class="drawer-item"><span>1. Entry & Value Prop</span></button>
+    <button onclick="navScreen('view-auth')" class="drawer-item"><span>2. Mobile Auth (OTP)</span></button>
+    <button onclick="navScreen('view-onboarding-who')" class="drawer-item"><span>3. Step 1 (Who)</span></button>
+    <button onclick="navScreen('view-onboarding-basic')" class="drawer-item"><span>4. Step 2 (Profile)</span></button>
+    <button onclick="navScreen('view-onboarding-location')" class="drawer-item"><span>5. Step 3 (Location)</span></button>
+    <button onclick="navScreen('view-onboarding-reqs')" class="drawer-item"><span>6. Step 4 (Care Needs)</span></button>
+    <button onclick="navScreen('view-matchmaking')" class="drawer-item"><span>7. Matchmaker</span></button>
+    <button onclick="navScreen('view-portal')" class="drawer-item active"><span>8. Family Care Portal</span></button>
+  </div>
+
+  <button onclick="document.getElementById('drawer-menu').classList.toggle('open')" class="workflow-switcher-pill">
+    <span style="color:#2dd4bf;">✦</span>
+    <span>Workflow Steps</span>
+  </button>
+
+  <script>
+    function navScreen(screenId) {
+      document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(screenId);
+      if (el) {
+        el.classList.add('active');
+        document.getElementById('app-canvas').scrollTop = 0;
+      }
+      document.getElementById('drawer-menu').classList.remove('open');
+    }
+
+    function setWhoCard(type) {
+      const me = document.getElementById('who-card-me');
+      const someone = document.getElementById('who-card-someone');
+      if (type === 'ME') {
+        me.style.borderColor = '#004340';
+        me.style.background = 'rgba(240, 253, 250, 0.7)';
+        someone.style.borderColor = '#e2e8f0';
+        someone.style.background = '#ffffff';
+      } else {
+        someone.style.borderColor = '#004340';
+        someone.style.background = 'rgba(240, 253, 250, 0.7)';
+        me.style.borderColor = '#e2e8f0';
+        me.style.background = '#ffffff';
+      }
+    }
+
+    function setGenderOption(gender) {
+      ['female', 'male', 'other'].forEach(g => {
+        const btn = document.getElementById('g-' + g);
+        if (g === gender.toLowerCase()) {
+          btn.style.borderColor = '#004340';
+          btn.style.backgroundColor = '#f0fdfa';
+          btn.style.color = '#004340';
+        } else {
+          btn.style.borderColor = '#cbd5e1';
+          btn.style.backgroundColor = '#ffffff';
+          btn.style.color = '#334155';
+        }
+      });
+    }
+
+    
+    function handleToggleCard(card) {
+      card.classList.toggle('is-selected');
+      const badge = card.querySelector('.req-badge');
+      if (badge) {
+        if (card.classList.contains('is-selected')) {
+          badge.textContent = 'Selected';
+        } else {
+          badge.textContent = '+ Add';
+        }
+      }
+    }
+
+    function confirmAndGoToPortal() {
+      alert('🎉 Attendant Sundari M. booked for Kalyani Ammal! Opening Family Care Portal.');
+      navScreen('view-portal');
+      switchPortalTab('HOME');
+    }
+
+    function switchPortalTab(tab) {
+      const tabs = ['HOME', 'MY_CARE', 'UPDATES', 'MESSAGES', 'MORE'];
+      const map = {
+        'HOME': 'tab-home',
+        'MY_CARE': 'tab-mycare',
+        'UPDATES': 'tab-updates',
+        'MESSAGES': 'tab-messages',
+        'MORE': 'tab-more'
+      };
+
+      tabs.forEach(t => {
+        const content = document.getElementById(map[t]);
+        const btn = document.getElementById('nav-' + t.toLowerCase().replace('_', ''));
+        if (t === tab) {
+          if (content) {
+            content.style.display = 'flex';
+            content.style.animation = 'itemFadeSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+          }
+          if (btn) btn.classList.add('active');
+        } else {
+          if (content) content.style.display = 'none';
+          if (btn) btn.classList.remove('active');
+        }
+      });
+    }
+
+    function setUpdateSubTab(sub) {
+      document.getElementById('view-timeline-content').style.display = sub === 'TIMELINE' ? 'flex' : 'none';
+      document.getElementById('view-vitals-content').style.display = sub === 'VITALS' ? 'flex' : 'none';
+      document.getElementById('view-photos-content').style.display = sub === 'PHOTOS' ? 'flex' : 'none';
+
+      ['timeline', 'vitals', 'photos'].forEach(s => {
+        const btn = document.getElementById('sub-' + s + '-btn');
+        if (s === sub.toLowerCase()) {
+          btn.style.background = '#ffffff';
+          btn.style.color = '#004340';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.color = '#64748b';
+        }
+      });
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function saveVitalsModal() {
+      const bp = document.getElementById('in-bp').value;
+      const pulse = document.getElementById('in-pulse').value;
+      const sugar = document.getElementById('in-sugar').value;
+
+      document.getElementById('v-bp').innerText = bp;
+      document.getElementById('v-pulse').innerText = pulse + ' bpm';
+      document.getElementById('v-sugar').innerText = sugar + ' mg';
+
+      closeModal('modal-vitals');
+      alert('Vitals updated!');
+    }
+
+    function saveEditProfile() {
+      const newName = document.getElementById('edit-name').value;
+      document.getElementById('topbar-name').innerText = newName;
+      document.getElementById('home-elder-name').innerText = newName;
+      document.getElementById('mycare-name').innerText = newName;
+      closeModal('modal-edit');
+    }
+
+    function sendQuickMessage(txt) {
+      document.getElementById('chat-input').value = txt;
+      handleSendChat(new Event('submit'));
+    }
+
+    function handleSendChat(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const box = document.getElementById('chat-stream-box');
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const userBubble = document.createElement('div');
+      userBubble.className = "chat-bubble-pop";
+      userBubble.style.cssText = "align-self:flex-end; max-width:80%; background:#004340; color:#ffffff; border-radius:16px; padding:10px 12px; font-size:12px; box-shadow:0 2px 6px rgba(0,67,64,0.2);";
+      userBubble.innerHTML = `<div>${val}</div><div style="font-size:9px; color:#99f6e4; text-align:right; margin-top:4px;">${now}</div>`;
+      box.appendChild(userBubble);
+      input.value = "";
+      box.scrollTop = box.scrollHeight;
+
+      setTimeout(() => {
+        const reply = document.createElement('div');
+        reply.className = "chat-bubble-pop";
+        reply.style.cssText = "align-self:flex-start; max-width:80%; background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:10px 12px; font-size:12px; color:#0f172a; box-shadow:0 1px 3px rgba(0,0,0,0.03);";
+        reply.innerHTML = `<div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+            <div class="avatar-photo-wrap" style="width:20px; height:20px; border-radius:50%;">
+              <img src="https://images.unsplash.com/photo-1594824813586-258d4a6ec711?auto=format&fit=crop&w=80&q=80" alt="Sundari M." class="avatar-photo-img" onerror="this.style.display='none';" />
+            </div>
+            <div style="font-size:10px; font-weight:800; color:#004340;">Sundari M. (Attendant)</div>
+          </div>
+          <div>Got it sir! Amma is resting comfortably right now. Everything is on schedule.</div>
+          <div style="font-size:9px; color:#94a3b8; text-align:right; margin-top:4px;">Just now</div>`;
+        box.appendChild(reply);
+        box.scrollTop = box.scrollHeight;
+      }, 650);
+    }
+  </script>
+</body>
+</html>

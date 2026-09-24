@@ -43,7 +43,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
 
         {/* 3 Mobile Feature Badges */}
         <div className="grid grid-cols-1 gap-2.5 pt-2">
-          <div className="interactive-card flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
             <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
               <UserCheck className="w-5 h-5" />
             </div>
@@ -53,7 +53,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
             </div>
           </div>
 
-          <div className="interactive-card flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
             <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
               <Activity className="w-5 h-5" />
             </div>
@@ -63,7 +63,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
             </div>
           </div>
 
-          <div className="interactive-card flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm cursor-pointer">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
             <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
               <Heart className="w-5 h-5" />
             </div>
@@ -79,7 +79,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
       <div className="space-y-3 pt-4">
         <button
           onClick={onGetStarted}
-          className="btn-primary-exact"
+          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-lg shadow-teal-900/20 flex items-center justify-center gap-2 transition"
         >
           <span>Find Suitable Care</span>
           <ArrowRight className="w-5 h-5" />

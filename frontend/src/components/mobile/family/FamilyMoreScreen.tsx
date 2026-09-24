@@ -177,10 +177,9 @@ export const FamilyMoreScreen: React.FC<FamilyMoreScreenProps> = ({
       {/* Logout */}
       <button
         onClick={logout}
-        className="w-full min-h-[50px] p-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 transition"
+        className="w-full min-h-[50px] p-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center transition"
       >
-        <LogOut className="w-4 h-4" />
-        <span>Sign Out of CareConnect</span>
+        Sign Out of CareConnect
       </button>
 
       {/* MODAL: Replacement Request */}

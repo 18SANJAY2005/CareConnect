@@ -78,7 +78,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         </div>
         <button
           onClick={onOpenSos}
-          className="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow flex items-center gap-1.5 sos-pulse-effect cursor-pointer"
+          className="px-3 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow flex items-center gap-1.5 animate-pulse active:scale-95"
         >
           <AlertCircle className="w-3.5 h-3.5" />
           <span>SOS</span>
@@ -86,21 +86,21 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
       </div>
 
       {/* Attendant & Shift Status Card */}
-      <div className="interactive-card p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+      <div className="p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
             Today's Caregiver
           </span>
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 ${
+            className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold flex items-center gap-1 ${
               isOnDuty
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : 'bg-amber-50 text-amber-700 border border-amber-200'
             }`}
           >
             <span
-              className={`w-2 h-2 rounded-full ${
-                isOnDuty ? 'bg-emerald-500 duty-dot-pulse' : 'bg-amber-500'
+              className={`w-1.5 h-1.5 rounded-full ${
+                isOnDuty ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'
               }`}
             />
             <span>{isOnDuty ? 'On Duty Now' : 'Shift Scheduled'}</span>
@@ -134,7 +134,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
       <div className="grid grid-cols-2 gap-2.5">
         <button
           onClick={() => onOpenTab('UPDATES')}
-          className="interactive-card clickable-row p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 text-left transition"
+          className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 text-left transition hover:border-slate-300"
         >
           <div className="w-9 h-9 rounded-xl bg-teal-50 text-primary flex items-center justify-center shrink-0">
             <Activity className="w-5 h-5" />
@@ -147,7 +147,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
 
         <button
           onClick={() => onOpenTab('MESSAGES')}
-          className="interactive-card clickable-row p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 text-left transition"
+          className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-3 text-left transition hover:border-slate-300"
         >
           <div className="w-9 h-9 rounded-xl bg-teal-50 text-primary flex items-center justify-center shrink-0">
             <MessageSquare className="w-5 h-5" />
@@ -206,21 +206,19 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="vital-stat-box p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
+          <div className="p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
             <div className="text-[10px] text-slate-500 font-bold">Blood Pressure</div>
             <div className="text-sm font-extrabold text-slate-900 mt-0.5">120/80</div>
             <div className="text-[9px] text-emerald-600 font-semibold">Normal</div>
           </div>
 
-          <div className="vital-stat-box p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
-            <div className="text-[10px] text-slate-500 font-bold flex items-center justify-center">
-              <span className="heart-beat-pulse inline-block mr-1">💓</span> Pulse Rate
-            </div>
+          <div className="p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
+            <div className="text-[10px] text-slate-500 font-bold">Pulse Rate</div>
             <div className="text-sm font-extrabold text-slate-900 mt-0.5">72 bpm</div>
             <div className="text-[9px] text-emerald-600 font-semibold">Steady</div>
           </div>
 
-          <div className="vital-stat-box p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
+          <div className="p-2.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-center">
             <div className="text-[10px] text-slate-500 font-bold">Blood Sugar</div>
             <div className="text-sm font-extrabold text-slate-900 mt-0.5">110 mg/dL</div>
             <div className="text-[9px] text-emerald-600 font-semibold">Normal</div>
