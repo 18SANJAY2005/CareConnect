@@ -1,6 +1,6 @@
 import React from 'react';
 import { CareConnectLogo } from '../common/CareConnectLogo';
-import { ShieldCheck, Heart, Activity, ArrowRight, UserCheck } from 'lucide-react';
+import { ShieldCheck, Heart, Activity, ArrowRight, UserCheck, Sparkles } from 'lucide-react';
 
 interface MobileEntryScreenProps {
   onGetStarted: () => void;
@@ -13,93 +13,78 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
   onSignIn,
 }) => {
   return (
-    <div className="flex-1 flex flex-col justify-between px-5 py-8 animate-fadeIn text-slate-900">
-      {/* Top Brand Header */}
+    <div className="flex flex-1 flex-col justify-between px-5 py-7 animate-fadeIn text-slate-900">
       <div className="flex items-center justify-between">
         <CareConnectLogo size="md" showWordmark />
         <button
           onClick={onSignIn}
-          className="text-xs font-bold text-primary hover:text-primary-container px-3 py-1.5 rounded-full bg-teal-50 border border-teal-100 transition"
+          className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-[11px] font-bold text-primary transition hover:bg-teal-100"
         >
           Sign In
         </button>
       </div>
 
-      {/* Center Hero & Value Proposition */}
-      <div className="my-auto py-8 space-y-6">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-primary text-[11px] font-bold tracking-wide">
-          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          <span>Managed Elder Care at Home</span>
+      <div className="my-auto space-y-6 py-7">
+        <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-primary uppercase">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Trusted elder care
         </div>
 
-        <div className="space-y-3">
-          <h1 className="text-3xl font-extrabold font-heading tracking-tight text-slate-900 leading-tight">
-            Compassionate care for the ones who cared for you.
+        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-teal-50/80 to-slate-50 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="rounded-2xl bg-primary p-3 text-white shadow-sm">
+              <Heart className="h-6 w-6 fill-current" />
+            </div>
+            <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              24/7 support
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
+            Compassionate care for the ones who matter most.
           </h1>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Verified, trained attendants with real-time health monitoring, daily vitals tracking, and 24/7 care desk supervision.
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            Verified attendants, daily health support, and a real care team designed for comfort and peace of mind.
           </p>
         </div>
 
-        {/* 3 Mobile Feature Badges */}
-        <div className="grid grid-cols-1 gap-2.5 pt-2">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
-              <UserCheck className="w-5 h-5" />
+        <div className="space-y-2.5">
+          {[
+            { icon: UserCheck, title: 'Verified attendants', text: 'Background-checked and trained for elder care.' },
+            { icon: Activity, title: 'Daily health support', text: 'Vitals, routines, and medication reminders.' },
+            { icon: Sparkles, title: 'Care that feels personal', text: 'Simple onboarding and a caring support desk.' },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-800">{title}</div>
+                <div className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{text}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs font-bold text-slate-800">Verified & Trained Attendants</div>
-              <div className="text-[11px] text-slate-500">Background checked with hospital-grade skill training</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-800">Daily Health Vitals Tracking</div>
-              <div className="text-[11px] text-slate-500">BP, blood sugar, medication logs, and photo updates</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-200 shadow-sm">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-primary shrink-0">
-              <Heart className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-800">24/7 Care Coordination</div>
-              <div className="text-[11px] text-slate-500">Dedicated care managers and emergency SOS response</div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Bottom CTA Block */}
-      <div className="space-y-3 pt-4">
+      <div className="space-y-3 pt-2">
         <button
           onClick={onGetStarted}
-          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-lg shadow-teal-900/20 flex items-center justify-center gap-2 transition"
+          className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-teal-900/20 transition hover:bg-primary-hover active:scale-[0.98]"
         >
           <span>Find Suitable Care</span>
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="h-5 w-5" />
         </button>
 
-        <div className="text-center pt-1">
-          <span className="text-xs text-slate-500">
-            Already have an account?{' '}
-            <button
-              onClick={onSignIn}
-              className="font-bold text-primary hover:underline ml-0.5"
-            >
-              Sign In
-            </button>
-          </span>
+        <div className="text-center text-xs text-slate-500">
+          Already have an account?{' '}
+          <button onClick={onSignIn} className="ml-1 font-bold text-primary underline-offset-2 hover:underline">
+            Sign In
+          </button>
         </div>
 
-        {/* 3-Point Mobile Disclaimer */}
-        <div className="pt-2 text-[10px] text-slate-400 text-center leading-relaxed">
-          Non-emergency elder home assistance • DPDP Act 2023 protected • 24/7 Care Manager support
+        <div className="pt-1 text-center text-[10px] leading-relaxed text-slate-400">
+          Non-emergency elder care • DPDP Act 2023 • 24/7 care desk
         </div>
       </div>
     </div>

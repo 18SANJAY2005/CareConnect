@@ -15,89 +15,88 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
   const [recipient, setRecipient] = useState<'ME' | 'SOMEONE_ELSE' | null>(initialValue || null);
 
   return (
-    <div className="flex-1 flex flex-col justify-between px-5 py-6 animate-fadeIn text-slate-900">
-      {/* Step Header */}
+    <div className="flex flex-1 flex-col justify-between px-5 py-6 animate-fadeIn text-slate-900">
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition"
+            className="-ml-2 rounded-full p-2 text-slate-600 transition hover:bg-slate-100"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-teal-700">
             Step 1 of 4
           </span>
         </div>
 
-        <h2 className="text-2xl font-extrabold font-heading text-slate-900">
-          Who is care for?
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Tell us who will be receiving care so we can tailor the questions.
+        <h2 className="text-3xl font-extrabold tracking-[-0.04em] text-slate-900">Who is care for?</h2>
+        <p className="mt-2 text-sm text-slate-500">
+          Tell us who will receive care so we can tailor the next steps.
         </p>
       </div>
 
-      {/* Selectable Cards */}
-      <div className="space-y-3.5 my-auto py-6">
-        <button
-          type="button"
-          onClick={() => setRecipient('ME')}
-          className={`w-full p-5 rounded-3xl border-2 text-left flex items-center gap-4 transition active:scale-98 ${
-            recipient === 'ME'
-              ? 'border-primary bg-teal-50/60 shadow-md ring-2 ring-primary/20'
-              : 'border-slate-200 bg-white hover:border-slate-300'
-          }`}
-        >
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-              recipient === 'ME' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
-            }`}
-          >
-            <User className="w-7 h-7" />
-          </div>
-          <div className="flex-1">
-            <div className="text-base font-bold text-slate-900">Myself</div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              I am looking for personal care assistance or companionship at home.
-            </div>
-          </div>
-        </button>
+      <div className="my-auto space-y-3.5 py-6">
+        {[
+          {
+            id: 'ME',
+            title: 'Myself',
+            subtitle: 'Care for me',
+            description: 'I am looking for home support or companionship for myself.',
+            icon: User,
+          },
+          {
+            id: 'SOMEONE_ELSE',
+            title: 'Someone else',
+            subtitle: 'Care for a loved one',
+            description: 'For a parent, spouse, grandparent, or family member who needs support.',
+            icon: Users,
+          },
+        ].map(({ id, title, subtitle, description, icon: Icon }) => {
+          const isSelected = recipient === id;
 
-        <button
-          type="button"
-          onClick={() => setRecipient('SOMEONE_ELSE')}
-          className={`w-full p-5 rounded-3xl border-2 text-left flex items-center gap-4 transition active:scale-98 ${
-            recipient === 'SOMEONE_ELSE'
-              ? 'border-primary bg-teal-50/60 shadow-md ring-2 ring-primary/20'
-              : 'border-slate-200 bg-white hover:border-slate-300'
-          }`}
-        >
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-              recipient === 'SOMEONE_ELSE' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
-            }`}
-          >
-            <Users className="w-7 h-7" />
-          </div>
-          <div className="flex-1">
-            <div className="text-base font-bold text-slate-900">Someone else</div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              For a parent, spouse, grandparent, or relative who needs daily support.
-            </div>
-          </div>
-        </button>
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setRecipient(id as 'ME' | 'SOMEONE_ELSE')}
+              className={`w-full rounded-[28px] border-2 p-5 text-left transition-all duration-200 active:scale-[0.98] ${
+                isSelected
+                  ? 'border-primary bg-teal-50/60 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15'
+                  : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <div
+                  className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
+                    isSelected ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <Icon className="h-8 w-8" />
+                </div>
+
+                <div className="flex-1">
+                  <div className="text-2xl font-extrabold tracking-[-0.03em] text-slate-900">{title}</div>
+                  <div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-teal-700">
+                    {subtitle}
+                  </div>
+                  <div className="mt-2 text-sm leading-relaxed text-slate-500">{description}</div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Primary Action Button */}
       <div className="pt-4">
         <button
-          onClick={() => { if (recipient) onSelect(recipient); }}
+          onClick={() => {
+            if (recipient) onSelect(recipient);
+          }}
           disabled={!recipient}
-          className="w-full min-h-[56px] bg-primary hover:bg-primary-hover disabled:opacity-50 active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+          className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-md transition hover:bg-primary-hover disabled:opacity-50 active:scale-[0.98]"
         >
           <span>Continue</span>
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="h-5 w-5" />
         </button>
       </div>
     </div>

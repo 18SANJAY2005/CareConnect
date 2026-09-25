@@ -57,23 +57,21 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-120px)] animate-fadeIn text-slate-900 px-4 py-3">
-      {/* Header Banner */}
-      <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3 shrink-0 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-teal-50 text-primary flex items-center justify-center">
-          <ShieldCheck className="w-5 h-5" />
+    <div className="flex h-[calc(100vh-120px)] flex-1 animate-fadeIn flex-col px-4 py-3 text-slate-900">
+      <div className="mb-3 flex shrink-0 items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
+          <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <div className="text-xs font-bold text-slate-900">Care Coordinator Desk</div>
-          <div className="text-[10px] text-emerald-600 font-semibold">● Active • Typical reply in &lt; 5 mins</div>
+          <div className="text-sm font-bold text-slate-900">Care coordinator desk</div>
+          <div className="text-[10px] font-semibold text-emerald-600">● Active • Typical reply in under 5 mins</div>
         </div>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1 py-1">
+      <div className="flex-1 space-y-3 overflow-y-auto py-1 pr-1">
         {messages.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-400">
-            Send a message to your assigned Care Coordinator for any assistance or schedule updates.
+          <div className="rounded-[26px] border border-dashed border-slate-200 bg-white p-8 text-center text-xs leading-relaxed text-slate-500">
+            Send a message to your assigned care coordinator for assistance or schedule updates.
           </div>
         ) : (
           messages.map((m) => {
@@ -88,8 +86,8 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
 
             if (isSystem) {
               return (
-                <div key={m.id} className="flex justify-center my-2">
-                  <div className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded-full text-[10px] font-medium text-center max-w-[85%]">
+                <div key={m.id} className="my-2 flex justify-center">
+                  <div className="max-w-[85%] rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-center text-[10px] font-medium text-slate-600">
                     {m.content}
                   </div>
                 </div>
@@ -97,35 +95,32 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
             }
 
             if (isMe) {
-              // User's own messages -> ALIGNED RIGHT
               return (
                 <div key={m.id} className="flex flex-col items-end my-1">
-                  <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-xs bg-primary text-white text-xs leading-relaxed shadow-sm">
+                  <div className="max-w-[78%] rounded-[22px] rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">
                     <p>{m.content}</p>
                   </div>
-                  <span className="text-[9px] text-slate-400 mt-1 mr-1">
+                  <span className="mt-1 mr-1 text-[9px] text-slate-400">
                     {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               );
             }
 
-            // Other participant (Caregiver, Care Coordinator) -> ALIGNED LEFT
             return (
-              <div key={m.id} className="flex flex-col items-start my-1">
-                <div className="flex items-center gap-1.5 mb-1 ml-1 text-[11px] font-bold text-slate-700">
+              <div key={m.id} className="my-1 flex flex-col items-start">
+                <div className="mb-1 ml-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                   <span>
-                    {m.senderName ||
-                      (m.senderRole === 'COORDINATOR' ? 'Care Coordinator' : 'Attendant')}
+                    {m.senderName || (m.senderRole === 'COORDINATOR' ? 'Care Coordinator' : 'Attendant')}
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 border border-teal-200/60 font-semibold">
+                  <span className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700 border border-teal-200/60">
                     {m.senderRole === 'COORDINATOR' ? 'Desk' : 'Caregiver'}
                   </span>
                 </div>
-                <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-bl-xs bg-white text-slate-800 border border-slate-200 text-xs leading-relaxed shadow-sm">
+                <div className="max-w-[78%] rounded-[22px] rounded-bl-md border border-slate-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
                   <p>{m.content}</p>
                 </div>
-                <span className="text-[9px] text-slate-400 mt-1 ml-1">
+                <span className="mt-1 ml-1 text-[9px] text-slate-400">
                   {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -135,21 +130,20 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Bottom Input Field */}
-      <form onSubmit={handleSend} className="pt-2 pb-safe-nav flex items-center gap-2 shrink-0">
+      <form onSubmit={handleSend} className="flex shrink-0 items-center gap-2 pb-safe-nav pt-2">
         <input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Ask care coordinator a question..."
-          className="flex-1 h-12 px-4 bg-white rounded-2xl border border-slate-300 text-xs text-slate-900 focus:border-primary shadow-sm"
+          className="h-12 flex-1 rounded-2xl border border-slate-300 bg-white px-4 text-sm text-slate-900 shadow-sm focus:border-primary"
         />
         <button
           type="submit"
           disabled={!inputText.trim() || isSending}
-          className="w-12 h-12 bg-primary hover:bg-primary-hover disabled:opacity-40 text-white rounded-2xl flex items-center justify-center transition shrink-0 shadow-sm"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-40"
         >
-          {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </form>
     </div>

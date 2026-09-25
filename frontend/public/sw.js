@@ -1,5 +1,5 @@
 // CareConnect Service Worker - Mobile PWA App Shell & Offline Cache
-const CACHE_NAME = 'careconnect-pwa-v4';
+const CACHE_NAME = 'careconnect-pwa-v5';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
