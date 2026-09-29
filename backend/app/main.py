@@ -108,13 +108,18 @@ app = FastAPI(
 # CORS configuration
 # ============================================================
 
+cors_kwargs = {
+    "allow_origins": settings.CORS_ORIGINS,
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+if settings.ENVIRONMENT in ["development", "test"]:
+    cors_kwargs["allow_origin_regex"] = r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:[0-9]+)?)$"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:[0-9]+)?)$",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    **cors_kwargs
 )
 
 
@@ -282,6 +287,11 @@ app.include_router(
 
 app.include_router(
     chat.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    caregivers_router,
     prefix="/api/v1",
 )
 

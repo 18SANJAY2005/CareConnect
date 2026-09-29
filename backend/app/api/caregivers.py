@@ -1,11 +1,14 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.security import require_role
 from app.models.caregiver import Caregiver
+from app.models.user import User
 from app.schemas.caregiver import CaregiverResponse, CuratedMatchesResponse
 from app.services.matching_service import (
     get_curated_caregivers_for_elder,
@@ -16,6 +19,12 @@ router = APIRouter(
     prefix="/caregivers",
     tags=["Caregivers & Matching"],
 )
+
+
+class CaregiverProvisionRequest(BaseModel):
+    fullName: str
+    phone: str
+    email: Optional[str] = None
 
 
 @router.get("/matches", response_model=CuratedMatchesResponse)
@@ -99,3 +108,39 @@ async def list_caregivers(
         CaregiverResponse.model_validate(caregiver)
         for caregiver in caregivers
     ]
+
+
+@router.post("/provision", status_code=status.HTTP_201_CREATED)
+async def provision_caregiver_account(
+    payload: CaregiverProvisionRequest,
+    current_user: User = Depends(require_role(["ADMIN", "OPS_MANAGER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Explicit provisioning of a vetted caregiver account by Admin/Operations.
+    Ensures that caregiver accounts cannot be self-assigned via public signup.
+    """
+    result = await db.execute(select(User).where(User.phone == payload.phone))
+    user = result.scalars().first()
+    if user:
+        user.role = "CAREGIVER"
+        user.fullName = payload.fullName
+        if payload.email:
+            user.email = payload.email
+    else:
+        user = User(
+            role="CAREGIVER",
+            fullName=payload.fullName,
+            phone=payload.phone,
+            email=payload.email,
+            authProvider="PHONE_OTP",
+        )
+        db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return {
+        "success": True,
+        "message": f"Caregiver account for {user.fullName} ({user.phone}) provisioned successfully.",
+        "userId": user.id,
+        "role": user.role,
+    }

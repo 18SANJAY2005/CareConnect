@@ -82,7 +82,8 @@ class CareTaskService:
         status_val: str,
         details: Optional[Dict[str, Any]] = None,
         notes: Optional[str] = None,
-        idempotency_key: Optional[str] = None
+        idempotency_key: Optional[str] = None,
+        user_role: str = "CAREGIVER"
     ) -> CareTask:
         """Update a specific task (complete, skip, or log details). Idempotency protected."""
         # Check idempotency
@@ -96,6 +97,12 @@ class CareTaskService:
         task = res.scalar_one_or_none()
         if not task:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Care task not found")
+
+        if user_role == "CAREGIVER" and task.caregiverId != caregiver_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to update this care task."
+            )
 
         task.status = status_val
         if details:
@@ -116,11 +123,13 @@ class CareTaskService:
     @staticmethod
     async def batch_sync(
         db: AsyncSession,
-        tasks_data: List[Dict[str, Any]]
+        tasks_data: List[Dict[str, Any]],
+        caregiver_id: Optional[str] = None,
+        user_role: str = "CAREGIVER"
     ) -> Dict[str, Any]:
         """
         Batch synchronize queued tasks from offline caregiver device.
-        Guarantees idempotency and prevents duplicates.
+        Guarantees idempotency and prevents unauthorized modifications.
         """
         processed_count = 0
         skipped_count = 0
@@ -140,6 +149,11 @@ class CareTaskService:
                 res = await db.execute(select(CareTask).where(CareTask.id == task_id))
                 task = res.scalar_one_or_none()
                 if task:
+                    # Enforce ownership: caregiver cannot update another caregiver's task
+                    if user_role == "CAREGIVER" and caregiver_id and task.caregiverId != caregiver_id:
+                        skipped_count += 1
+                        continue
+
                     task.status = item.get("status", "COMPLETED")
                     if "details" in item:
                         task.details = item["details"]

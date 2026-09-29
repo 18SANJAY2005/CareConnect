@@ -95,7 +95,7 @@ class AuthService:
 
         # Query or create user
         result = await db.execute(select(User).where(User.phone == phone))
-        user = result.scalar_one_or_none()
+        user = result.scalars().first()
 
         if not user:
             user = User(

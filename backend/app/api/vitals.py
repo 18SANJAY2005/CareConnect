@@ -1,8 +1,10 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_role
+from app.core.authorization import verify_elder_access
 from app.models.user import User
 from app.schemas.vital import VitalReadingCreate, VitalReadingResponse, VitalAlertItem
 from app.services.vitals_service import VitalsService
@@ -12,13 +14,16 @@ router = APIRouter(prefix="/vitals", tags=["Vitals & Health Tracker"])
 @router.post("/", response_model=VitalReadingResponse, status_code=status.HTTP_201_CREATED)
 async def record_vital_reading(
     payload: VitalReadingCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["CAREGIVER", "FAMILY_SPONSOR", "OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Record elder vital reading with physiological validation and operational alert checks.
     Readings are treated strictly as monitoring measurements, not medical diagnoses.
+    Validates that caregiver or sponsor is authorized for the elder before recording.
     """
+    await verify_elder_access(db, current_user, payload.elderId)
+
     reading = await VitalsService.record_vitals(
         db=db,
         elder_id=payload.elderId,
@@ -40,15 +45,18 @@ async def record_vital_reading(
 async def get_elder_vitals_history(
     elder_id: str,
     limit: int = 50,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve historical vitals readings for an elder."""
+    """Retrieve historical vitals readings for an authorized elder."""
+    await verify_elder_access(db, current_user, elder_id)
     readings = await VitalsService.get_elder_vitals_history(db, elder_id, limit)
     return readings
 
 @router.get("/elder/{elder_id}/trends", status_code=status.HTTP_200_OK)
 async def get_elder_vitals_trends(
     elder_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -58,6 +66,7 @@ async def get_elder_vitals_trends(
     - Pulse rate trend
     - Temperature trend
     """
+    await verify_elder_access(db, current_user, elder_id)
     readings = await VitalsService.get_elder_vitals_history(db, elder_id, limit=30)
     # Reverse to chronological order (oldest -> newest) for plotting
     chronological = list(reversed(readings))
@@ -119,6 +128,7 @@ async def get_elder_vitals_trends(
 
 @router.get("/alerts", response_model=List[VitalAlertItem], status_code=status.HTTP_200_OK)
 async def get_vital_alerts(
+    current_user: User = Depends(require_role(["OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Operations queue: Fetch active, unacknowledged abnormal vitals alerts."""
@@ -128,10 +138,9 @@ async def get_vital_alerts(
 @router.post("/alerts/{vital_id}/acknowledge", status_code=status.HTTP_200_OK)
 async def acknowledge_vital_alert(
     vital_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Acknowledge an abnormal vital reading alert by Care Manager."""
     res = await VitalsService.acknowledge_alert(db, vital_id, current_user.id)
     return res
-

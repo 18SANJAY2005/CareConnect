@@ -54,7 +54,9 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-:: Clear any leftover processes on ports 8000 and 5173
+set "CAREGIVER_DIR=%PROJECT_ROOT%caregiver-app"
+
+:: Clear any leftover processes on ports 8000, 5173, and 5174
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do (
     echo [*] Port 8000 is occupied by PID %%a. Freeing port...
     taskkill /f /pid %%a >nul 2>&1
@@ -65,13 +67,21 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5173" ^| findstr "LISTENING
     taskkill /f /pid %%a >nul 2>&1
 )
 
-echo [1/3] Launching FastAPI Backend on Port 8000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5174" ^| findstr "LISTENING"') do (
+    echo [*] Port 5174 is occupied by PID %%a. Freeing port...
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+echo [1/4] Launching FastAPI Backend on Port 8000...
 start "CareConnect Backend" cmd /k "cd /d %BACKEND_DIR% && python run.py"
 
-echo [2/3] Launching Vite Frontend on Port 5173...
-start "CareConnect Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev"
+echo [2/4] Launching Vite Family Frontend on Port 5173...
+start "CareConnect Family Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev"
 
-echo [3/3] Waiting for services to initialize...
+echo [3/4] Launching Vite Caregiver PWA on Port 5174...
+start "CareConnect Caregiver PWA" cmd /k "cd /d %CAREGIVER_DIR% && npm run dev"
+
+echo [4/4] Waiting for services to initialize...
 ping -n 6 127.0.0.1 >nul
 
 echo.
@@ -81,32 +91,41 @@ echo ---------------------------------------------------
 
 netstat -ano | findstr ":8000" | findstr "LISTENING" >nul
 if %ERRORLEVEL% equ 0 (
-    echo   [OK] Backend  is LISTENING on http://localhost:8000
+    echo   [OK] Backend       is LISTENING on http://localhost:8000
 ) else (
     echo   [!] Backend is still starting or failed. See Backend window.
 )
 
 netstat -ano | findstr ":5173" | findstr "LISTENING" >nul
 if %ERRORLEVEL% equ 0 (
-    echo   [OK] Frontend is LISTENING on http://localhost:5173
+    echo   [OK] Family PWA    is LISTENING on http://localhost:5173
 ) else (
-    echo   [!] Frontend is still starting or failed. See Frontend window.
+    echo   [!] Family PWA is still starting or failed. See Frontend window.
+)
+
+netstat -ano | findstr ":5174" | findstr "LISTENING" >nul
+if %ERRORLEVEL% equ 0 (
+    echo   [OK] Caregiver PWA is LISTENING on http://localhost:5174
+) else (
+    echo   [!] Caregiver PWA is still starting or failed. See Caregiver window.
 )
 
 echo.
 echo ===================================================
 echo           CareConnect Platform is Ready!
 echo ===================================================
-echo   - Web Application : http://localhost:5173
+echo   - Family PWA      : http://localhost:5173
+echo   - Caregiver PWA   : http://localhost:5174
 echo   - Backend REST API: http://localhost:8000
 echo   - Swagger Docs    : http://localhost:8000/docs
 echo ===================================================
 echo.
-echo Opening default web browser to http://localhost:5173 ...
+echo Opening web browsers to Family PWA and Caregiver PWA...
 start http://localhost:5173
+start http://localhost:5174
 
 echo.
-echo Leave this and the two spawned server windows open while using the platform.
+echo Leave this and the spawned server windows open while using the platform.
 echo To shut down all services, run stop_project.bat or close the windows.
 echo.
 if not "%~1"=="--no-pause" pause

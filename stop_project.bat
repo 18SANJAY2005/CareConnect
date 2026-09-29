@@ -16,6 +16,11 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5173" ^| findstr "LISTENING
     taskkill /f /pid %%a 2>nul
 )
 
+echo [*] Terminating Caregiver PWA processes on port 5174...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5174" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a 2>nul
+)
+
 echo.
 echo All CareConnect servers have been stopped.
 echo.

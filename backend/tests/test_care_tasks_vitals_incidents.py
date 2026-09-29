@@ -37,14 +37,14 @@ async def test_care_tasks_flow(
     elder = setup_care_environment["elder"]
 
     # Retrieve shift tasks
-    res = await client.get(f"/api/v1/care-tasks/shift/{shift.id}")
+    res = await client.get(f"/api/v1/care-tasks/shift/{shift.id}", headers=caregiver_headers)
     assert res.status_code == 200
     tasks = res.json()
     # At least morning/afternoon/evening/night activities created or empty before ensure
     if not tasks:
         # Trigger current shift endpoint to populate tasks
         await client.get("/api/v1/shifts/current", headers=caregiver_headers)
-        res = await client.get(f"/api/v1/care-tasks/shift/{shift.id}")
+        res = await client.get(f"/api/v1/care-tasks/shift/{shift.id}", headers=caregiver_headers)
         tasks = res.json()
 
     assert len(tasks) > 0
@@ -65,7 +65,7 @@ async def test_care_tasks_flow(
     assert update_res.json()["status"] == "COMPLETED"
 
     # Family timeline check
-    timeline_res = await client.get(f"/api/v1/care-tasks/elder/{elder.id}/timeline")
+    timeline_res = await client.get(f"/api/v1/care-tasks/elder/{elder.id}/timeline", headers=caregiver_headers)
     assert timeline_res.status_code == 200
     timeline = timeline_res.json()
     assert len(timeline) >= 1
@@ -101,7 +101,7 @@ async def test_vitals_normal_and_trends(
     assert vital["alertSeverity"] == "NORMAL"
 
     # Fetch trends
-    trend_res = await client.get(f"/api/v1/vitals/elder/{elder.id}/trends")
+    trend_res = await client.get(f"/api/v1/vitals/elder/{elder.id}/trends", headers=caregiver_headers)
     assert trend_res.status_code == 200
     trend_data = trend_res.json()
     assert len(trend_data["bpTrend"]) >= 1
@@ -132,7 +132,7 @@ async def test_vitals_abnormal_operational_alert(
     assert vital["alertSeverity"] in ["WARNING", "CRITICAL"]
 
     # Operations alerts queue
-    alerts_res = await client.get("/api/v1/vitals/alerts")
+    alerts_res = await client.get("/api/v1/vitals/alerts", headers=ops_headers)
     assert alerts_res.status_code == 200
     alerts = alerts_res.json()
     assert any(a["id"] == vital["id"] for a in alerts)
@@ -195,7 +195,7 @@ async def test_sos_and_incident_desk_lifecycle(
     assert len(incident["timeline"]) >= 1
 
     # 2. Operations Incident Desk
-    desk_res = await client.get("/api/v1/incidents/desk")
+    desk_res = await client.get("/api/v1/incidents/desk", headers=ops_headers)
     assert desk_res.status_code == 200
     assert any(i["id"] == incident["id"] for i in desk_res.json())
 
@@ -268,7 +268,7 @@ async def test_coordinator_chat_and_media(
     assert media_res.json()["category"] == "MEAL"
 
     # Family views media
-    media_list = await client.get(f"/api/v1/media/elder/{elder.id}")
+    media_list = await client.get(f"/api/v1/media/elder/{elder.id}", headers=auth_headers)
     assert media_list.status_code == 200
     assert len(media_list.json()) >= 1
 

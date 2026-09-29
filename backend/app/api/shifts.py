@@ -4,8 +4,9 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_user, require_role
 from app.models.user import User
 from app.models.elder import Elder
 from app.models.location import ElderLocation
@@ -21,17 +22,18 @@ router = APIRouter(prefix="/shifts", tags=["Shifts & Attendance"])
 
 @router.get("/current", status_code=status.HTTP_200_OK)
 async def get_current_caregiver_shift(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["CAREGIVER", "OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve the current active or upcoming shift for the logged-in caregiver."""
     shift = await AttendanceService.get_caregiver_current_shift(db, current_user.id)
     if not shift:
-        # If no shift assigned directly to current_user, check if any shift exists in the system to support demo
-        any_shift_res = await db.execute(select(CareShift).order_by(CareShift.createdAt.desc()))
-        shift = any_shift_res.scalars().first()
-        if not shift:
-            return {"shift": None, "message": "No active shift assignment found."}
+        return {
+            "shift": None,
+            "elder": None,
+            "latestAttendance": None,
+            "message": "No active shift assignment found for this caregiver."
+        }
 
     elder_res = await db.execute(select(Elder).where(Elder.id == shift.elderId))
     elder = elder_res.scalar_one_or_none()
@@ -106,6 +108,8 @@ async def get_elder_shift_status(
         "shiftId": shift.id,
         "status": shift.status,
         "shiftType": shift.shiftType,
+        "scheduledStart": shift.scheduledStart.isoformat() if shift.scheduledStart else None,
+        "scheduledEnd": shift.scheduledEnd.isoformat() if shift.scheduledEnd else None,
         "caregiver": {
             "id": caregiver.id if caregiver else None,
             "fullName": caregiver.fullName if caregiver else "Assigned Attendant",
@@ -131,7 +135,7 @@ async def get_live_shift_monitor(
 async def check_in_shift(
     shift_id: str,
     payload: CheckInRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["CAREGIVER", "OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Caregiver check-in with GPS coordinates & geofence validation."""
@@ -150,7 +154,7 @@ async def check_in_shift(
 async def check_out_shift(
     shift_id: str,
     payload: CheckOutRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["CAREGIVER", "OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Caregiver check-out and shift summary."""
@@ -168,7 +172,7 @@ async def check_out_shift(
 async def supervisor_override(
     shift_id: str,
     payload: SupervisorOverrideRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_role(["OPS_MANAGER", "ADMIN"])),
     db: AsyncSession = Depends(get_db)
 ):
     """Supervisor/Ops approves an out-of-range check-in exception."""
@@ -191,11 +195,16 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
     - Daily care tasks
     - Historical vitals
     """
+    if settings.ENVIRONMENT not in ["development", "test"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo seed endpoint is restricted to development or test environments."
+        )
     now = datetime.now(timezone.utc)
 
     # 1. Ensure caregiver user exists
     cg_res = await db.execute(select(User).where(User.phone == "+919876500001"))
-    caregiver = cg_res.scalar_one_or_none()
+    caregiver = cg_res.scalars().first()
     if not caregiver:
         caregiver = User(
             role="CAREGIVER",
@@ -206,10 +215,14 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
         )
         db.add(caregiver)
         await db.flush()
+    elif caregiver.role != "CAREGIVER" or caregiver.fullName != "Meenakshi Sundaram":
+        caregiver.role = "CAREGIVER"
+        caregiver.fullName = "Meenakshi Sundaram"
+        await db.flush()
 
     # 2. Ensure family sponsor exists
     sp_res = await db.execute(select(User).where(User.phone == "+919876543210"))
-    sponsor = sp_res.scalar_one_or_none()
+    sponsor = sp_res.scalars().first()
     if not sponsor:
         sponsor = User(
             role="FAMILY_SPONSOR",
@@ -221,9 +234,26 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
         db.add(sponsor)
         await db.flush()
 
+    # 2b. Ensure operations manager exists
+    ops_res = await db.execute(select(User).where(User.phone == "+919876599999"))
+    ops_user = ops_res.scalars().first()
+    if not ops_user:
+        ops_user = User(
+            role="OPS_MANAGER",
+            fullName="Deepa Operations",
+            phone="+919876599999",
+            email="operations@careconnect.in",
+            authProvider="PHONE_OTP"
+        )
+        db.add(ops_user)
+        await db.flush()
+    elif ops_user.role != "OPS_MANAGER":
+        ops_user.role = "OPS_MANAGER"
+        await db.flush()
+
     # 3. Ensure elder exists
     elder_res = await db.execute(select(Elder).where(Elder.name == "Kalyani Ammal"))
-    elder = elder_res.scalar_one_or_none()
+    elder = elder_res.scalars().first()
     if not elder:
         elder = Elder(
             familyId=sponsor.id,
@@ -253,6 +283,9 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
             serviceable=True
         )
         db.add(loc)
+        await db.flush()
+    else:
+        elder.familyId = sponsor.id
         await db.flush()
 
     # 4. Create or reset Shift for today
@@ -284,6 +317,10 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
             checkInMethod="GPS"
         )
         db.add(att_log)
+    else:
+        shift.status = "ACTIVE"
+        shift.caregiverId = caregiver.id
+        await db.flush()
 
     await db.commit()
 

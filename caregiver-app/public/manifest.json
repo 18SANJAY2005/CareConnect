@@ -1,0 +1,21 @@
+{
+  "name": "CareConnect Caregiver Portal",
+  "short_name": "Caregiver",
+  "description": "CareConnect Field Attendance, Care Tasks & Monitoring Portal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#004340",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/vite.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

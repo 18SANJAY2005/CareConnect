@@ -87,7 +87,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         elder_id: currentElder.id,
         caregiver_id: Number(cgId) || 1,
         sponsor_id: currentElder.familyId || 'sponsor',
-        shift_type: '12_HOURS_DAY',
+        shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
       });
       const id = Number(asg.id) || 1;
       setAssignmentId(id);

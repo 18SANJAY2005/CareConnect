@@ -8,14 +8,50 @@ from app.models.shift import CareShift, AttendanceLog
 from app.models.elder import Elder
 from app.models.location import ElderLocation
 from app.models.user import User
+from app.models.caregiver import Caregiver
+from app.models.assignment import CareAssignment
 from app.services.geo_service import GeoService
 
 class AttendanceService:
     @staticmethod
+    def _compute_shift_schedule(shift_type: str, daily_routine: Optional[dict] = None) -> tuple[datetime, datetime]:
+        now = datetime.now(timezone.utc)
+        st = (shift_type or "").upper()
+        routine = daily_routine or {}
+
+        if "24" in st or "LIVE_IN" in st or "TWENTY_FOUR" in st:
+            start_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            end_time = start_time + timedelta(hours=24)
+        elif "12" in st or "TWELVE" in st:
+            start_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            end_time = start_time + timedelta(hours=12)
+        elif "FLEXIBLE" in st:
+            pref_start = routine.get("preferredStartTime") or routine.get("startTime") or "09:00"
+            pref_end = routine.get("preferredEndTime") or routine.get("endTime") or "17:00"
+            try:
+                sh, sm = map(int, str(pref_start).split(":"))
+                eh, em = map(int, str(pref_end).split(":"))
+                start_time = now.replace(hour=sh, minute=sm, second=0, microsecond=0)
+                end_time = now.replace(hour=eh, minute=em, second=0, microsecond=0)
+                if end_time <= start_time:
+                    end_time += timedelta(days=1)
+            except Exception:
+                start_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
+                end_time = start_time + timedelta(hours=8)
+        else:
+            # Default 8 hours
+            start_time = now.replace(hour=8, minute=0, second=0, microsecond=0)
+            end_time = start_time + timedelta(hours=8)
+
+        return start_time, end_time
+
+    @staticmethod
     async def get_caregiver_current_shift(db: AsyncSession, caregiver_id: str) -> Optional[CareShift]:
         """Fetch the current active or upcoming shift assigned to this caregiver."""
         now = datetime.now(timezone.utc)
-        # Look for active or checked in shifts first
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Look for active, checked in, or scheduled shifts first
         result = await db.execute(
             select(CareShift)
             .where(
@@ -24,11 +60,96 @@ class AttendanceService:
             )
             .order_by(CareShift.scheduledStart.asc())
         )
-        return result.scalars().first()
+        shift = result.scalars().first()
+        if shift:
+            return shift
+
+        # If caregiver already checked out or completed a shift today, preserve and return it
+        co_res = await db.execute(
+            select(CareShift)
+            .where(
+                CareShift.caregiverId == caregiver_id,
+                CareShift.status.in_(["CHECKED_OUT", "COMPLETED"]),
+                CareShift.scheduledStart >= today_start
+            )
+            .order_by(CareShift.createdAt.desc())
+        )
+        co_shift = co_res.scalars().first()
+        if co_shift:
+            return co_shift
+
+        # If no active CareShift exists, check if caregiver has an active CareAssignment
+        u_res = await db.execute(select(User).where(User.id == caregiver_id))
+        user = u_res.scalar_one_or_none()
+        if not user:
+            return None
+
+        # Link User to Caregiver directory record by phone or name
+        cg_res = await db.execute(
+            select(Caregiver).where(
+                (Caregiver.phone == user.phone) | (Caregiver.full_name == user.fullName)
+            )
+        )
+        cg = cg_res.scalars().first()
+        if not cg:
+            return None
+
+        # Look for confirmed/active CareAssignment
+        asg_res = await db.execute(
+            select(CareAssignment).where(
+                CareAssignment.caregiver_id == cg.id,
+                CareAssignment.status.in_(["ACTIVE", "SERVICE_CONFIRMED"])
+            )
+        )
+        asg = asg_res.scalars().first()
+        if not asg:
+            return None
+
+        # Check if elder already has an active or today's shift (prevents duplicate shifts)
+        elder_shift_res = await db.execute(
+            select(CareShift)
+            .where(
+                CareShift.elderId == asg.elder_id,
+                CareShift.scheduledStart >= today_start
+            )
+            .order_by(CareShift.createdAt.desc())
+        )
+        elder_shift = elder_shift_res.scalars().first()
+        if elder_shift:
+            if elder_shift.caregiverId != user.id:
+                elder_shift.caregiverId = user.id
+                await db.commit()
+                await db.refresh(elder_shift)
+            return elder_shift
+
+        # Fetch elder to inspect shift preferences and daily routine
+        elder_res = await db.execute(select(Elder).where(Elder.id == asg.elder_id))
+        elder = elder_res.scalar_one_or_none()
+        daily_routine = elder.dailyRoutine if (elder and isinstance(elder.dailyRoutine, dict)) else {}
+        shift_type = asg.shift_type or (elder.shiftPreference if elder else None) or "EIGHT_HOUR_DAY"
+        start_time, end_time = AttendanceService._compute_shift_schedule(shift_type, daily_routine)
+
+        new_shift = CareShift(
+            elderId=asg.elder_id,
+            caregiverId=user.id,
+            shiftType=shift_type,
+            status="SCHEDULED",
+            scheduledStart=start_time,
+            scheduledEnd=end_time,
+            geofenceRadiusMeters=200.0,
+            supervisorNotes=f"Auto-scheduled shift based on active CareAssignment #{asg.id} ({shift_type})."
+        )
+        db.add(new_shift)
+        await db.commit()
+        await db.refresh(new_shift)
+        return new_shift
 
     @staticmethod
     async def get_elder_active_shift(db: AsyncSession, elder_id: str) -> Optional[CareShift]:
         """Fetch the current active shift for an elder."""
+        now = datetime.now(timezone.utc)
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
         result = await db.execute(
             select(CareShift)
             .where(
@@ -37,7 +158,65 @@ class AttendanceService:
             )
             .order_by(CareShift.createdAt.desc())
         )
-        return result.scalars().first()
+        shift = result.scalars().first()
+        if shift:
+            return shift
+
+        # If no shift yet, check if elder has an active assignment
+        asg_res = await db.execute(
+            select(CareAssignment).where(
+                CareAssignment.elder_id == elder_id,
+                CareAssignment.status.in_(["ACTIVE", "SERVICE_CONFIRMED"])
+            )
+        )
+        asg = asg_res.scalars().first()
+        if not asg:
+            return None
+
+        # Find caregiver directory record
+        cg_res = await db.execute(select(Caregiver).where(Caregiver.id == asg.caregiver_id))
+        cg = cg_res.scalar_one_or_none()
+        if not cg:
+            return None
+
+        # Find or create corresponding caregiver user
+        user_res = await db.execute(
+            select(User).where(
+                (User.phone == cg.phone) | (User.fullName == cg.full_name)
+            )
+        )
+        cg_user = user_res.scalars().first()
+        if not cg_user:
+            cg_user = User(
+                role="CAREGIVER",
+                fullName=cg.full_name,
+                phone=cg.phone or "+919876500001",
+                email=f"caregiver.{cg.id}@careconnect.in",
+                authProvider="PHONE_OTP"
+            )
+            db.add(cg_user)
+            await db.flush()
+
+        elder_res = await db.execute(select(Elder).where(Elder.id == elder_id))
+        elder = elder_res.scalar_one_or_none()
+        daily_routine = elder.dailyRoutine if (elder and isinstance(elder.dailyRoutine, dict)) else {}
+        shift_type = asg.shift_type or (elder.shiftPreference if elder else None) or "EIGHT_HOUR_DAY"
+        start_time, end_time = AttendanceService._compute_shift_schedule(shift_type, daily_routine)
+
+        new_shift = CareShift(
+            elderId=elder_id,
+            caregiverId=cg_user.id,
+            shiftType=shift_type,
+            status="SCHEDULED",
+            scheduledStart=start_time,
+            scheduledEnd=end_time,
+            geofenceRadiusMeters=200.0,
+            supervisorNotes=f"Auto-scheduled shift based on active CareAssignment #{asg.id} ({shift_type})."
+        )
+        db.add(new_shift)
+        await db.commit()
+        await db.refresh(new_shift)
+        return new_shift
 
     @staticmethod
     async def check_in(
@@ -106,9 +285,13 @@ class AttendanceService:
         
         # Check if late
         now = datetime.now(timezone.utc)
-        if shift.scheduledStart and now > shift.scheduledStart + timedelta(minutes=15) and shift.status == "ACTIVE":
-            # Shift was started late
-            shift.supervisorNotes = (shift.supervisorNotes or "") + f" [Check-in completed late at {now.isoformat()}]"
+        sched_start = shift.scheduledStart
+        if sched_start is not None:
+            if sched_start.tzinfo is None:
+                sched_start = sched_start.replace(tzinfo=timezone.utc)
+            if now > sched_start + timedelta(minutes=15) and shift.status == "ACTIVE":
+                # Shift was started late
+                shift.supervisorNotes = (shift.supervisorNotes or "") + f" [Check-in completed late at {now.isoformat()}]"
 
         # Create attendance log
         log = AttendanceLog(
