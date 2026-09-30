@@ -40,6 +40,7 @@ class Elder(Base):
     dateOfBirth = Column(Date, nullable=True)
     age = Column(Integer, nullable=False, default=70)
     gender = Column(String(50), nullable=False, default="FEMALE")
+    phoneNumber = Column(String(20), nullable=True)
 
     locationId = Column(String(36), nullable=True)
 

@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
-import { X, Check, Loader2, AlertCircle, Clock, Globe, Heart, FileText, Trash2 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Elder } from '../../../types';
+import React, { useState } from "react";
+import {
+  X,
+  Check,
+  Loader2,
+  AlertCircle,
+  Clock,
+  Globe,
+  Heart,
+  FileText,
+  Trash2,
+} from "lucide-react";
+import { api } from "../../../services/api";
+import type { Elder } from "../../../types";
 
 export type EditableSection =
-  | 'NAME'
-  | 'AGE_GENDER'
-  | 'LANGUAGE'
-  | 'REQUIREMENTS'
-  | 'DURATION'
-  | 'PREFERENCES'
-  | 'DETAILED_CARE';
+  | "NAME"
+  | "AGE_GENDER"
+  | "LANGUAGE"
+  | "REQUIREMENTS"
+  | "DURATION"
+  | "PREFERENCES"
+  | "DETAILED_CARE";
 
 interface ElderSectionEditorModalProps {
   section: EditableSection;
@@ -21,95 +31,106 @@ interface ElderSectionEditorModalProps {
 }
 
 const ALL_LANGUAGES = [
-  'Bengali',
-  'English',
-  'Gujarati',
-  'Hindi',
-  'Kannada',
-  'Malayalam',
-  'Marathi',
-  'Tamil',
-  'Telugu',
+  "Bengali",
+  "English",
+  "Gujarati",
+  "Hindi",
+  "Kannada",
+  "Malayalam",
+  "Marathi",
+  "Tamil",
+  "Telugu",
 ];
 
 const DURATION_OPTIONS = [
-  { id: 'EIGHT_HOUR_DAY', label: '8 Hours' },
-  { id: 'TWELVE_HOUR_DAY_NIGHT', label: '12 Hours' },
-  { id: 'TWENTY_FOUR_HOUR_LIVE_IN', label: '24 Hours' },
-  { id: 'FLEXIBLE', label: 'Flexible' },
+  { id: "EIGHT_HOUR_DAY", label: "8 Hours" },
+  { id: "TWELVE_HOUR_DAY_NIGHT", label: "12 Hours" },
+  { id: "TWENTY_FOUR_HOUR_LIVE_IN", label: "24 Hours" },
+  { id: "FLEXIBLE", label: "Flexible" },
 ];
 
 const MOBILITY_OPTIONS = [
-  { id: 'INDEPENDENT', label: 'Independent' },
-  { id: 'CANE_WALKER', label: 'Cane / Walker' },
-  { id: 'WHEELCHAIR', label: 'Wheelchair' },
-  { id: 'BEDRIDDEN', label: 'Bedridden' },
+  { id: "INDEPENDENT", label: "Independent" },
+  { id: "CANE_WALKER", label: "Cane / Walker" },
+  { id: "WHEELCHAIR", label: "Wheelchair" },
+  { id: "BEDRIDDEN", label: "Bedridden" },
 ];
 
 const COMMON_REQUIREMENTS = [
-  'Assisted Care',
-  'Mobility Support',
-  'Medication Management',
-  'Companionship',
-  'Dementia Support',
-  'Vitals Monitoring',
-  'Hygiene & Bathing',
+  "Assisted Care",
+  "Mobility Support",
+  "Medication Management",
+  "Companionship",
+  "Dementia Support",
+  "Vitals Monitoring",
+  "Hygiene & Bathing",
 ];
 
 const COMMON_CONDITIONS = [
-  'Hypertension',
-  'Diabetes Type 2',
-  'Mild Dementia',
-  'Cardiac Care',
-  'Post-Fall Care',
-  'Arthritis',
-  'Parkinsons',
+  "Hypertension",
+  "Diabetes Type 2",
+  "Mild Dementia",
+  "Cardiac Care",
+  "Post-Fall Care",
+  "Arthritis",
+  "Parkinsons",
 ];
 
-export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = ({
-  section,
-  elder,
-  onSave,
-  onClose,
-  onTriggerDelete,
-}) => {
+export const ElderSectionEditorModal: React.FC<
+  ElderSectionEditorModalProps
+> = ({ section, elder, onSave, onClose, onTriggerDelete }) => {
   // Local state for Name
-  const [name, setName] = useState(elder.name || '');
+  const [name, setName] = useState(elder.name || "");
+  const [phoneNumber, setPhoneNumber] = useState(elder.phoneNumber || "");
 
   // Local state for Age & Gender
-  const [age, setAge] = useState(elder.age ? String(elder.age) : '70');
-  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>(elder.gender || 'FEMALE');
+  const [age, setAge] = useState(elder.age ? String(elder.age) : "70");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">(
+    elder.gender || "FEMALE",
+  );
 
   // Local state for Language
-  const [primaryLanguage, setPrimaryLanguage] = useState(elder.primaryLanguage || 'English');
+  const [primaryLanguage, setPrimaryLanguage] = useState(
+    elder.primaryLanguage || "English",
+  );
   const [languages, setLanguages] = useState<string[]>(
-    elder.languages && elder.languages.length > 0 ? elder.languages : ['English', 'Tamil']
+    elder.languages && elder.languages.length > 0
+      ? elder.languages
+      : ["English", "Tamil"],
   );
 
   // Local state for Requirements & Mobility
-  const [mobilityLevel, setMobilityLevel] = useState<string>(elder.mobilityLevel || 'CANE_WALKER');
+  const [mobilityLevel, setMobilityLevel] = useState<string>(
+    elder.mobilityLevel || "CANE_WALKER",
+  );
   const [careRequirements, setCareRequirements] = useState<string[]>(
     elder.careRequirements && elder.careRequirements.length > 0
       ? elder.careRequirements
-      : ['Assisted Care']
+      : ["Assisted Care"],
   );
 
   // Local state for Duration & Timing
-  const initialShift = elder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT';
+  const initialShift = elder.shiftPreference || "TWELVE_HOUR_DAY_NIGHT";
   const [shiftPreference, setShiftPreference] = useState<string>(initialShift);
   const routine = (elder.dailyRoutine as Record<string, any>) || {};
-  const [startTime, setStartTime] = useState<string>(routine.preferredStartTime || '09:00');
-  const [endTime, setEndTime] = useState<string>(routine.preferredEndTime || '17:00');
+  const [startTime, setStartTime] = useState<string>(
+    routine.preferredStartTime || "09:00",
+  );
+  const [endTime, setEndTime] = useState<string>(
+    routine.preferredEndTime || "17:00",
+  );
 
   // Local state for Preferences
-  const [additionalNotes, setAdditionalNotes] = useState(elder.additionalNotes || '');
+  const [additionalNotes, setAdditionalNotes] = useState(
+    elder.additionalNotes || "",
+  );
 
   // Local state for Detailed Care Info
   const [medicalConditions, setMedicalConditions] = useState<string[]>(
-    elder.medicalConditions || ['Hypertension']
+    elder.medicalConditions || ["Hypertension"],
   );
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>(
-    elder.dietaryPreferences || ['Vegetarian']
+    elder.dietaryPreferences || ["Vegetarian"],
   );
 
   // Async state
@@ -118,20 +139,20 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
 
   const getTitle = () => {
     switch (section) {
-      case 'NAME':
-        return 'Edit Full Name';
-      case 'AGE_GENDER':
-        return 'Edit Age & Gender';
-      case 'LANGUAGE':
-        return 'Edit Languages Spoken';
-      case 'REQUIREMENTS':
-        return 'Edit Care Requirements & Mobility';
-      case 'DURATION':
-        return 'Edit Care Duration & Hours';
-      case 'PREFERENCES':
-        return 'Edit Additional Preferences';
-      case 'DETAILED_CARE':
-        return 'Edit Clinical & Health Details';
+      case "NAME":
+        return "Edit Full Name";
+      case "AGE_GENDER":
+        return "Edit Age & Gender";
+      case "LANGUAGE":
+        return "Edit Languages Spoken";
+      case "REQUIREMENTS":
+        return "Edit Care Requirements & Mobility";
+      case "DURATION":
+        return "Edit Care Duration & Hours";
+      case "PREFERENCES":
+        return "Edit Additional Preferences";
+      case "DETAILED_CARE":
+        return "Edit Clinical & Health Details";
     }
   };
 
@@ -143,46 +164,52 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
     const patchPayload: Record<string, any> = {};
 
     try {
-      if (section === 'NAME') {
-        if (!name.trim()) throw new Error('Name cannot be blank.');
+      if (section === "NAME") {
+        if (!name.trim()) throw new Error("Name cannot be blank.");
         patchPayload.name = name.trim();
-        patchPayload.full_name = name.trim();
-      } else if (section === 'AGE_GENDER') {
+        patchPayload.phoneNumber = phoneNumber.trim() || null;
+      } else if (section === "AGE_GENDER") {
         const ageNum = parseInt(age, 10);
         if (isNaN(ageNum) || ageNum < 18 || ageNum > 125) {
-          throw new Error('Please enter a valid age between 18 and 125.');
+          throw new Error("Please enter a valid age between 18 and 125.");
         }
         patchPayload.age = ageNum;
         patchPayload.gender = gender;
-      } else if (section === 'LANGUAGE') {
-        if (!primaryLanguage) throw new Error('Please select a primary language.');
+      } else if (section === "LANGUAGE") {
+        if (!primaryLanguage)
+          throw new Error("Please select a primary language.");
         const finalLangs = Array.from(new Set([primaryLanguage, ...languages]));
         patchPayload.primaryLanguage = primaryLanguage;
         patchPayload.primary_language = primaryLanguage;
         patchPayload.languages = finalLangs;
-      } else if (section === 'REQUIREMENTS') {
+      } else if (section === "REQUIREMENTS") {
         patchPayload.mobilityLevel = mobilityLevel;
         patchPayload.careRequirements = careRequirements;
-      } else if (section === 'DURATION') {
-        if (shiftPreference === 'FLEXIBLE') {
+      } else if (section === "DURATION") {
+        if (shiftPreference === "FLEXIBLE") {
           if (!startTime || !endTime) {
-            throw new Error('Please enter both start and end times for flexible care.');
+            throw new Error(
+              "Please enter both start and end times for flexible care.",
+            );
           }
           if (startTime === endTime) {
-            throw new Error('Start time and end time cannot be identical.');
+            throw new Error("Start time and end time cannot be identical.");
           }
         }
         patchPayload.shiftPreference = shiftPreference;
-        const currentRoutine = (elder.dailyRoutine as Record<string, any>) || {};
+        const currentRoutine =
+          (elder.dailyRoutine as Record<string, any>) || {};
         patchPayload.dailyRoutine = {
           ...currentRoutine,
           shiftType: shiftPreference,
-          preferredStartTime: shiftPreference === 'FLEXIBLE' ? startTime : undefined,
-          preferredEndTime: shiftPreference === 'FLEXIBLE' ? endTime : undefined,
+          preferredStartTime:
+            shiftPreference === "FLEXIBLE" ? startTime : undefined,
+          preferredEndTime:
+            shiftPreference === "FLEXIBLE" ? endTime : undefined,
         };
-      } else if (section === 'PREFERENCES') {
+      } else if (section === "PREFERENCES") {
         patchPayload.additionalNotes = additionalNotes.trim();
-      } else if (section === 'DETAILED_CARE') {
+      } else if (section === "DETAILED_CARE") {
         patchPayload.medicalConditions = medicalConditions;
         patchPayload.dietaryPreferences = dietaryPreferences;
       }
@@ -191,7 +218,9 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
       onSave(updated);
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save changes. Please try again.');
+      setErrorMessage(
+        err.message || "Failed to save changes. Please try again.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -206,7 +235,9 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
             <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
               Quick Edit
             </span>
-            <h3 className="text-base font-bold font-heading text-slate-900 mt-0.5">{getTitle()}</h3>
+            <h3 className="text-base font-bold font-heading text-slate-900 mt-0.5">
+              {getTitle()}
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -218,7 +249,10 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs">
+        <form
+          onSubmit={handleSave}
+          className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-xs"
+        >
           {errorMessage && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -227,10 +261,12 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 1. NAME SECTION */}
-          {section === 'NAME' && (
+          {section === "NAME" && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   value={name}
@@ -245,8 +281,12 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
               {onTriggerDelete && (
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div>
-                    <span className="text-xs font-bold text-rose-700 block">Manage Profile</span>
-                    <span className="text-[11px] text-slate-400">Remove elder from account</span>
+                    <span className="text-xs font-bold text-rose-700 block">
+                      Manage Profile
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Remove elder from account
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -265,10 +305,12 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 2. AGE & GENDER SECTION */}
-          {section === 'AGE_GENDER' && (
+          {section === "AGE_GENDER" && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Age (Years)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Age (Years)
+                </label>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -283,20 +325,26 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Gender
+                </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {(['FEMALE', 'MALE', 'OTHER'] as const).map((g) => (
+                  {(["FEMALE", "MALE", "OTHER"] as const).map((g) => (
                     <button
                       key={g}
                       type="button"
                       onClick={() => setGender(g)}
                       className={`h-11 rounded-xl font-bold border text-xs transition ${
                         gender === g
-                          ? 'border-primary bg-primary text-white shadow-sm'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          ? "border-primary bg-primary text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                       }`}
                     >
-                      {g === 'FEMALE' ? 'Female' : g === 'MALE' ? 'Male' : 'Other'}
+                      {g === "FEMALE"
+                        ? "Female"
+                        : g === "MALE"
+                          ? "Male"
+                          : "Other"}
                     </button>
                   ))}
                 </div>
@@ -305,7 +353,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 3. LANGUAGE SECTION */}
-          {section === 'LANGUAGE' && (
+          {section === "LANGUAGE" && (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
@@ -338,13 +386,15 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                         type="button"
                         onClick={() => {
                           setLanguages((prev) =>
-                            prev.includes(lang) ? prev.filter((x) => x !== lang) : [...prev, lang]
+                            prev.includes(lang)
+                              ? prev.filter((x) => x !== lang)
+                              : [...prev, lang],
                           );
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
                           isSelected
-                            ? 'bg-teal-50 border-primary text-primary font-bold'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? "bg-teal-50 border-primary text-primary font-bold"
+                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                       >
                         {lang}
@@ -357,7 +407,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 4. CARE REQUIREMENTS & MOBILITY */}
-          {section === 'REQUIREMENTS' && (
+          {section === "REQUIREMENTS" && (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -371,8 +421,8 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                       onClick={() => setMobilityLevel(m.id)}
                       className={`p-3 rounded-xl border text-left transition ${
                         mobilityLevel === m.id
-                          ? 'border-primary bg-teal-50/70 text-primary font-bold shadow-sm'
-                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          ? "border-primary bg-teal-50/70 text-primary font-bold shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       {m.label}
@@ -394,19 +444,23 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                         type="button"
                         onClick={() => {
                           setCareRequirements((prev) =>
-                            prev.includes(req) ? prev.filter((r) => r !== req) : [...prev, req]
+                            prev.includes(req)
+                              ? prev.filter((r) => r !== req)
+                              : [...prev, req],
                           );
                         }}
                         className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between text-xs transition ${
                           active
-                            ? 'border-primary bg-teal-50/50 text-slate-900 font-bold'
-                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? "border-primary bg-teal-50/50 text-slate-900 font-bold"
+                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                         }`}
                       >
                         <span>{req}</span>
                         <div
                           className={`w-4 h-4 rounded-md border flex items-center justify-center ${
-                            active ? 'border-primary bg-primary text-white' : 'border-slate-300'
+                            active
+                              ? "border-primary bg-primary text-white"
+                              : "border-slate-300"
                           }`}
                         >
                           {active && <Check className="w-3 h-3 stroke-[3]" />}
@@ -420,7 +474,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 5. CARE DURATION & FLEXIBLE TIMING */}
-          {section === 'DURATION' && (
+          {section === "DURATION" && (
             <div className="space-y-3">
               <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-primary" />
@@ -435,27 +489,31 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                     onClick={() => setShiftPreference(opt.id)}
                     className={`w-full min-h-[50px] px-3.5 py-2.5 rounded-2xl border-2 text-left transition flex items-center justify-between ${
                       shiftPreference === opt.id
-                        ? 'border-primary bg-teal-50/70 text-slate-900 font-bold shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        ? "border-primary bg-teal-50/70 text-slate-900 font-bold shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div
                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          shiftPreference === opt.id ? 'border-primary bg-white' : 'border-slate-300 bg-white'
+                          shiftPreference === opt.id
+                            ? "border-primary bg-white"
+                            : "border-slate-300 bg-white"
                         }`}
                       >
                         {shiftPreference === opt.id && (
                           <div className="w-2 h-2 rounded-full bg-primary" />
                         )}
                       </div>
-                      <span className="text-xs font-bold text-slate-800">{opt.label}</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {opt.label}
+                      </span>
                     </div>
                   </button>
                 ))}
               </div>
 
-              {shiftPreference === 'FLEXIBLE' && (
+              {shiftPreference === "FLEXIBLE" && (
                 <div className="p-3.5 bg-teal-50/60 rounded-2xl border border-teal-200/70 space-y-2.5 animate-fadeIn mt-2">
                   <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-primary" />
@@ -463,7 +521,9 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">From:</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        From:
+                      </label>
                       <input
                         type="time"
                         value={startTime}
@@ -472,7 +532,9 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">To:</label>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        To:
+                      </label>
                       <input
                         type="time"
                         value={endTime}
@@ -492,7 +554,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 6. ADDITIONAL PREFERENCES */}
-          {section === 'PREFERENCES' && (
+          {section === "PREFERENCES" && (
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-primary" />
@@ -509,7 +571,7 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
           )}
 
           {/* 7. DETAILED CARE INFORMATION */}
-          {section === 'DETAILED_CARE' && (
+          {section === "DETAILED_CARE" && (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
@@ -525,13 +587,15 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                         type="button"
                         onClick={() => {
                           setMedicalConditions((prev) =>
-                            prev.includes(cond) ? prev.filter((c) => c !== cond) : [...prev, cond]
+                            prev.includes(cond)
+                              ? prev.filter((c) => c !== cond)
+                              : [...prev, cond],
                           );
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
                           active
-                            ? 'bg-teal-50 border-primary text-primary font-bold'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? "bg-teal-50 border-primary text-primary font-bold"
+                            : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                       >
                         {cond}
@@ -546,7 +610,12 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                   Dietary Preferences
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Vegetarian', 'Diabetic Diet', 'Low Sodium', 'Non-Vegetarian'].map((diet) => {
+                  {[
+                    "Vegetarian",
+                    "Diabetic Diet",
+                    "Low Sodium",
+                    "Non-Vegetarian",
+                  ].map((diet) => {
                     const active = dietaryPreferences.includes(diet);
                     return (
                       <button
@@ -554,13 +623,15 @@ export const ElderSectionEditorModal: React.FC<ElderSectionEditorModalProps> = (
                         type="button"
                         onClick={() => {
                           setDietaryPreferences((prev) =>
-                            prev.includes(diet) ? prev.filter((d) => d !== diet) : [...prev, diet]
+                            prev.includes(diet)
+                              ? prev.filter((d) => d !== diet)
+                              : [...prev, diet],
                           );
                         }}
                         className={`p-2.5 rounded-xl border text-xs font-semibold transition ${
                           active
-                            ? 'border-primary bg-teal-50/70 text-primary font-bold'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            ? "border-primary bg-teal-50/70 text-primary font-bold"
+                            : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                         }`}
                       >
                         {diet}

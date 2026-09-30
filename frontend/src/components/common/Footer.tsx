@@ -1,6 +1,6 @@
-import React from 'react';
-import { CareConnectLogo } from './CareConnectLogo';
-import { Mail } from 'lucide-react';
+import React from "react";
+import { CareConnectLogo } from "./CareConnectLogo";
+import { Mail } from "lucide-react";
 
 export const Footer: React.FC = () => {
   return (
@@ -10,7 +10,8 @@ export const Footer: React.FC = () => {
         <div className="space-y-3 max-w-md">
           <CareConnectLogo size="md" showWordmark variant="inverted" />
           <p className="text-sm text-slate-400 leading-relaxed">
-            Managed elder-care platform designed to connect families, caregivers, and care teams.
+            Managed elder-care platform designed to connect families,
+            caregivers, and care teams.
           </p>
         </div>
 
@@ -37,4 +38,3 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
-

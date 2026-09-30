@@ -1,10 +1,10 @@
-import React from 'react';
-import { CareConnectLogo } from '../common/CareConnectLogo';
-import { AlertCircle, ChevronDown } from 'lucide-react';
-import type { Elder } from '../../types';
+import React from "react";
+import { CareConnectLogo } from "../common/CareConnectLogo";
+import { AlertCircle, ChevronDown } from "lucide-react";
+import type { Elder } from "../../types";
 
 interface MobileTopBarProps {
-  activePortal?: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS';
+  activePortal?: "FAMILY" | "CAREGIVER" | "OPERATIONS";
   elders?: Elder[];
   activeElder?: Elder | null;
   onSelectElder?: (elderId: string) => void;
@@ -14,7 +14,7 @@ interface MobileTopBarProps {
 }
 
 export const MobileTopBar: React.FC<MobileTopBarProps> = ({
-  activePortal = 'FAMILY',
+  activePortal = "FAMILY",
   elders = [],
   activeElder,
   onSelectElder,
@@ -36,13 +36,15 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {activePortal === 'FAMILY' && elders.length > 1 && (
+          {activePortal === "FAMILY" && elders.length > 1 && (
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
               >
-                <span className="max-w-[80px] truncate">{activeElder?.name || 'Elder'}</span>
+                <span className="max-w-[80px] truncate">
+                  {activeElder?.name || "Elder"}
+                </span>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
               </button>
 
@@ -59,11 +61,15 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
                         setIsDropdownOpen(false);
                       }}
                       className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] transition ${
-                        activeElder?.id === e.id ? 'bg-teal-50 font-bold text-primary' : 'text-slate-700 hover:bg-slate-50'
+                        activeElder?.id === e.id
+                          ? "bg-teal-50 font-bold text-primary"
+                          : "text-slate-700 hover:bg-slate-50"
                       }`}
                     >
                       <span className="truncate">{e.name}</span>
-                      {activeElder?.id === e.id && <span className="h-2 w-2 rounded-full bg-primary" />}
+                      {activeElder?.id === e.id && (
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -84,4 +90,3 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
     </header>
   );
 };
-

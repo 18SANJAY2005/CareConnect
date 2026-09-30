@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  MapPin, 
-  CheckCircle2, 
-  AlertCircle, 
-  XCircle, 
-  Navigation, 
-  ArrowRight, 
-  Building2, 
+import React, { useState, useEffect } from "react";
+import {
+  MapPin,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  Navigation,
+  ArrowRight,
+  Building2,
   Compass,
-  Info
-} from 'lucide-react';
-import { api } from '../../services/api';
-import { useOnboarding } from '../../context/OnboardingContext';
-import type { LocationVerifyResponse } from '../../types';
-import { PreciseLocationPicker, type PreciseLocationData } from '../common/PreciseLocationPicker';
+  Info,
+} from "lucide-react";
+import { api } from "../../services/api";
+import { useOnboarding } from "../../context/OnboardingContext";
+import type { LocationVerifyResponse } from "../../types";
+import {
+  PreciseLocationPicker,
+  type PreciseLocationData,
+} from "../common/PreciseLocationPicker";
 
 interface LocalityOption {
   name: string;
@@ -22,45 +25,49 @@ interface LocalityOption {
 }
 
 const SERVICEABLE_LOCALITIES: LocalityOption[] = [
-  { name: 'Adyar', pincode: '600020', hub: 'South Care Hub' },
-  { name: 'Besant Nagar', pincode: '600090', hub: 'South Care Hub' },
-  { name: 'Thiruvanmiyur', pincode: '600041', hub: 'South Care Hub' },
-  { name: 'Velachery', pincode: '600042', hub: 'South Care Hub' },
-  { name: 'Mylapore', pincode: '600004', hub: 'Central Care Hub' },
-  { name: 'T. Nagar', pincode: '600017', hub: 'Central Care Hub' },
-  { name: 'Alwarpet', pincode: '600018', hub: 'Central Care Hub' },
-  { name: 'Nungambakkam', pincode: '600034', hub: 'Central Care Hub' },
-  { name: 'Anna Nagar', pincode: '600040', hub: 'North-West Care Hub' },
-  { name: 'Kilpauk', pincode: '600010', hub: 'Central Care Hub' },
-  { name: 'Royapettah', pincode: '600014', hub: 'Central Care Hub' },
-  { name: 'Perungudi (OMR)', pincode: '600096', hub: 'OMR Care Hub' },
-  { name: 'Sholinganallur (OMR)', pincode: '600119', hub: 'OMR Care Hub' },
-  { name: 'R.A. Puram', pincode: '600028', hub: 'Central Care Hub' },
-  { name: 'Ashok Nagar', pincode: '600083', hub: 'Central Care Hub' },
+  { name: "Adyar", pincode: "600020", hub: "South Care Hub" },
+  { name: "Besant Nagar", pincode: "600090", hub: "South Care Hub" },
+  { name: "Thiruvanmiyur", pincode: "600041", hub: "South Care Hub" },
+  { name: "Velachery", pincode: "600042", hub: "South Care Hub" },
+  { name: "Mylapore", pincode: "600004", hub: "Central Care Hub" },
+  { name: "T. Nagar", pincode: "600017", hub: "Central Care Hub" },
+  { name: "Alwarpet", pincode: "600018", hub: "Central Care Hub" },
+  { name: "Nungambakkam", pincode: "600034", hub: "Central Care Hub" },
+  { name: "Anna Nagar", pincode: "600040", hub: "North-West Care Hub" },
+  { name: "Kilpauk", pincode: "600010", hub: "Central Care Hub" },
+  { name: "Royapettah", pincode: "600014", hub: "Central Care Hub" },
+  { name: "Perungudi (OMR)", pincode: "600096", hub: "OMR Care Hub" },
+  { name: "Sholinganallur (OMR)", pincode: "600119", hub: "OMR Care Hub" },
+  { name: "R.A. Puram", pincode: "600028", hub: "Central Care Hub" },
+  { name: "Ashok Nagar", pincode: "600083", hub: "Central Care Hub" },
 ];
 
 export const GeographicVerification: React.FC = () => {
-  const { elders, activeElder, setCurrentStep, refreshElders } = useOnboarding();
+  const { elders, activeElder, setCurrentStep, refreshElders } =
+    useOnboarding();
 
   // Basic elder fields if new
-  const [elderName, setElderName] = useState('');
+  const [elderName, setElderName] = useState("");
   const [elderAge, setElderAge] = useState(0);
-  const [elderGender, setElderGender] = useState<'FEMALE' | 'MALE' | 'OTHER'>('FEMALE');
+  const [elderGender, setElderGender] = useState<"FEMALE" | "MALE" | "OTHER">(
+    "FEMALE",
+  );
 
   // Location fields
-  const [addressLine1, setAddressLine1] = useState('');
-  const [addressLine2, setAddressLine2] = useState('');
-  const [locality, setLocality] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [landmark, setLandmark] = useState('');
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [locality, setLocality] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [landmark, setLandmark] = useState("");
 
   // Verification state
-  const [verifyResult, setVerifyResult] = useState<LocationVerifyResponse | null>(null);
+  const [verifyResult, setVerifyResult] =
+    useState<LocationVerifyResponse | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Auto-fill from active elder if already set, or clear for new elder
   useEffect(() => {
@@ -71,47 +78,49 @@ export const GeographicVerification: React.FC = () => {
       if (activeElder.location) {
         const loc = activeElder.location;
         setAddressLine1(loc.addressLine1);
-        setAddressLine2(loc.addressLine2 || '');
+        setAddressLine2(loc.addressLine2 || "");
         setLocality(loc.locality);
         setCity(loc.city);
         setState(loc.state);
         setPostalCode(loc.postalCode);
-        setLandmark(loc.landmark || '');
+        setLandmark(loc.landmark || "");
         setVerifyResult({
           serviceable: loc.serviceable,
           verificationStatus: loc.verificationStatus,
-          message: 'Saved address retrieved from database.',
+          message: "Saved address retrieved from database.",
           latitude: loc.latitude,
           longitude: loc.longitude,
           locality: loc.locality,
           city: loc.city,
           postalCode: loc.postalCode,
-          assignedHub: 'Primary Care Hub'
+          assignedHub: "Primary Care Hub",
         });
       }
     } else {
-      setElderName('');
+      setElderName("");
       setElderAge(0);
-      setElderGender('FEMALE');
-      setAddressLine1('');
-      setAddressLine2('');
-      setLocality('');
-      setCity('Chennai');
-      setState('Tamil Nadu');
-      setPostalCode('');
-      setLandmark('');
+      setElderGender("FEMALE");
+      setAddressLine1("");
+      setAddressLine2("");
+      setLocality("");
+      setCity("Chennai");
+      setState("Tamil Nadu");
+      setPostalCode("");
+      setLandmark("");
       setVerifyResult(null);
-      setErrorMessage('');
+      setErrorMessage("");
     }
   }, [activeElder]);
 
   const handleLocalitySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = SERVICEABLE_LOCALITIES.find(l => l.name === e.target.value);
+    const selected = SERVICEABLE_LOCALITIES.find(
+      (l) => l.name === e.target.value,
+    );
     if (selected) {
       setLocality(selected.name);
       setPostalCode(selected.pincode);
-      setCity('Chennai');
-      setState('Tamil Nadu');
+      setCity("Chennai");
+      setState("Tamil Nadu");
     } else {
       setLocality(e.target.value);
     }
@@ -125,7 +134,7 @@ export const GeographicVerification: React.FC = () => {
     setState(locData.state);
     setPostalCode(locData.postalCode);
 
-    setErrorMessage('');
+    setErrorMessage("");
     setIsVerifying(true);
     try {
       const res = await api.verifyLocation({
@@ -142,47 +151,53 @@ export const GeographicVerification: React.FC = () => {
         ...res,
         message: res.message
           ? res.message
-              .replace(/Chennai metropolitan region/gi, 'active care network')
-              .replace(/in Chennai/gi, '')
-              .replace(/across Chennai/gi, 'across our network')
-              .replace(/active Chennai service corridors/gi, 'active service corridors')
-          : res.message
+              .replace(/Chennai metropolitan region/gi, "active care network")
+              .replace(/in Chennai/gi, "")
+              .replace(/across Chennai/gi, "across our network")
+              .replace(
+                /active Chennai service corridors/gi,
+                "active service corridors",
+              )
+          : res.message,
       };
       setVerifyResult(sanitized);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Geographic verification failed');
+      setErrorMessage(err.message || "Geographic verification failed");
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleVerifyLocation = async (simulateState?: string) => {
-    setErrorMessage('');
+    setErrorMessage("");
     setIsVerifying(true);
     try {
       const res = await api.verifyLocation({
         addressLine1,
         addressLine2,
         locality,
-        city: city || 'Chennai',
-        state: state || 'Tamil Nadu',
+        city: city || "Chennai",
+        state: state || "Tamil Nadu",
         postalCode,
         landmark,
-        simulateState
+        simulateState,
       });
       const sanitized = {
         ...res,
         message: res.message
           ? res.message
-              .replace(/Chennai metropolitan region/gi, 'active care network')
-              .replace(/in Chennai/gi, '')
-              .replace(/across Chennai/gi, 'across our network')
-              .replace(/active Chennai service corridors/gi, 'active service corridors')
-          : res.message
+              .replace(/Chennai metropolitan region/gi, "active care network")
+              .replace(/in Chennai/gi, "")
+              .replace(/across Chennai/gi, "across our network")
+              .replace(
+                /active Chennai service corridors/gi,
+                "active service corridors",
+              )
+          : res.message,
       };
       setVerifyResult(sanitized);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Geographic verification failed');
+      setErrorMessage(err.message || "Geographic verification failed");
     } finally {
       setIsVerifying(false);
     }
@@ -190,12 +205,14 @@ export const GeographicVerification: React.FC = () => {
 
   const handleSaveAndProceed = async () => {
     if (!verifyResult || !verifyResult.serviceable) {
-      setErrorMessage('Please verify that the address is within serviceable coverage first.');
+      setErrorMessage(
+        "Please verify that the address is within serviceable coverage first.",
+      );
       return;
     }
 
     setIsSaving(true);
-    setErrorMessage('');
+    setErrorMessage("");
     try {
       let currentElder = activeElder;
       // 1. Create elder if not existing yet
@@ -213,7 +230,7 @@ export const GeographicVerification: React.FC = () => {
         addressLine2,
         locality: locality || verifyResult.locality,
         city: city || verifyResult.city,
-        state: state || 'Tamil Nadu',
+        state: state || "Tamil Nadu",
         postalCode: postalCode || verifyResult.postalCode,
         landmark,
         latitude: verifyResult.latitude,
@@ -222,18 +239,16 @@ export const GeographicVerification: React.FC = () => {
 
       // 3. Refresh elders list and select current elder
       await refreshElders(currentElder.id);
-      setCurrentStep('PERSONA');
+      setCurrentStep("PERSONA");
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save verified address');
+      setErrorMessage(err.message || "Failed to save verified address");
     } finally {
       setIsSaving(false);
     }
   };
 
-
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-      
       {/* Step Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -246,7 +261,9 @@ export const GeographicVerification: React.FC = () => {
             Where will your loved one receive care?
           </h1>
           <p className="text-slate-600 mt-2 text-sm sm:text-base leading-relaxed">
-            CareConnect operates dedicated clinical care corridors. We independently verify the elder’s residence to ensure rapid attendant dispatch and reliable geofenced check-ins.
+            CareConnect operates dedicated clinical care corridors. We
+            independently verify the elder’s residence to ensure rapid attendant
+            dispatch and reliable geofenced check-ins.
           </p>
         </div>
         {elders && elders.length > 0 && (
@@ -268,10 +285,8 @@ export const GeographicVerification: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
         {/* Left Column: Form Inputs */}
         <div className="lg:col-span-7 space-y-6">
-          
           {/* Elder Basic Info Section */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -280,7 +295,9 @@ export const GeographicVerification: React.FC = () => {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Elder's Full Name</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Elder's Full Name
+                </label>
                 <input
                   type="text"
                   required
@@ -291,7 +308,9 @@ export const GeographicVerification: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Age</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Age
+                </label>
                 <input
                   type="number"
                   min="50"
@@ -311,12 +330,14 @@ export const GeographicVerification: React.FC = () => {
               Residential Care Address
             </h2>
             <p className="text-xs text-slate-500 mb-3">
-              The home address where attendants and clinical managers will report.
+              The home address where attendants and clinical managers will
+              report.
             </p>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
-                House / Flat No., Apartment Name, Street <span className="text-rose-500">*</span>
+                House / Flat No., Apartment Name, Street{" "}
+                <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -364,7 +385,9 @@ export const GeographicVerification: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">City</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  City
+                </label>
                 <input
                   type="text"
                   value={city}
@@ -374,7 +397,9 @@ export const GeographicVerification: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">State</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  State
+                </label>
                 <input
                   type="text"
                   value={state}
@@ -419,7 +444,9 @@ export const GeographicVerification: React.FC = () => {
                 className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl shadow-sm transition flex items-center justify-center gap-2"
               >
                 {isVerifying ? (
-                  <span className="inline-block animate-pulse">Checking Geographic Serviceability...</span>
+                  <span className="inline-block animate-pulse">
+                    Checking Geographic Serviceability...
+                  </span>
                 ) : (
                   <>
                     <Compass className="w-4 h-4 text-teal-400" />
@@ -428,14 +455,11 @@ export const GeographicVerification: React.FC = () => {
                 )}
               </button>
             </div>
-
           </div>
-
         </div>
 
         {/* Right Column: Verification Status & Map Preview */}
         <div className="lg:col-span-5 space-y-6">
-          
           {/* Verification Status Card */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <h3 className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wider text-slate-500">
@@ -445,72 +469,90 @@ export const GeographicVerification: React.FC = () => {
             {!verifyResult ? (
               <div className="text-center py-8 px-4 border-2 border-dashed border-slate-200 rounded-xl">
                 <Navigation className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-xs font-medium text-slate-600">No address verified yet</p>
+                <p className="text-xs font-medium text-slate-600">
+                  No address verified yet
+                </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Fill in the address details and click "Check Serviceability" to run verification against the coverage grid.
+                  Fill in the address details and click "Check Serviceability"
+                  to run verification against the coverage grid.
                 </p>
               </div>
-            ) : verifyResult.verificationStatus === 'VERIFIED' ? (
+            ) : verifyResult.verificationStatus === "VERIFIED" ? (
               <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-3">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <span className="font-bold text-sm">Zone Verified & Active</span>
+                  <span className="font-bold text-sm">
+                    Zone Verified & Active
+                  </span>
                 </div>
                 <p className="text-xs text-emerald-800 leading-relaxed">
                   {verifyResult.message}
                 </p>
                 <div className="pt-2 border-t border-emerald-200/60 grid grid-cols-2 gap-2 text-[11px]">
                   <div>
-                    <span className="text-emerald-700 block font-medium">Assigned Care Hub:</span>
-                    <span className="font-bold text-slate-800">{verifyResult.assignedHub}</span>
+                    <span className="text-emerald-700 block font-medium">
+                      Assigned Care Hub:
+                    </span>
+                    <span className="font-bold text-slate-800">
+                      {verifyResult.assignedHub}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-emerald-700 block font-medium">GPS Coordinates:</span>
+                    <span className="text-emerald-700 block font-medium">
+                      GPS Coordinates:
+                    </span>
                     <span className="font-mono text-slate-800">
                       {verifyResult.latitude}, {verifyResult.longitude}
                     </span>
                   </div>
                 </div>
               </div>
-            ) : verifyResult.verificationStatus === 'NOT_SERVICEABLE' ? (
+            ) : verifyResult.verificationStatus === "NOT_SERVICEABLE" ? (
               <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-3">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-                  <span className="font-bold text-sm">Outside Active Service Corridor</span>
+                  <span className="font-bold text-sm">
+                    Outside Active Service Corridor
+                  </span>
                 </div>
                 <p className="text-xs text-amber-800 leading-relaxed">
                   {verifyResult.message}
                 </p>
                 <p className="text-[11px] text-amber-700">
-                  CareConnect is currently deploying attendants in active service zones. You can join our priority expansion waitlist.
+                  CareConnect is currently deploying attendants in active
+                  service zones. You can join our priority expansion waitlist.
                 </p>
                 <button
                   type="button"
-                  onClick={() => alert('Added to priority expansion waitlist! Our team will notify you when services expand.')}
+                  onClick={() =>
+                    alert(
+                      "Added to priority expansion waitlist! Our team will notify you when services expand.",
+                    )
+                  }
                   className="mt-2 text-xs font-semibold px-3 py-1.5 bg-amber-200/80 hover:bg-amber-200 text-amber-900 rounded-lg transition"
                 >
                   Join Waitlist for {locality || city}
                 </button>
               </div>
-            ) : verifyResult.verificationStatus === 'INVALID_ADDRESS' ? (
+            ) : verifyResult.verificationStatus === "INVALID_ADDRESS" ? (
               <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 space-y-2">
                 <div className="flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                  <span className="font-bold text-sm">Invalid Address Format</span>
+                  <span className="font-bold text-sm">
+                    Invalid Address Format
+                  </span>
                 </div>
-                <p className="text-xs text-rose-800">
-                  {verifyResult.message}
-                </p>
+                <p className="text-xs text-rose-800">{verifyResult.message}</p>
               </div>
             ) : (
               <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <Info className="w-5 h-5 text-slate-600 shrink-0" />
-                  <span className="font-bold text-sm">{verifyResult.verificationStatus.replace('_', ' ')}</span>
+                  <span className="font-bold text-sm">
+                    {verifyResult.verificationStatus.replace("_", " ")}
+                  </span>
                 </div>
-                <p className="text-xs text-slate-600">
-                  {verifyResult.message}
-                </p>
+                <p className="text-xs text-slate-600">{verifyResult.message}</p>
               </div>
             )}
 
@@ -540,7 +582,9 @@ export const GeographicVerification: React.FC = () => {
                 className="w-full py-3 px-4 bg-teal-700 hover:bg-teal-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2"
               >
                 {isSaving ? (
-                  <span className="inline-block animate-pulse">Persisting Verified Location...</span>
+                  <span className="inline-block animate-pulse">
+                    Persisting Verified Location...
+                  </span>
                 ) : (
                   <>
                     <span>Confirm & Proceed to Patient Persona</span>
@@ -549,16 +593,13 @@ export const GeographicVerification: React.FC = () => {
                 )}
               </button>
               <p className="text-[11px] text-center text-slate-400 mt-2">
-                Phase A.2 Patient Persona intake will begin with this confirmed address.
+                Phase A.2 Patient Persona intake will begin with this confirmed
+                address.
               </p>
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 };

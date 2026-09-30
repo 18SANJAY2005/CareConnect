@@ -1,8 +1,4 @@
-export type UserRole =
-  | "FAMILY_SPONSOR"
-  | "CAREGIVER"
-  | "OPS_MANAGER"
-  | "ADMIN";
+export type UserRole = "FAMILY_SPONSOR" | "CAREGIVER" | "OPS_MANAGER" | "ADMIN";
 
 export interface User {
   id: string;
@@ -16,16 +12,9 @@ export interface User {
 }
 
 export type MobilityLevel =
-  | "INDEPENDENT"
-  | "CANE_WALKER"
-  | "WHEELCHAIR"
-  | "BEDRIDDEN";
+  "INDEPENDENT" | "CANE_WALKER" | "WHEELCHAIR" | "BEDRIDDEN";
 
-export type PersonaStatus =
-  | "DRAFT"
-  | "IN_PROGRESS"
-  | "REVIEW"
-  | "SAVED";
+export type PersonaStatus = "DRAFT" | "IN_PROGRESS" | "REVIEW" | "SAVED";
 
 export type ShiftPreference =
   | "EIGHT_HOUR_DAY"
@@ -68,6 +57,7 @@ export interface Elder {
   dateOfBirth?: string | null;
   age: number;
   gender: "MALE" | "FEMALE" | "OTHER";
+  phoneNumber?: string | null;
   locationId?: string | null;
   mobilityLevel: MobilityLevel;
   medicalConditions: string[];
@@ -87,11 +77,7 @@ export interface Elder {
 }
 
 export type AssessmentStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "CONFIRMED"
-  | "FAILED"
-  | "CANCELLED";
+  "DRAFT" | "SUBMITTED" | "CONFIRMED" | "FAILED" | "CANCELLED";
 
 export interface HomeAssessment {
   id: string;
@@ -99,10 +85,7 @@ export interface HomeAssessment {
   requestedBy: string;
   addressSnapshot: Record<string, any>;
   preferredDate: string;
-  preferredTime:
-    | "MORNING_9_12"
-    | "AFTERNOON_12_4"
-    | "EVENING_4_7";
+  preferredTime: "MORNING_9_12" | "AFTERNOON_12_4" | "EVENING_4_7";
   notes?: string | null;
   status: AssessmentStatus;
   createdAt: string;
@@ -230,11 +213,7 @@ export interface IntroCall {
   scheduled_at: string;
   timezone: string;
   duration_minutes: number;
-  status:
-    | "SCHEDULED"
-    | "IN_PROGRESS"
-    | "COMPLETED"
-    | "CANCELLED";
+  status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   provider_reference?: string;
   call_notes?: string;
 }
@@ -288,11 +267,7 @@ export interface SLAAcceptanceResponse {
 }
 
 export type PhaseBStep =
-  | "matching"
-  | "call"
-  | "payment"
-  | "sla"
-  | "confirmation";
+  "matching" | "call" | "payment" | "sla" | "confirmation";
 
 /* =========================================================
    Phase D01 — Replacement Request
@@ -487,11 +462,7 @@ export interface Renewal {
     | "EXPIRED";
   autoDebitEnabled: boolean;
   autoDebitMandateId?: string | null;
-  mandateStatus:
-    | "NOT_CONFIGURED"
-    | "PENDING"
-    | "ACTIVE"
-    | "FAILED";
+  mandateStatus: "NOT_CONFIGURED" | "PENDING" | "ACTIVE" | "FAILED";
   notes?: string | null;
   paymentTransactionId?: string | null;
   createdAt: string;

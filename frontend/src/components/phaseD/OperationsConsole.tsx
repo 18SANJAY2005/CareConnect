@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import type {
   ReplacementRequest,
   OperationsIssue,
   Invoice,
   AuditLog,
   Caregiver,
-} from '../../types';
-import { api } from '../../services/api';
+} from "../../types";
+import { api } from "../../services/api";
 import {
   ShieldAlert,
   MessageSquareHeart,
@@ -18,36 +18,34 @@ import {
   Star,
   Loader2,
   X,
-} from 'lucide-react';
-import { CareConnectLogo } from '../common/CareConnectLogo';
+} from "lucide-react";
+import { CareConnectLogo } from "../common/CareConnectLogo";
 
 export const OperationsConsole: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    'REPLACEMENTS' | 'QA_ISSUES' | 'BILLING' | 'AUDIT'
-  >('REPLACEMENTS');
+    "REPLACEMENTS" | "QA_ISSUES" | "BILLING" | "AUDIT"
+  >("REPLACEMENTS");
 
   // State for Replacements
   const [replacements, setReplacements] = useState<ReplacementRequest[]>([]);
-  const [repStatusFilter, setRepStatusFilter] = useState<string>('');
+  const [repStatusFilter, setRepStatusFilter] = useState<string>("");
   const [bufferCaregivers, setBufferCaregivers] = useState<Caregiver[]>([]);
-  const [selectedRep, setSelectedRep] =
-    useState<ReplacementRequest | null>(null);
-  const [selectedSubstituteId, setSelectedSubstituteId] =
-    useState<string>('');
-  const [assignNote, setAssignNote] = useState<string>('');
+  const [selectedRep, setSelectedRep] = useState<ReplacementRequest | null>(
+    null,
+  );
+  const [selectedSubstituteId, setSelectedSubstituteId] = useState<string>("");
+  const [assignNote, setAssignNote] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState<boolean>(false);
 
   // State for QA Issues
   const [issues, setIssues] = useState<OperationsIssue[]>([]);
-  const [issueStatusFilter, setIssueStatusFilter] = useState<string>('');
-  const [selectedIssue, setSelectedIssue] =
-    useState<OperationsIssue | null>(null);
-  const [issueResolutionNotes, setIssueResolutionNotes] =
-    useState<string>('');
-  const [issueNewStatus, setIssueNewStatus] =
-    useState<string>('RESOLVED');
-  const [isResolvingIssue, setIsResolvingIssue] =
-    useState<boolean>(false);
+  const [issueStatusFilter, setIssueStatusFilter] = useState<string>("");
+  const [selectedIssue, setSelectedIssue] = useState<OperationsIssue | null>(
+    null,
+  );
+  const [issueResolutionNotes, setIssueResolutionNotes] = useState<string>("");
+  const [issueNewStatus, setIssueNewStatus] = useState<string>("RESOLVED");
+  const [isResolvingIssue, setIsResolvingIssue] = useState<boolean>(false);
 
   // State for Billing
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -72,9 +70,9 @@ export const OperationsConsole: React.FC = () => {
       return caregiver.languages;
     }
 
-    if (typeof caregiver.languages === 'string') {
+    if (typeof caregiver.languages === "string") {
       return caregiver.languages
-        .split(',')
+        .split(",")
         .map((language) => language.trim())
         .filter(Boolean);
     }
@@ -86,11 +84,9 @@ export const OperationsConsole: React.FC = () => {
     setIsLoading(true);
 
     try {
-      if (activeTab === 'REPLACEMENTS') {
+      if (activeTab === "REPLACEMENTS") {
         const [reps, cgs] = await Promise.all([
-          api.getOperationsReplacementQueue(
-            repStatusFilter || undefined
-          ),
+          api.getOperationsReplacementQueue(repStatusFilter || undefined),
           api.getBufferPoolCaregivers(),
         ]);
 
@@ -100,16 +96,16 @@ export const OperationsConsole: React.FC = () => {
         if (cgs.length > 0 && !selectedSubstituteId) {
           setSelectedSubstituteId(String(cgs[0].id));
         }
-      } else if (activeTab === 'QA_ISSUES') {
+      } else if (activeTab === "QA_ISSUES") {
         const issueList = await api.getOperationsFeedbackQueue(
-          issueStatusFilter || undefined
+          issueStatusFilter || undefined,
         );
 
         setIssues(issueList);
-      } else if (activeTab === 'BILLING') {
+      } else if (activeTab === "BILLING") {
         const invs = await api.getOperationsInvoices();
         setInvoices(invs);
-      } else if (activeTab === 'AUDIT') {
+      } else if (activeTab === "AUDIT") {
         const logs = await api.getAuditTrail();
         setAuditLogs(logs);
       }
@@ -127,7 +123,7 @@ export const OperationsConsole: React.FC = () => {
   const handleStatusChange = async (
     id: string,
     newStatus: string,
-    note?: string
+    note?: string,
   ) => {
     try {
       await api.updateOperationsReplacementRequest(id, {
@@ -141,13 +137,11 @@ export const OperationsConsole: React.FC = () => {
 
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update status.');
+      alert(err.message || "Failed to update status.");
     }
   };
 
-  const handleAssignSubstitute = async (
-    e: React.FormEvent
-  ) => {
+  const handleAssignSubstitute = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedRep || !selectedSubstituteId) {
@@ -160,29 +154,25 @@ export const OperationsConsole: React.FC = () => {
       await api.assignSubstituteCaregiver(
         selectedRep.id,
         selectedSubstituteId,
-        assignNote
+        assignNote,
       );
 
       setSelectedRep(null);
-      setAssignNote('');
+      setAssignNote("");
 
-      setMessage(
-        'Substitute caregiver assigned from Buffer Pool.'
-      );
+      setMessage("Substitute caregiver assigned from Buffer Pool.");
 
       setTimeout(() => setMessage(null), 3000);
 
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to assign substitute.');
+      alert(err.message || "Failed to assign substitute.");
     } finally {
       setIsAssigning(false);
     }
   };
 
-  const handleUpdateIssue = async (
-    e: React.FormEvent
-  ) => {
+  const handleUpdateIssue = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedIssue) {
@@ -198,17 +188,15 @@ export const OperationsConsole: React.FC = () => {
       });
 
       setSelectedIssue(null);
-      setIssueResolutionNotes('');
+      setIssueResolutionNotes("");
 
-      setMessage(
-        'Operations issue updated successfully.'
-      );
+      setMessage("Operations issue updated successfully.");
 
       setTimeout(() => setMessage(null), 3000);
 
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to update issue.');
+      alert(err.message || "Failed to update issue.");
     } finally {
       setIsResolvingIssue(false);
     }
@@ -233,8 +221,8 @@ export const OperationsConsole: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400">
-              Triage replacements, review feedback QA alerts,
-              monitor invoices, and view audit trail.
+              Triage replacements, review feedback QA alerts, monitor invoices,
+              and view audit trail.
             </p>
           </div>
         </div>
@@ -242,11 +230,11 @@ export const OperationsConsole: React.FC = () => {
         {/* Tab Controls */}
         <div className="flex flex-wrap gap-1.5 p-1 bg-slate-800/80 rounded-xl border border-slate-700">
           <button
-            onClick={() => setActiveTab('REPLACEMENTS')}
+            onClick={() => setActiveTab("REPLACEMENTS")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'REPLACEMENTS'
-                ? 'bg-teal-700 text-white shadow'
-                : 'text-slate-300 hover:text-white'
+              activeTab === "REPLACEMENTS"
+                ? "bg-teal-700 text-white shadow"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             <ShieldAlert className="w-3.5 h-3.5" />
@@ -254,11 +242,11 @@ export const OperationsConsole: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('QA_ISSUES')}
+            onClick={() => setActiveTab("QA_ISSUES")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'QA_ISSUES'
-                ? 'bg-teal-700 text-white shadow'
-                : 'text-slate-300 hover:text-white'
+              activeTab === "QA_ISSUES"
+                ? "bg-teal-700 text-white shadow"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             <MessageSquareHeart className="w-3.5 h-3.5" />
@@ -266,11 +254,11 @@ export const OperationsConsole: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('BILLING')}
+            onClick={() => setActiveTab("BILLING")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'BILLING'
-                ? 'bg-teal-700 text-white shadow'
-                : 'text-slate-300 hover:text-white'
+              activeTab === "BILLING"
+                ? "bg-teal-700 text-white shadow"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             <ReceiptIndianRupee className="w-3.5 h-3.5" />
@@ -278,11 +266,11 @@ export const OperationsConsole: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('AUDIT')}
+            onClick={() => setActiveTab("AUDIT")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ${
-              activeTab === 'AUDIT'
-                ? 'bg-teal-700 text-white shadow'
-                : 'text-slate-300 hover:text-white'
+              activeTab === "AUDIT"
+                ? "bg-teal-700 text-white shadow"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             <ScrollText className="w-3.5 h-3.5" />
@@ -299,7 +287,7 @@ export const OperationsConsole: React.FC = () => {
       )}
 
       {/* TAB 1: REPLACEMENTS QUEUE */}
-      {activeTab === 'REPLACEMENTS' && (
+      {activeTab === "REPLACEMENTS" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2">
@@ -318,21 +306,13 @@ export const OperationsConsole: React.FC = () => {
 
               <select
                 value={repStatusFilter}
-                onChange={(e) =>
-                  setRepStatusFilter(e.target.value)
-                }
+                onChange={(e) => setRepStatusFilter(e.target.value)}
                 className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-teal-700"
               >
                 <option value="">All Statuses</option>
-                <option value="SUBMITTED">
-                  SUBMITTED (Pending Review)
-                </option>
-                <option value="UNDER_REVIEW">
-                  UNDER_REVIEW
-                </option>
-                <option value="ASSIGNED">
-                  ASSIGNED (Awaiting Family)
-                </option>
+                <option value="SUBMITTED">SUBMITTED (Pending Review)</option>
+                <option value="UNDER_REVIEW">UNDER_REVIEW</option>
+                <option value="ASSIGNED">ASSIGNED (Awaiting Family)</option>
                 <option value="RESOLVED">RESOLVED</option>
                 <option value="REJECTED">REJECTED</option>
               </select>
@@ -342,14 +322,11 @@ export const OperationsConsole: React.FC = () => {
           {isLoading ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-teal-700" />
-              <span className="text-xs">
-                Loading requests...
-              </span>
+              <span className="text-xs">Loading requests...</span>
             </div>
           ) : replacements.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-xs">
-              No replacement requests match the selected
-              filter.
+              No replacement requests match the selected filter.
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -361,16 +338,16 @@ export const OperationsConsole: React.FC = () => {
                   <div className="space-y-1.5 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-900">
-                        {rep.reasonCode.replace(/_/g, ' ')}
+                        {rep.reasonCode.replace(/_/g, " ")}
                       </span>
 
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          rep.priority === 'URGENT'
-                            ? 'bg-rose-100 text-rose-800'
-                            : rep.priority === 'HIGH'
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-slate-100 text-slate-700'
+                          rep.priority === "URGENT"
+                            ? "bg-rose-100 text-rose-800"
+                            : rep.priority === "HIGH"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-slate-100 text-slate-700"
                         }`}
                       >
                         {rep.priority}
@@ -382,21 +359,16 @@ export const OperationsConsole: React.FC = () => {
                     </div>
 
                     <div className="text-slate-500">
-                      Current Attendant:{' '}
+                      Current Attendant:{" "}
                       <strong className="text-slate-700">
-                        {rep.currentCaregiver?.fullName ||
-                          'Assigned'}
+                        {rep.currentCaregiver?.fullName || "Assigned"}
                       </strong>
-
                       {rep.substituteCaregiver && (
                         <span>
-                          {' '}
-                          • Proposed Substitute:{' '}
+                          {" "}
+                          • Proposed Substitute:{" "}
                           <strong className="text-teal-800">
-                            {
-                              rep.substituteCaregiver
-                                .fullName
-                            }
+                            {rep.substituteCaregiver.fullName}
                           </strong>
                         </span>
                       )}
@@ -411,13 +383,13 @@ export const OperationsConsole: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 shrink-0">
-                    {rep.status === 'SUBMITTED' && (
+                    {rep.status === "SUBMITTED" && (
                       <button
                         onClick={() =>
                           handleStatusChange(
                             rep.id,
-                            'UNDER_REVIEW',
-                            'Clinical Care Manager initiated review.'
+                            "UNDER_REVIEW",
+                            "Clinical Care Manager initiated review.",
                           )
                         }
                         className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition"
@@ -426,13 +398,9 @@ export const OperationsConsole: React.FC = () => {
                       </button>
                     )}
 
-                    {['SUBMITTED', 'UNDER_REVIEW'].includes(
-                      rep.status
-                    ) && (
+                    {["SUBMITTED", "UNDER_REVIEW"].includes(rep.status) && (
                       <button
-                        onClick={() =>
-                          setSelectedRep(rep)
-                        }
+                        onClick={() => setSelectedRep(rep)}
                         className="px-3 py-1.5 bg-teal-900 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shadow-sm flex items-center gap-1.5"
                       >
                         <UserCheck className="w-3.5 h-3.5" />
@@ -440,13 +408,13 @@ export const OperationsConsole: React.FC = () => {
                       </button>
                     )}
 
-                    {rep.status === 'ASSIGNED' && (
+                    {rep.status === "ASSIGNED" && (
                       <span className="text-[11px] text-amber-700 font-semibold px-2 py-1 bg-amber-50 rounded-lg">
                         Waiting for family confirmation
                       </span>
                     )}
 
-                    {rep.status === 'RESOLVED' && (
+                    {rep.status === "RESOLVED" && (
                       <span className="text-[11px] text-emerald-700 font-semibold px-2 py-1 bg-emerald-50 rounded-lg flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Resolved & Active</span>
@@ -461,7 +429,7 @@ export const OperationsConsole: React.FC = () => {
       )}
 
       {/* TAB 2: QA ISSUES QUEUE */}
-      {activeTab === 'QA_ISSUES' && (
+      {activeTab === "QA_ISSUES" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
@@ -470,23 +438,18 @@ export const OperationsConsole: React.FC = () => {
               </h3>
 
               <p className="text-xs text-slate-500">
-                Auto-escalated issues from family ratings of 2
-                stars or below.
+                Auto-escalated issues from family ratings of 2 stars or below.
               </p>
             </div>
 
             <select
               value={issueStatusFilter}
-              onChange={(e) =>
-                setIssueStatusFilter(e.target.value)
-              }
+              onChange={(e) => setIssueStatusFilter(e.target.value)}
               className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-teal-700"
             >
               <option value="">All Statuses</option>
               <option value="OPEN">OPEN</option>
-              <option value="IN_PROGRESS">
-                IN_PROGRESS
-              </option>
+              <option value="IN_PROGRESS">IN_PROGRESS</option>
               <option value="RESOLVED">RESOLVED</option>
               <option value="CLOSED">CLOSED</option>
             </select>
@@ -495,14 +458,12 @@ export const OperationsConsole: React.FC = () => {
           {isLoading ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-teal-700" />
-              <span className="text-xs">
-                Loading QA issues...
-              </span>
+              <span className="text-xs">Loading QA issues...</span>
             </div>
           ) : issues.length === 0 ? (
             <div className="p-12 text-center text-slate-400 text-xs">
-              No escalated quality assurance alerts found.
-              All active care within threshold!
+              No escalated quality assurance alerts found. All active care
+              within threshold!
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -519,9 +480,9 @@ export const OperationsConsole: React.FC = () => {
 
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          iss.priority === 'HIGH'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-100 text-slate-700'
+                          iss.priority === "HIGH"
+                            ? "bg-rose-100 text-rose-800"
+                            : "bg-slate-100 text-slate-700"
                         }`}
                       >
                         {iss.priority}
@@ -543,9 +504,7 @@ export const OperationsConsole: React.FC = () => {
                     onClick={() => {
                       setSelectedIssue(iss);
                       setIssueNewStatus(iss.status);
-                      setIssueResolutionNotes(
-                        iss.resolutionNotes || ''
-                      );
+                      setIssueResolutionNotes(iss.resolutionNotes || "");
                     }}
                     className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold shrink-0"
                   >
@@ -559,7 +518,7 @@ export const OperationsConsole: React.FC = () => {
       )}
 
       {/* TAB 3: BILLING OVERVIEW */}
-      {activeTab === 'BILLING' && (
+      {activeTab === "BILLING" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider pb-4 border-b border-slate-100">
             Platform Monthly Billing Oversight
@@ -571,21 +530,11 @@ export const OperationsConsole: React.FC = () => {
                 <tr>
                   <th className="p-3">Invoice Number</th>
                   <th className="p-3">Billing Period</th>
-                  <th className="p-3 text-right">
-                    Base Attendant
-                  </th>
-                  <th className="p-3 text-right">
-                    Agency Fee (15%)
-                  </th>
-                  <th className="p-3 text-right">
-                    GST (18%)
-                  </th>
-                  <th className="p-3 text-right">
-                    Total Payable
-                  </th>
-                  <th className="p-3 text-center">
-                    Status
-                  </th>
+                  <th className="p-3 text-right">Base Attendant</th>
+                  <th className="p-3 text-right">Agency Fee (15%)</th>
+                  <th className="p-3 text-right">GST (18%)</th>
+                  <th className="p-3 text-right">Total Payable</th>
+                  <th className="p-3 text-center">Status</th>
                 </tr>
               </thead>
 
@@ -597,55 +546,39 @@ export const OperationsConsole: React.FC = () => {
                     </td>
 
                     <td className="p-3">
-                      {new Date(
-                        inv.billingPeriodStart
-                      ).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
-                      })}{' '}
-                      –{' '}
-                      {new Date(
-                        inv.billingPeriodEnd
-                      ).toLocaleDateString([], {
-                        month: 'short',
-                        day: 'numeric',
+                      {new Date(inv.billingPeriodStart).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      })}{" "}
+                      –{" "}
+                      {new Date(inv.billingPeriodEnd).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
                       })}
                     </td>
 
                     <td className="p-3 text-right font-mono">
-                      ₹
-                      {inv.subtotal.toLocaleString(
-                        'en-IN'
-                      )}
+                      ₹{inv.subtotal.toLocaleString("en-IN")}
                     </td>
 
                     <td className="p-3 text-right font-mono">
-                      ₹
-                      {inv.agencyFee.toLocaleString(
-                        'en-IN'
-                      )}
+                      ₹{inv.agencyFee.toLocaleString("en-IN")}
                     </td>
 
                     <td className="p-3 text-right font-mono">
-                      ₹
-                      {inv.taxAmount.toLocaleString(
-                        'en-IN'
-                      )}
+                      ₹{inv.taxAmount.toLocaleString("en-IN")}
                     </td>
 
                     <td className="p-3 text-right font-mono font-bold text-slate-900">
-                      ₹
-                      {inv.totalAmount.toLocaleString(
-                        'en-IN'
-                      )}
+                      ₹{inv.totalAmount.toLocaleString("en-IN")}
                     </td>
 
                     <td className="p-3 text-center">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          inv.status === 'PAID'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-900'
+                          inv.status === "PAID"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-900"
                         }`}
                       >
                         {inv.status}
@@ -660,7 +593,7 @@ export const OperationsConsole: React.FC = () => {
       )}
 
       {/* TAB 4: AUDIT TRAIL */}
-      {activeTab === 'AUDIT' && (
+      {activeTab === "AUDIT" && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider pb-4 border-b border-slate-100">
             System Audit Trail & State Transitions
@@ -695,9 +628,7 @@ export const OperationsConsole: React.FC = () => {
                 </div>
 
                 <div className="text-[10px] font-mono text-slate-400 shrink-0">
-                  {new Date(
-                    log.createdAt
-                  ).toLocaleString()}
+                  {new Date(log.createdAt).toLocaleString()}
                 </div>
               </div>
             ))}
@@ -727,18 +658,10 @@ export const OperationsConsole: React.FC = () => {
               className="space-y-4 text-xs"
             >
               <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-900">
-                Reason:{' '}
-                <strong>
-                  {selectedRep.reasonCode.replace(
-                    /_/g,
-                    ' '
-                  )}
-                </strong>
-
+                Reason:{" "}
+                <strong>{selectedRep.reasonCode.replace(/_/g, " ")}</strong>
                 {selectedRep.notes && (
-                  <div className="mt-1 text-[11px]">
-                    "{selectedRep.notes}"
-                  </div>
+                  <div className="mt-1 text-[11px]">"{selectedRep.notes}"</div>
                 )}
               </div>
 
@@ -756,10 +679,9 @@ export const OperationsConsole: React.FC = () => {
                       <label
                         key={caregiverId}
                         className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer transition ${
-                          selectedSubstituteId ===
-                          caregiverId
-                            ? 'border-teal-700 bg-teal-50/50 ring-2 ring-teal-700/20'
-                            : 'border-slate-200 hover:bg-slate-50'
+                          selectedSubstituteId === caregiverId
+                            ? "border-teal-700 bg-teal-50/50 ring-2 ring-teal-700/20"
+                            : "border-slate-200 hover:bg-slate-50"
                         }`}
                       >
                         <div className="flex items-center gap-3">
@@ -767,14 +689,9 @@ export const OperationsConsole: React.FC = () => {
                             type="radio"
                             name="substitute"
                             value={caregiverId}
-                            checked={
-                              selectedSubstituteId ===
-                              caregiverId
-                            }
+                            checked={selectedSubstituteId === caregiverId}
                             onChange={() =>
-                              setSelectedSubstituteId(
-                                caregiverId
-                              )
+                              setSelectedSubstituteId(caregiverId)
                             }
                             className="text-teal-700 focus:ring-teal-700"
                           />
@@ -785,9 +702,8 @@ export const OperationsConsole: React.FC = () => {
                             </div>
 
                             <div className="text-[11px] text-slate-500">
-                              {cg.experienceYears} yrs exp •{' '}
-                              {cg.locality} •{' '}
-                              {languages.join(', ')}
+                              {cg.experienceYears} yrs exp • {cg.locality} •{" "}
+                              {languages.join(", ")}
                             </div>
                           </div>
                         </div>
@@ -809,9 +725,7 @@ export const OperationsConsole: React.FC = () => {
 
                 <textarea
                   value={assignNote}
-                  onChange={(e) =>
-                    setAssignNote(e.target.value)
-                  }
+                  onChange={(e) => setAssignNote(e.target.value)}
                   rows={2}
                   placeholder="e.g. Matched based on locality, clinical needs, and language fluency..."
                   className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-teal-700"
@@ -832,9 +746,7 @@ export const OperationsConsole: React.FC = () => {
                   disabled={isAssigning}
                   className="px-5 py-2.5 bg-teal-900 hover:bg-teal-800 text-white font-bold rounded-xl transition"
                 >
-                  {isAssigning
-                    ? 'Assigning...'
-                    : 'Assign & Notify Family'}
+                  {isAssigning ? "Assigning..." : "Assign & Notify Family"}
                 </button>
               </div>
             </form>
@@ -859,10 +771,7 @@ export const OperationsConsole: React.FC = () => {
               </button>
             </div>
 
-            <form
-              onSubmit={handleUpdateIssue}
-              className="space-y-4 text-xs"
-            >
+            <form onSubmit={handleUpdateIssue} className="space-y-4 text-xs">
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
                 {selectedIssue.summary}
               </div>
@@ -874,9 +783,7 @@ export const OperationsConsole: React.FC = () => {
 
                 <select
                   value={issueNewStatus}
-                  onChange={(e) =>
-                    setIssueNewStatus(e.target.value)
-                  }
+                  onChange={(e) => setIssueNewStatus(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-teal-700"
                 >
                   <option value="IN_PROGRESS">
@@ -896,9 +803,7 @@ export const OperationsConsole: React.FC = () => {
 
                 <textarea
                   value={issueResolutionNotes}
-                  onChange={(e) =>
-                    setIssueResolutionNotes(e.target.value)
-                  }
+                  onChange={(e) => setIssueResolutionNotes(e.target.value)}
                   required
                   rows={3}
                   placeholder="Document supervisory investigation and steps taken with attendant..."
@@ -920,9 +825,7 @@ export const OperationsConsole: React.FC = () => {
                   disabled={isResolvingIssue}
                   className="px-5 py-2.5 bg-teal-900 hover:bg-teal-800 text-white font-bold rounded-xl transition"
                 >
-                  {isResolvingIssue
-                    ? 'Saving...'
-                    : 'Save Resolution'}
+                  {isResolvingIssue ? "Saving..." : "Save Resolution"}
                 </button>
               </div>
             </form>

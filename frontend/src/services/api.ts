@@ -58,10 +58,7 @@ class ApiService {
     localStorage.removeItem("careconnect_token");
   }
 
-  async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = this.getToken();
 
     const headers: Record<string, string> = {
@@ -94,10 +91,7 @@ class ApiService {
 
       try {
         const errorData = await response.json();
-        errorMessage =
-          errorData.detail ||
-          errorData.message ||
-          errorMessage;
+        errorMessage = errorData.detail || errorData.message || errorMessage;
       } catch {
         // Keep default error message.
       }
@@ -114,7 +108,7 @@ class ApiService {
 
   async sendOtp(
     phone: string,
-    channel: string = "WHATSAPP"
+    channel: string = "WHATSAPP",
   ): Promise<{
     success: boolean;
     message: string;
@@ -134,20 +128,17 @@ class ApiService {
     phone: string,
     otp: string,
     fullName?: string,
-    email?: string
+    email?: string,
   ): Promise<AuthResponse> {
-    const res = await this.request<AuthResponse>(
-      "/auth/otp/verify",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          phone,
-          otp,
-          fullName,
-          email,
-        }),
-      }
-    );
+    const res = await this.request<AuthResponse>("/auth/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({
+        phone,
+        otp,
+        fullName,
+        email,
+      }),
+    });
 
     this.setToken(res.access_token);
 
@@ -157,19 +148,16 @@ class ApiService {
   async loginWithGoogle(
     idToken: string,
     fullName?: string,
-    email?: string
+    email?: string,
   ): Promise<AuthResponse> {
-    const res = await this.request<AuthResponse>(
-      "/auth/google",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          idToken,
-          fullName,
-          email,
-        }),
-      }
-    );
+    const res = await this.request<AuthResponse>("/auth/google", {
+      method: "POST",
+      body: JSON.stringify({
+        idToken,
+        fullName,
+        email,
+      }),
+    });
 
     this.setToken(res.access_token);
 
@@ -189,6 +177,7 @@ class ApiService {
     age: number;
     gender: string;
     dateOfBirth?: string | null;
+    phoneNumber?: string;
   }): Promise<Elder> {
     return this.request<Elder>("/elders", {
       method: "POST",
@@ -204,10 +193,7 @@ class ApiService {
     return this.request<Elder[]>("/elders");
   }
 
-  async updateElder(
-    id: string,
-    data: Partial<Elder>
-  ): Promise<Elder> {
+  async updateElder(id: string, data: Partial<Elder>): Promise<Elder> {
     return this.request<Elder>(`/elders/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -236,13 +222,10 @@ class ApiService {
     landmark?: string;
     simulateState?: string;
   }): Promise<LocationVerifyResponse> {
-    return this.request<LocationVerifyResponse>(
-      "/locations/verify",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<LocationVerifyResponse>("/locations/verify", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async persistElderLocation(
@@ -257,15 +240,12 @@ class ApiService {
       landmark?: string;
       latitude: number;
       longitude: number;
-    }
+    },
   ): Promise<ElderLocation> {
-    return this.request<ElderLocation>(
-      `/elders/${elderId}/location`,
-      {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<ElderLocation>(`/elders/${elderId}/location`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
   }
 
   /* =========================================================
@@ -278,56 +258,39 @@ class ApiService {
     preferredTime: string;
     notes?: string;
   }): Promise<HomeAssessment> {
-    return this.request<HomeAssessment>(
-      "/home-assessments",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<HomeAssessment>("/home-assessments", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
-  async getHomeAssessment(
-    id: string
-  ): Promise<HomeAssessment> {
-    return this.request<HomeAssessment>(
-      `/home-assessments/${id}`
-    );
+  async getHomeAssessment(id: string): Promise<HomeAssessment> {
+    return this.request<HomeAssessment>(`/home-assessments/${id}`);
   }
 
   async listHomeAssessments(): Promise<HomeAssessment[]> {
-    return this.request<HomeAssessment[]>(
-      "/home-assessments"
-    );
+    return this.request<HomeAssessment[]>("/home-assessments");
   }
 
   /* =========================================================
      PHASE B ÔÇö CAREGIVER MATCHING
      ========================================================= */
 
-  async getCuratedMatches(
-    elderId: string
-  ): Promise<CuratedMatchesResponse> {
+  async getCuratedMatches(elderId: string): Promise<CuratedMatchesResponse> {
     return this.request<CuratedMatchesResponse>(
-      `/caregivers/matches?elder_id=${encodeURIComponent(elderId)}`
+      `/caregivers/matches?elder_id=${encodeURIComponent(elderId)}`,
     );
   }
 
-  async getCaregiverProfile(
-    caregiverId: number
-  ): Promise<Caregiver> {
-    return this.request<Caregiver>(
-      `/caregivers/${caregiverId}`
-    );
+  async getCaregiverProfile(caregiverId: number): Promise<Caregiver> {
+    return this.request<Caregiver>(`/caregivers/${caregiverId}`);
   }
 
-  async getAllCaregivers(
-    filters?: {
-      locality?: string;
-      language?: string;
-      skill?: string;
-    }
-  ): Promise<Caregiver[]> {
+  async getAllCaregivers(filters?: {
+    locality?: string;
+    language?: string;
+    skill?: string;
+  }): Promise<Caregiver[]> {
     const params = new URLSearchParams();
 
     if (filters?.locality) {
@@ -344,9 +307,7 @@ class ApiService {
 
     const query = params.toString();
 
-    return this.request<Caregiver[]>(
-      `/caregivers/${query ? `?${query}` : ""}`
-    );
+    return this.request<Caregiver[]>(`/caregivers/${query ? `?${query}` : ""}`);
   }
 
   /* =========================================================
@@ -361,21 +322,14 @@ class ApiService {
     start_date?: string;
     notes?: string;
   }): Promise<CareAssignment> {
-    return this.request<CareAssignment>(
-      "/assignments",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    );
+    return this.request<CareAssignment>("/assignments", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
-  async getAssignment(
-    assignmentId: number
-  ): Promise<CareAssignment> {
-    return this.request<CareAssignment>(
-      `/assignments/${assignmentId}`
-    );
+  async getAssignment(assignmentId: number): Promise<CareAssignment> {
+    return this.request<CareAssignment>(`/assignments/${assignmentId}`);
   }
 
   /* =========================================================
@@ -388,46 +342,34 @@ class ApiService {
     timezone?: string;
     call_notes?: string;
   }): Promise<IntroCall> {
-    return this.request<IntroCall>(
-      "/intro-calls",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    );
+    return this.request<IntroCall>("/intro-calls", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
-  async getIntroCall(
-    callId: number
-  ): Promise<IntroCall> {
-    return this.request<IntroCall>(
-      `/intro-calls/${callId}`
-    );
+  async getIntroCall(callId: number): Promise<IntroCall> {
+    return this.request<IntroCall>(`/intro-calls/${callId}`);
   }
 
-  async getIntroCallByAssignment(
-    assignmentId: number
-  ): Promise<IntroCall> {
+  async getIntroCallByAssignment(assignmentId: number): Promise<IntroCall> {
     return this.request<IntroCall>(
-      `/intro-calls/by-assignment/${assignmentId}`
+      `/intro-calls/by-assignment/${assignmentId}`,
     );
   }
 
   async updateCallStatus(
     callId: number,
     status: string,
-    call_notes?: string
+    call_notes?: string,
   ): Promise<IntroCall> {
-    return this.request<IntroCall>(
-      `/intro-calls/${callId}/status`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          status,
-          call_notes,
-        }),
-      }
-    );
+    return this.request<IntroCall>(`/intro-calls/${callId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        status,
+        call_notes,
+      }),
+    });
   }
 
   /* =========================================================
@@ -441,13 +383,10 @@ class ApiService {
     addon_amount?: number;
     currency?: string;
   }): Promise<PaymentOrder> {
-    return this.request<PaymentOrder>(
-      "/payments/orders",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    );
+    return this.request<PaymentOrder>("/payments/orders", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
   async verifyPayment(payload: {
@@ -458,13 +397,10 @@ class ApiService {
     signature: string;
     payment_method?: string;
   }): Promise<PaymentVerifyResponse> {
-    return this.request<PaymentVerifyResponse>(
-      "/payments/verify",
-      {
-        method: "POST",
-        body: JSON.stringify(payload),
-      }
-    );
+    return this.request<PaymentVerifyResponse>("/payments/verify", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 
   /* =========================================================
@@ -485,14 +421,14 @@ class ApiService {
       confirmed_conduct_terms?: boolean;
       confirmed_emergency_liability?: boolean;
       confirmed_dpdp_consent?: boolean;
-    }
+    },
   ): Promise<SLAAcceptanceResponse> {
     return this.request<SLAAcceptanceResponse>(
       `/sla/assignments/${assignmentId}/accept`,
       {
         method: "POST",
         body: JSON.stringify(payload),
-      }
+      },
     );
   }
 
@@ -507,12 +443,12 @@ class ApiService {
   // --- Phase D: Care Assignment & Buffer ---
   // ==========================================
   async getActiveAssignment(elderId?: string): Promise<CareAssignment | null> {
-    const q = elderId ? `?elderId=${elderId}` : '';
+    const q = elderId ? `?elderId=${elderId}` : "";
     return this.request<CareAssignment | null>(`/assignments/active${q}`);
   }
 
   async getBufferPoolCaregivers(): Promise<Caregiver[]> {
-    return this.request<Caregiver[]>('/caregivers/buffer-pool');
+    return this.request<Caregiver[]>("/caregivers/buffer-pool");
   }
 
   // ==========================================
@@ -525,14 +461,14 @@ class ApiService {
     priority?: string;
     requestedStartAt?: string;
   }): Promise<ReplacementRequest> {
-    return this.request<ReplacementRequest>('/replacement-requests', {
-      method: 'POST',
+    return this.request<ReplacementRequest>("/replacement-requests", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async listReplacementRequests(): Promise<ReplacementRequest[]> {
-    return this.request<ReplacementRequest[]>('/replacement-requests');
+    return this.request<ReplacementRequest[]>("/replacement-requests");
   }
 
   async getReplacementRequest(id: string): Promise<ReplacementRequest> {
@@ -540,41 +476,61 @@ class ApiService {
   }
 
   async cancelReplacementRequest(id: string): Promise<ReplacementRequest> {
-    return this.request<ReplacementRequest>(`/replacement-requests/${id}/cancel`, {
-      method: 'POST',
-    });
+    return this.request<ReplacementRequest>(
+      `/replacement-requests/${id}/cancel`,
+      {
+        method: "POST",
+      },
+    );
   }
 
   async confirmReplacement(id: string): Promise<ReplacementRequest> {
-    return this.request<ReplacementRequest>(`/replacement-requests/${id}/confirm-replacement`, {
-      method: 'POST',
-    });
+    return this.request<ReplacementRequest>(
+      `/replacement-requests/${id}/confirm-replacement`,
+      {
+        method: "POST",
+      },
+    );
   }
 
-  async getOperationsReplacementQueue(statusFilter?: string, priorityFilter?: string): Promise<ReplacementRequest[]> {
+  async getOperationsReplacementQueue(
+    statusFilter?: string,
+    priorityFilter?: string,
+  ): Promise<ReplacementRequest[]> {
     const params = new URLSearchParams();
-    if (statusFilter) params.append('status', statusFilter);
-    if (priorityFilter) params.append('priority', priorityFilter);
-    const qs = params.toString() ? `?${params.toString()}` : '';
-    return this.request<ReplacementRequest[]>(`/operations/replacement-queue${qs}`);
+    if (statusFilter) params.append("status", statusFilter);
+    if (priorityFilter) params.append("priority", priorityFilter);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request<ReplacementRequest[]>(
+      `/operations/replacement-queue${qs}`,
+    );
   }
 
-  async updateOperationsReplacementRequest(id: string, data: { status: string; note?: string; resolutionNotes?: string }): Promise<ReplacementRequest> {
-    return this.request<ReplacementRequest>(`/operations/replacement-requests/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+  async updateOperationsReplacementRequest(
+    id: string,
+    data: { status: string; note?: string; resolutionNotes?: string },
+  ): Promise<ReplacementRequest> {
+    return this.request<ReplacementRequest>(
+      `/operations/replacement-requests/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      },
+    );
   }
 
   async assignSubstituteCaregiver(
     id: string,
     substituteCaregiverId: string | number,
-    note?: string
+    note?: string,
   ): Promise<ReplacementRequest> {
-    return this.request<ReplacementRequest>(`/operations/replacement-requests/${id}/assign`, {
-      method: 'POST',
-      body: JSON.stringify({ substituteCaregiverId, note }),
-    });
+    return this.request<ReplacementRequest>(
+      `/operations/replacement-requests/${id}/assign`,
+      {
+        method: "POST",
+        body: JSON.stringify({ substituteCaregiverId, note }),
+      },
+    );
   }
 
   // ==========================================
@@ -589,24 +545,29 @@ class ApiService {
     seniorFeedback?: string;
     visibility?: string;
   }): Promise<CareFeedback> {
-    return this.request<CareFeedback>('/feedback', {
-      method: 'POST',
+    return this.request<CareFeedback>("/feedback", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async listFeedback(): Promise<CareFeedback[]> {
-    return this.request<CareFeedback[]>('/feedback');
+    return this.request<CareFeedback[]>("/feedback");
   }
 
-  async getOperationsFeedbackQueue(statusFilter?: string): Promise<OperationsIssue[]> {
-    const qs = statusFilter ? `?status=${statusFilter}` : '';
+  async getOperationsFeedbackQueue(
+    statusFilter?: string,
+  ): Promise<OperationsIssue[]> {
+    const qs = statusFilter ? `?status=${statusFilter}` : "";
     return this.request<OperationsIssue[]>(`/operations/feedback-queue${qs}`);
   }
 
-  async updateOperationsIssue(id: string, data: { status: string; resolutionNotes?: string; ownerUserId?: string }): Promise<OperationsIssue> {
+  async updateOperationsIssue(
+    id: string,
+    data: { status: string; resolutionNotes?: string; ownerUserId?: string },
+  ): Promise<OperationsIssue> {
     return this.request<OperationsIssue>(`/operations/issues/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
@@ -615,7 +576,7 @@ class ApiService {
   // --- Phase D03: Billing & Invoicing ---
   // ==========================================
   async listInvoices(): Promise<Invoice[]> {
-    return this.request<Invoice[]>('/invoices');
+    return this.request<Invoice[]>("/invoices");
   }
 
   async getInvoice(id: string): Promise<Invoice> {
@@ -624,19 +585,26 @@ class ApiService {
 
   async initiateInvoicePayment(id: string): Promise<PaymentIntent> {
     return this.request<PaymentIntent>(`/invoices/${id}/pay`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
-  async confirmInvoicePayment(id: string, data: { razorpayPaymentId: string; razorpayOrderId: string; razorpaySignature: string }): Promise<Invoice> {
+  async confirmInvoicePayment(
+    id: string,
+    data: {
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    },
+  ): Promise<Invoice> {
     return this.request<Invoice>(`/invoices/${id}/confirm-payment`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async getOperationsInvoices(statusFilter?: string): Promise<Invoice[]> {
-    const qs = statusFilter ? `?status=${statusFilter}` : '';
+    const qs = statusFilter ? `?status=${statusFilter}` : "";
     return this.request<Invoice[]>(`/operations/invoices${qs}`);
   }
 
@@ -644,49 +612,53 @@ class ApiService {
   // --- Phase D04: Renewals & Auto-Debit ---
   // ==========================================
   async getUpcomingRenewal(): Promise<Renewal | null> {
-    return this.request<Renewal | null>('/renewals/upcoming');
+    return this.request<Renewal | null>("/renewals/upcoming");
   }
 
   async confirmRenewal(notes?: string): Promise<Renewal> {
-    return this.request<Renewal>('/renewals/confirm', {
-      method: 'POST',
+    return this.request<Renewal>("/renewals/confirm", {
+      method: "POST",
       body: JSON.stringify({ notes }),
     });
   }
 
   async toggleAutoDebitMandate(enable: boolean): Promise<Renewal> {
-    return this.request<Renewal>('/renewals/mandate', {
-      method: 'POST',
+    return this.request<Renewal>("/renewals/mandate", {
+      method: "POST",
       body: JSON.stringify({ enable }),
     });
   }
 
-  async requestRenewalChange(data: { action: 'CHANGE_PLAN' | 'CANCEL_SERVICE'; reason: string; preferredPlan?: string }): Promise<Renewal> {
-    return this.request<Renewal>('/renewals/request-change', {
-      method: 'POST',
+  async requestRenewalChange(data: {
+    action: "CHANGE_PLAN" | "CANCEL_SERVICE";
+    reason: string;
+    preferredPlan?: string;
+  }): Promise<Renewal> {
+    return this.request<Renewal>("/renewals/request-change", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async getOperationsRenewals(): Promise<Renewal[]> {
-    return this.request<Renewal[]>('/operations/renewals');
+    return this.request<Renewal[]>("/operations/renewals");
   }
 
   // ==========================================
   // --- Notifications & Audit ---
   // ==========================================
   async listNotifications(): Promise<Notification[]> {
-    return this.request<Notification[]>('/notifications');
+    return this.request<Notification[]>("/notifications");
   }
 
   async markNotificationRead(id: string): Promise<Notification> {
     return this.request<Notification>(`/notifications/${id}/read`, {
-      method: 'PATCH',
+      method: "PATCH",
     });
   }
 
   async getAuditTrail(): Promise<AuditLog[]> {
-    return this.request<AuditLog[]>('/operations/audit');
+    return this.request<AuditLog[]>("/operations/audit");
   }
   /* ---------------------------------------------------------
      Shifts & Attendance
@@ -696,20 +668,12 @@ class ApiService {
     return this.request<ShiftDetails>("/shifts/current");
   }
 
-  async getElderShiftStatus(
-    elderId: string
-  ): Promise<any> {
-    return this.request(
-      `/shifts/elder/${elderId}`
-    );
+  async getElderShiftStatus(elderId: string): Promise<any> {
+    return this.request(`/shifts/elder/${elderId}`);
   }
 
-  async getLiveShiftMonitor(): Promise<
-    LiveShiftMonitorItem[]
-  > {
-    return this.request<LiveShiftMonitorItem[]>(
-      "/shifts/monitor"
-    );
+  async getLiveShiftMonitor(): Promise<LiveShiftMonitorItem[]> {
+    return this.request<LiveShiftMonitorItem[]>("/shifts/monitor");
   }
 
   async checkInShift(
@@ -719,15 +683,12 @@ class ApiService {
       longitude: number;
       overrideCode?: string;
       method?: string;
-    }
+    },
   ): Promise<any> {
-    return this.request(
-      `/shifts/${shiftId}/check-in`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request(`/shifts/${shiftId}/check-in`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async checkOutShift(
@@ -736,28 +697,19 @@ class ApiService {
       latitude?: number;
       longitude?: number;
       summary?: string;
-    }
+    },
   ): Promise<any> {
-    return this.request(
-      `/shifts/${shiftId}/check-out`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request(`/shifts/${shiftId}/check-out`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
-  async supervisorOverride(
-    shiftId: string,
-    reason: string
-  ): Promise<any> {
-    return this.request(
-      `/shifts/${shiftId}/supervisor-override`,
-      {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-      }
-    );
+  async supervisorOverride(shiftId: string, reason: string): Promise<any> {
+    return this.request(`/shifts/${shiftId}/supervisor-override`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
   }
 
   async seedDemoScenario(): Promise<any> {
@@ -766,18 +718,12 @@ class ApiService {
     });
   }
 
-
-
   /* ---------------------------------------------------------
      C02 ÔÇö Daily Care Tasks & ADL
      --------------------------------------------------------- */
 
-  async getShiftTasks(
-    shiftId: string
-  ): Promise<CareTask[]> {
-    return this.request<CareTask[]>(
-      `/care-tasks/shift/${shiftId}`
-    );
+  async getShiftTasks(shiftId: string): Promise<CareTask[]> {
+    return this.request<CareTask[]>(`/care-tasks/shift/${shiftId}`);
   }
 
   async updateCareTask(
@@ -787,15 +733,11 @@ class ApiService {
       details?: Record<string, any>;
       notes?: string;
       idempotencyKey?: string;
-    }
+    },
   ): Promise<any> {
     // Check if currently simulated or network offline
     if (!offlineQueue.isOnline) {
-      offlineQueue.enqueue(
-        `/care-tasks/${taskId}`,
-        "PATCH",
-        data
-      );
+      offlineQueue.enqueue(`/care-tasks/${taskId}`, "PATCH", data);
 
       return {
         id: taskId,
@@ -809,20 +751,13 @@ class ApiService {
     }
 
     try {
-      return await this.request(
-        `/care-tasks/${taskId}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify(data),
-        }
-      );
+      return await this.request(`/care-tasks/${taskId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
     } catch (err) {
       // If network failure occurs, fallback to local queue
-      offlineQueue.enqueue(
-        `/care-tasks/${taskId}`,
-        "PATCH",
-        data
-      );
+      offlineQueue.enqueue(`/care-tasks/${taskId}`, "PATCH", data);
 
       return {
         id: taskId,
@@ -836,9 +771,7 @@ class ApiService {
     }
   }
 
-  async batchSyncTasks(
-    tasks: any[]
-  ): Promise<any> {
+  async batchSyncTasks(tasks: any[]): Promise<any> {
     return this.request("/care-tasks/batch", {
       method: "POST",
       body: JSON.stringify({ tasks }),
@@ -847,10 +780,10 @@ class ApiService {
 
   async getElderCareTimeline(
     elderId: string,
-    limit: number = 30
+    limit: number = 30,
   ): Promise<TimelineItem[]> {
     return this.request<TimelineItem[]>(
-      `/care-tasks/elder/${elderId}/timeline?limit=${limit}`
+      `/care-tasks/elder/${elderId}/timeline?limit=${limit}`,
     );
   }
 
@@ -872,11 +805,7 @@ class ApiService {
     idempotencyKey?: string;
   }): Promise<VitalReading> {
     if (!offlineQueue.isOnline) {
-      offlineQueue.enqueue(
-        "/vitals/",
-        "POST",
-        data
-      );
+      offlineQueue.enqueue("/vitals/", "POST", data);
 
       return {
         id: "temp_" + Date.now(),
@@ -893,26 +822,17 @@ class ApiService {
         isAbnormal: false,
         alertSeverity: "NORMAL",
         alertAcknowledged: false,
-        notes:
-          (data.notes || "") +
-          " [Queued Offline]",
+        notes: (data.notes || "") + " [Queued Offline]",
       };
     }
 
     try {
-      return await this.request<VitalReading>(
-        "/vitals/",
-        {
-          method: "POST",
-          body: JSON.stringify(data),
-        }
-      );
+      return await this.request<VitalReading>("/vitals/", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     } catch (err) {
-      offlineQueue.enqueue(
-        "/vitals/",
-        "POST",
-        data
-      );
+      offlineQueue.enqueue("/vitals/", "POST", data);
 
       throw err;
     }
@@ -920,38 +840,25 @@ class ApiService {
 
   async getElderVitalsHistory(
     elderId: string,
-    limit: number = 50
+    limit: number = 50,
   ): Promise<VitalReading[]> {
     return this.request<VitalReading[]>(
-      `/vitals/elder/${elderId}?limit=${limit}`
+      `/vitals/elder/${elderId}?limit=${limit}`,
     );
   }
 
-  async getElderVitalsTrends(
-    elderId: string
-  ): Promise<VitalsTrendData> {
-    return this.request<VitalsTrendData>(
-      `/vitals/elder/${elderId}/trends`
-    );
+  async getElderVitalsTrends(elderId: string): Promise<VitalsTrendData> {
+    return this.request<VitalsTrendData>(`/vitals/elder/${elderId}/trends`);
   }
 
-  async getVitalAlerts(): Promise<
-    VitalAlertItem[]
-  > {
-    return this.request<VitalAlertItem[]>(
-      "/vitals/alerts"
-    );
+  async getVitalAlerts(): Promise<VitalAlertItem[]> {
+    return this.request<VitalAlertItem[]>("/vitals/alerts");
   }
 
-  async acknowledgeVitalAlert(
-    vitalId: string
-  ): Promise<any> {
-    return this.request(
-      `/vitals/alerts/${vitalId}/acknowledge`,
-      {
-        method: "POST",
-      }
-    );
+  async acknowledgeVitalAlert(vitalId: string): Promise<any> {
+    return this.request(`/vitals/alerts/${vitalId}/acknowledge`, {
+      method: "POST",
+    });
   }
 
   /* ---------------------------------------------------------
@@ -965,70 +872,46 @@ class ApiService {
     longitude?: number;
     notes?: string;
   }): Promise<Incident> {
-    return this.request<Incident>(
-      "/incidents/sos",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<Incident>("/incidents/sos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
-  async getIncidentDesk(
-    statusFilter?: string
-  ): Promise<Incident[]> {
-    const param = statusFilter
-      ? `?status_filter=${statusFilter}`
-      : "";
+  async getIncidentDesk(statusFilter?: string): Promise<Incident[]> {
+    const param = statusFilter ? `?status_filter=${statusFilter}` : "";
 
-    return this.request<Incident[]>(
-      `/incidents/desk${param}`
-    );
+    return this.request<Incident[]>(`/incidents/desk${param}`);
   }
 
-  async getElderIncidents(
-    elderId: string
-  ): Promise<Incident[]> {
-    return this.request<Incident[]>(
-      `/incidents/elder/${elderId}`
-    );
+  async getElderIncidents(elderId: string): Promise<Incident[]> {
+    return this.request<Incident[]>(`/incidents/elder/${elderId}`);
   }
 
-  async acknowledgeIncident(
-    incidentId: string
-  ): Promise<Incident> {
-    return this.request<Incident>(
-      `/incidents/${incidentId}/acknowledge`,
-      {
-        method: "POST",
-      }
-    );
+  async acknowledgeIncident(incidentId: string): Promise<Incident> {
+    return this.request<Incident>(`/incidents/${incidentId}/acknowledge`, {
+      method: "POST",
+    });
   }
 
   async escalateIncident(
     incidentId: string,
-    actionTaken: string
+    actionTaken: string,
   ): Promise<Incident> {
-    return this.request<Incident>(
-      `/incidents/${incidentId}/escalate`,
-      {
-        method: "POST",
-        body: JSON.stringify({ actionTaken }),
-      }
-    );
+    return this.request<Incident>(`/incidents/${incidentId}/escalate`, {
+      method: "POST",
+      body: JSON.stringify({ actionTaken }),
+    });
   }
 
   async resolveIncident(
     incidentId: string,
-    resolutionNotes: string
+    resolutionNotes: string,
   ): Promise<Incident> {
-    return this.request<Incident>(
-      `/incidents/${incidentId}/resolve`,
-      {
-        method: "POST",
-        body: JSON.stringify({ resolutionNotes }),
-      }
-    );
+    return this.request<Incident>(`/incidents/${incidentId}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ resolutionNotes }),
+    });
   }
 
   /* ---------------------------------------------------------
@@ -1043,21 +926,14 @@ class ApiService {
     caption?: string;
     shiftId?: string;
   }): Promise<CareMedia> {
-    return this.request<CareMedia>(
-      "/media/upload",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<CareMedia>("/media/upload", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
-  async getElderMedia(
-    elderId: string
-  ): Promise<CareMedia[]> {
-    return this.request<CareMedia[]>(
-      `/media/elder/${elderId}`
-    );
+  async getElderMedia(elderId: string): Promise<CareMedia[]> {
+    return this.request<CareMedia[]>(`/media/elder/${elderId}`);
   }
 
   /* ---------------------------------------------------------
@@ -1070,25 +946,20 @@ class ApiService {
     channel?: string;
     recipientId?: string;
   }): Promise<ChatMessage> {
-    return this.request<ChatMessage>(
-      "/chat/send",
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    );
+    return this.request<ChatMessage>("/chat/send", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async getChatMessages(
     elderId: string,
-    channel?: string
+    channel?: string,
   ): Promise<ChatMessage[]> {
-    const param = channel
-      ? `&channel=${channel}`
-      : "";
+    const param = channel ? `&channel=${channel}` : "";
 
     return this.request<ChatMessage[]>(
-      `/chat/messages?elder_id=${elderId}${param}`
+      `/chat/messages?elder_id=${elderId}${param}`,
     );
   }
 
@@ -1100,16 +971,13 @@ class ApiService {
     processed: number;
     failed: number;
   }> {
-    return offlineQueue.processQueue(
-      async (item: OfflineQueueItem) => {
-        return this.request(item.endpoint, {
-          method: item.method,
-          body: JSON.stringify(item.body),
-        });
-      }
-    );
+    return offlineQueue.processQueue(async (item: OfflineQueueItem) => {
+      return this.request(item.endpoint, {
+        method: item.method,
+        body: JSON.stringify(item.body),
+      });
+    });
   }
 }
 
 export const api = new ApiService();
-

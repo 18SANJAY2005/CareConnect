@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { AlertCircle, Phone, X, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
-import { offlineQueue } from '../../services/offlineQueue';
+import React, { useState } from "react";
+import {
+  AlertCircle,
+  Phone,
+  X,
+  ShieldAlert,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
+import { api } from "../../services/api";
+import { offlineQueue } from "../../services/offlineQueue";
 
 interface MobileSosModalProps {
   isOpen: boolean;
@@ -25,7 +32,7 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
   const handleTriggerOnlineSos = async () => {
     if (!elderId) {
       // If no elder profile is attached yet, trigger direct native call
-      window.location.href = 'tel:112';
+      window.location.href = "tel:112";
       return;
     }
 
@@ -38,9 +45,13 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
       let lng = 80.2565;
       if (navigator.geolocation) {
         try {
-          const pos: GeolocationPosition = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
-          });
+          const pos: GeolocationPosition = await new Promise(
+            (resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 3000,
+              });
+            },
+          );
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
         } catch {
@@ -52,28 +63,26 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
         elderId,
         latitude: lat,
         longitude: lng,
-        notes: `Emergency SOS triggered from mobile app for ${elderName || 'Elder'}.`,
+        notes: `Emergency SOS triggered from mobile app for ${elderName || "Elder"}.`,
       });
 
       setIsSent(true);
-      setStatusMessage('🚨 Emergency SOS broadcasted! Operations Care Desk has been alerted.');
-    } catch (err: any) {
-      offlineQueue.enqueue(
-        '/incidents/sos',
-        'POST',
-        {
-          elder_id: elderId,
-          incident_type: 'EMERGENCY_SOS',
-          severity: 'P1_CRITICAL',
-          notes: 'Offline SOS triggered from mobile device.',
-        }
+      setStatusMessage(
+        "🚨 Emergency SOS broadcasted! Operations Care Desk has been alerted.",
       );
+    } catch (err: any) {
+      offlineQueue.enqueue("/incidents/sos", "POST", {
+        elder_id: elderId,
+        incident_type: "EMERGENCY_SOS",
+        severity: "P1_CRITICAL",
+        notes: "Offline SOS triggered from mobile device.",
+      });
 
       setStatusMessage(
-        'Offline fallback: Request queued. Dialing 112 Emergency Medical Services directly...'
+        "Offline fallback: Request queued. Dialing 112 Emergency Medical Services directly...",
       );
       setTimeout(() => {
-        window.location.href = 'tel:112';
+        window.location.href = "tel:112";
       }, 1200);
     } finally {
       setIsSending(false);
@@ -90,7 +99,9 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
               <AlertCircle className="w-6 h-6 text-rose-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 leading-tight">Emergency SOS</h2>
+              <h2 className="text-lg font-bold text-slate-900 leading-tight">
+                Emergency SOS
+              </h2>
               <span className="text-[11px] font-semibold text-rose-600 uppercase tracking-wider">
                 Priority 1 Assistance
               </span>
@@ -108,8 +119,8 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
           <div
             className={`p-3.5 rounded-2xl text-xs flex items-start gap-2.5 ${
               isSent
-                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border border-rose-200'
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                : "bg-rose-50 text-rose-800 border border-rose-200"
             }`}
           >
             {isSent ? (
@@ -162,18 +173,29 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
 
         {/* 3-Point Clarification / Disclaimer */}
         <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 text-[11px] text-slate-500 space-y-1.5">
-          <div className="font-bold text-slate-700">Important Safety Information:</div>
-          <div className="flex items-start gap-1.5">
-            <span>•</span>
-            <span>CareConnect provides managed home monitoring, not clinical hospital ambulances.</span>
+          <div className="font-bold text-slate-700">
+            Important Safety Information:
           </div>
           <div className="flex items-start gap-1.5">
             <span>•</span>
-            <span>For acute life-threatening emergencies, always dial 112 immediately.</span>
+            <span>
+              CareConnect provides managed home monitoring, not clinical
+              hospital ambulances.
+            </span>
           </div>
           <div className="flex items-start gap-1.5">
             <span>•</span>
-            <span>Alerts automatically notify your on-duty caregiver and operations supervisor.</span>
+            <span>
+              For acute life-threatening emergencies, always dial 112
+              immediately.
+            </span>
+          </div>
+          <div className="flex items-start gap-1.5">
+            <span>•</span>
+            <span>
+              Alerts automatically notify your on-duty caregiver and operations
+              supervisor.
+            </span>
           </div>
         </div>
       </div>

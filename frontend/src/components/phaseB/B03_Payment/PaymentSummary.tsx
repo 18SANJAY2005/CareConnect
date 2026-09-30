@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
-import { CreditCard, ShieldCheck, CheckCircle2, ArrowRight, Lock } from 'lucide-react';
-import type { Caregiver, PaymentOrder } from '../../../types';
-import { RazorpayCheckoutModal } from './RazorpayCheckoutModal';
+import React, { useState } from "react";
+import {
+  CreditCard,
+  ShieldCheck,
+  CheckCircle2,
+  ArrowRight,
+  Lock,
+} from "lucide-react";
+import type { Caregiver, PaymentOrder } from "../../../types";
+import { RazorpayCheckoutModal } from "./RazorpayCheckoutModal";
 
 interface PaymentSummaryProps {
   caregiver: Caregiver;
   elderName: string;
   order: PaymentOrder | null;
   onInitiateOrder: () => Promise<void>;
-  onPaymentSuccess: (paymentId: string, signature: string, method: string) => Promise<void>;
+  onPaymentSuccess: (
+    paymentId: string,
+    signature: string,
+    method: string,
+  ) => Promise<void>;
   isCreatingOrder: boolean;
 }
 
@@ -41,13 +51,15 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
           />
           <div className="flex-1 text-center sm:text-left">
             <span className="inline-flex items-center text-xs font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full mb-1">
-              <CreditCard className="w-3.5 h-3.5 mr-1" /> Sub-Phase B03: Advance Deposit & Escrow
+              <CreditCard className="w-3.5 h-3.5 mr-1" /> Sub-Phase B03: Advance
+              Deposit & Escrow
             </span>
             <h2 className="text-2xl font-extrabold font-heading text-on-surface">
               7-Day Trial Care Deposit
             </h2>
             <p className="text-sm text-on-surface-variant mt-1">
-              Assigned to: <strong>{caregiver.full_name}</strong> for <strong>{elderName}</strong>
+              Assigned to: <strong>{caregiver.full_name}</strong> for{" "}
+              <strong>{elderName}</strong>
             </p>
           </div>
         </div>
@@ -65,7 +77,9 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
                 7-Day In-Home Care Trial (Day 10-Hour Shift @ ₹2,000/day)
               </span>
             </div>
-            <span className="font-bold text-on-surface font-heading">₹14,000.00</span>
+            <span className="font-bold text-on-surface font-heading">
+              ₹14,000.00
+            </span>
           </div>
 
           <div className="flex items-center justify-between text-sm py-1">
@@ -75,7 +89,9 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
                 Clinical Care Manager Supervision & Emergency Kit
               </span>
             </div>
-            <span className="font-bold text-on-surface font-heading">₹1,000.00</span>
+            <span className="font-bold text-on-surface font-heading">
+              ₹1,000.00
+            </span>
           </div>
 
           <div className="flex items-center justify-between text-sm py-1 text-on-surface-variant">
@@ -83,7 +99,9 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
               <span className="w-4 h-4" />
               <span>Platform Service Fee & GST</span>
             </div>
-            <span className="font-semibold text-tertiary">Waived (Promotional)</span>
+            <span className="font-semibold text-tertiary">
+              Waived (Promotional)
+            </span>
           </div>
 
           <div className="pt-4 mt-2 border-t border-outline-light/40 flex items-center justify-between">
@@ -99,7 +117,9 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
               <span className="text-3xl font-extrabold text-primary font-heading">
                 ₹15,000.00
               </span>
-              <span className="text-xs text-tertiary block font-semibold">100% Refund Protected</span>
+              <span className="text-xs text-tertiary block font-semibold">
+                100% Refund Protected
+              </span>
             </div>
           </div>
         </div>
@@ -114,7 +134,11 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
               How CareConnect Escrow Works:
             </h4>
             <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-              Your ₹15,000 deposit is not immediately transferred to the caregiver. It is held securely in an authorized settlement hold via Razorpay. If at any point during the 7-day trial you are dissatisfied or need to cancel, your unutilized balance is refunded directly to your payment source.
+              Your ₹15,000 deposit is not immediately transferred to the
+              caregiver. It is held securely in an authorized settlement hold
+              via Razorpay. If at any point during the 7-day trial you are
+              dissatisfied or need to cancel, your unutilized balance is
+              refunded directly to your payment source.
             </p>
           </div>
         </div>
@@ -124,7 +148,10 @@ export const PaymentSummary: React.FC<PaymentSummaryProps> = ({
       <div className="bg-surface-card p-6 rounded-2xl border border-outline-light/50 shadow-card flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-2 text-xs text-on-surface-variant">
           <Lock className="w-4 h-4 text-tertiary" />
-          <span>PCI-DSS compliant via Razorpay. Supports UPI, NetBanking, and NRI Cards.</span>
+          <span>
+            PCI-DSS compliant via Razorpay. Supports UPI, NetBanking, and NRI
+            Cards.
+          </span>
         </div>
 
         <button

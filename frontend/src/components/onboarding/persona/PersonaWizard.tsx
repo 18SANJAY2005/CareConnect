@@ -22,7 +22,8 @@ import type {
 } from "../../../types";
 
 export const PersonaWizard: React.FC = () => {
-  const { elders, activeElder, setActiveElder, setCurrentStep, refreshElders } = useOnboarding();
+  const { elders, activeElder, setActiveElder, setCurrentStep, refreshElders } =
+    useOnboarding();
 
   // Active step in the 10-step wizard (1-indexed: 1 to 10)
   const [currentStepIndex, setCurrentStepIndex] = useState(1);
@@ -55,9 +56,7 @@ export const PersonaWizard: React.FC = () => {
     activeElder?.dateOfBirth || "",
   );
 
-  const initialDobParts = parseDobParts(
-    activeElder?.dateOfBirth || "",
-  );
+  const initialDobParts = parseDobParts(activeElder?.dateOfBirth || "");
   const [dobDay, setDobDay] = useState(initialDobParts.day);
   const [dobMonth, setDobMonth] = useState(initialDobParts.month);
   const [dobYear, setDobYear] = useState(initialDobParts.year);
@@ -274,26 +273,23 @@ export const PersonaWizard: React.FC = () => {
   );
 
   const [medicalConditions, setMedicalConditions] = useState<string[]>(
-    activeElder?.medicalConditions?.length
-      ? activeElder.medicalConditions : [],
+    activeElder?.medicalConditions?.length ? activeElder.medicalConditions : [],
   );
   const [careRequirements, setCareRequirements] = useState<string[]>(
-    activeElder?.careRequirements?.length
-      ? activeElder.careRequirements : [],
+    activeElder?.careRequirements?.length ? activeElder.careRequirements : [],
   );
   const [medicalDevices, setMedicalDevices] = useState<string[]>(
-    activeElder?.medicalDevices?.length
-      ? activeElder.medicalDevices : [],
+    activeElder?.medicalDevices?.length ? activeElder.medicalDevices : [],
   );
 
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>(
     activeElder?.dietaryPreferences?.length
-      ? activeElder.dietaryPreferences : [],
+      ? activeElder.dietaryPreferences
+      : [],
   );
 
   const [languages, setLanguages] = useState<string[]>(
-    activeElder?.languages?.length
-      ? activeElder.languages : [],
+    activeElder?.languages?.length ? activeElder.languages : [],
   );
   const [primaryLanguage, setPrimaryLanguage] = useState(
     activeElder?.primaryLanguage || "",
@@ -301,7 +297,8 @@ export const PersonaWizard: React.FC = () => {
 
   const [lifestylePreferences, setLifestylePreferences] = useState<string[]>(
     activeElder?.lifestylePreferences?.length
-      ? activeElder.lifestylePreferences : [],
+      ? activeElder.lifestylePreferences
+      : [],
   );
   const [wakeTime, setWakeTime] = useState(
     activeElder?.dailyRoutine?.wakeTime || "",
@@ -477,7 +474,10 @@ export const PersonaWizard: React.FC = () => {
             {stepTitles[currentStepIndex - 1]}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Configuring profile for: <span className="font-bold text-teal-900">{name || activeElder?.name}</span>
+            Configuring profile for:{" "}
+            <span className="font-bold text-teal-900">
+              {name || activeElder?.name}
+            </span>
           </p>
         </div>
         {elders && elders.length > 0 && (

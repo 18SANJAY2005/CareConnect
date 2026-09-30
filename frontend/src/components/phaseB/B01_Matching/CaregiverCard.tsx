@@ -1,6 +1,14 @@
-import React from 'react';
-import { ShieldCheck, Star, MapPin, Languages, Check, ArrowRight, Award } from 'lucide-react';
-import type { CaregiverMatchItem } from '../../../types';
+import React from "react";
+import {
+  ShieldCheck,
+  Star,
+  MapPin,
+  Languages,
+  Check,
+  ArrowRight,
+  Award,
+} from "lucide-react";
+import type { CaregiverMatchItem } from "../../../types";
 
 interface CaregiverCardProps {
   matchItem: CaregiverMatchItem;
@@ -21,8 +29,8 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
     <div
       className={`bg-surface-card rounded-2xl border transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-card ${
         isSelected
-          ? 'border-primary ring-2 ring-primary shadow-elevated'
-          : 'border-outline-light/50 hover:border-primary/50 hover:shadow-elevated'
+          ? "border-primary ring-2 ring-primary shadow-elevated"
+          : "border-outline-light/50 hover:border-primary/50 hover:shadow-elevated"
       }`}
     >
       {/* Top Banner: Match Score + Verified Pill */}
@@ -40,7 +48,9 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
         </div>
         <div className="flex items-center text-xs text-on-surface-variant">
           <Star className="w-4 h-4 text-amber-500 fill-amber-500 mr-1" />
-          <strong className="font-bold text-on-surface">{caregiver.rating.toFixed(2)}</strong>
+          <strong className="font-bold text-on-surface">
+            {caregiver.rating.toFixed(2)}
+          </strong>
           <span className="ml-1">({caregiver.review_count} reviews)</span>
         </div>
       </div>
@@ -49,7 +59,10 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
       <div className="p-5 sm:p-6 flex-1 flex flex-col">
         <div className="flex items-start space-x-4 mb-4">
           <img
-            src={caregiver.photo_url || 'https://images.unsplash.com/photo-1594824813629-65313364f9f7?w=300&auto=format&fit=crop&q=80'}
+            src={
+              caregiver.photo_url ||
+              "https://images.unsplash.com/photo-1594824813629-65313364f9f7?w=300&auto=format&fit=crop&q=80"
+            }
             alt={caregiver.full_name}
             className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-outline-light/60 shadow-sm"
           />
@@ -88,7 +101,9 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
 
         {/* Persona Matching Rationale */}
         <div className="mt-2 text-xs text-on-surface-variant bg-surface rounded-lg p-3 border border-outline-light/40">
-          <strong className="text-primary font-semibold block mb-1">Matching Rationale:</strong>
+          <strong className="text-primary font-semibold block mb-1">
+            Matching Rationale:
+          </strong>
           <p className="line-clamp-2">{rationale}</p>
         </div>
 
@@ -107,12 +122,16 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
         {/* Pricing & Transparency */}
         <div className="mt-auto pt-4 flex items-center justify-between border-t border-outline-light/20">
           <div>
-            <span className="text-xs text-on-surface-variant block">Standard Shift Rate</span>
+            <span className="text-xs text-on-surface-variant block">
+              Standard Shift Rate
+            </span>
             <div className="flex items-baseline">
               <span className="text-xl font-extrabold text-primary font-heading">
                 ₹{caregiver.daily_rate}
               </span>
-              <span className="text-xs text-on-surface-variant ml-1">/ 10-Hr Day</span>
+              <span className="text-xs text-on-surface-variant ml-1">
+                / 10-Hr Day
+              </span>
             </div>
           </div>
           <button
@@ -132,8 +151,8 @@ export const CaregiverCard: React.FC<CaregiverCardProps> = ({
           onClick={onSelect}
           className={`w-full touch-target-primary rounded-xl font-heading font-bold text-sm sm:text-base transition-all duration-200 active:scale-[0.98] ${
             isSelected
-              ? 'bg-tertiary text-white shadow-md'
-              : 'bg-primary text-white hover:bg-primary-container shadow-sm'
+              ? "bg-tertiary text-white shadow-md"
+              : "bg-primary text-white hover:bg-primary-container shadow-sm"
           }`}
         >
           {isSelected ? (

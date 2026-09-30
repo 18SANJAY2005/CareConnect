@@ -176,8 +176,7 @@ export const ServiceConfirmation: React.FC<ServiceConfirmationProps> = ({
                     </span>
                   </div>
                   <p className="text-on-surface-variant mt-0.5">
-                    Provider: Jitsi Meet (
-                    {introCall?.room_id || "Pending"})
+                    Provider: Jitsi Meet ({introCall?.room_id || "Pending"})
                   </p>
                 </div>
               </div>

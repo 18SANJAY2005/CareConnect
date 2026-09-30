@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Download, X, Share2, PlusSquare, ShieldCheck, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Download,
+  X,
+  Share2,
+  PlusSquare,
+  ShieldCheck,
+  ExternalLink,
+} from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 export const PwaInstallBanner: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
   const [isHttps, setIsHttps] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
@@ -16,15 +24,16 @@ export const PwaInstallBanner: React.FC = () => {
   useEffect(() => {
     // 1. If already installed/running as standalone PWA, do not display
     const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone ===
+        true;
 
     if (isStandalone) {
       return;
     }
 
     // 2. Check if user recently dismissed the banner
-    const isDismissed = localStorage.getItem('careconnect_pwa_dismissed');
+    const isDismissed = localStorage.getItem("careconnect_pwa_dismissed");
     if (isDismissed) {
       return;
     }
@@ -35,7 +44,10 @@ export const PwaInstallBanner: React.FC = () => {
     const isAndroidDevice = /android/.test(userAgent);
     const isMobile = isIosDevice || isAndroidDevice || window.innerWidth <= 768;
 
-    const httpsActive = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const httpsActive =
+      window.location.protocol === "https:" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
     setIsHttps(httpsActive);
     setIsIos(isIosDevice);
 
@@ -51,10 +63,10 @@ export const PwaInstallBanner: React.FC = () => {
       setIsVisible(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
     };
   }, []);
 
@@ -63,7 +75,7 @@ export const PwaInstallBanner: React.FC = () => {
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
+      if (outcome === "accepted") {
         setIsVisible(false);
         setDeferredPrompt(null);
       }
@@ -75,13 +87,13 @@ export const PwaInstallBanner: React.FC = () => {
   };
 
   const handleSwitchToHttps = () => {
-    const httpsUrl = window.location.href.replace('http:', 'https:');
+    const httpsUrl = window.location.href.replace("http:", "https:");
     window.location.href = httpsUrl;
   };
 
   const handleDismiss = () => {
     setIsVisible(false);
-    localStorage.setItem('careconnect_pwa_dismissed', 'true');
+    localStorage.setItem("careconnect_pwa_dismissed", "true");
   };
 
   if (!isVisible) {
@@ -98,9 +110,13 @@ export const PwaInstallBanner: React.FC = () => {
             className="w-8 h-8 rounded-lg shadow-sm shrink-0 border border-teal-600/50"
           />
           <div className="min-w-0">
-            <div className="font-bold text-white leading-tight truncate">Install CareConnect App</div>
+            <div className="font-bold text-white leading-tight truncate">
+              Install CareConnect App
+            </div>
             <div className="text-[11px] text-teal-200 truncate">
-              {deferredPrompt ? '1-Tap home screen install' : 'Add to home screen for full app'}
+              {deferredPrompt
+                ? "1-Tap home screen install"
+                : "Add to home screen for full app"}
             </div>
           </div>
         </div>
@@ -133,7 +149,9 @@ export const PwaInstallBanner: React.FC = () => {
                 <span>Notice: Chrome requires HTTPS for 1-Tap Install</span>
               </div>
               <p className="text-[10px] text-amber-100 leading-relaxed">
-                You are currently on plain HTTP. Vite is equipped with HTTPS support. Tap below to switch to HTTPS (accept the dev certificate when prompted):
+                You are currently on plain HTTP. Vite is equipped with HTTPS
+                support. Tap below to switch to HTTPS (accept the dev
+                certificate when prompted):
               </p>
               <button
                 onClick={handleSwitchToHttps}
@@ -147,7 +165,9 @@ export const PwaInstallBanner: React.FC = () => {
 
           {isIos ? (
             <div className="space-y-1 text-slate-200">
-              <div className="font-semibold text-white">To install on iPhone (Safari):</div>
+              <div className="font-semibold text-white">
+                To install on iPhone (Safari):
+              </div>
               <div className="flex items-center gap-1.5">
                 <span>1. Tap Share</span>
                 <Share2 className="w-3.5 h-3.5 text-teal-300 inline" />
@@ -160,9 +180,17 @@ export const PwaInstallBanner: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-1 text-slate-200">
-              <div className="font-semibold text-white">To install on Android:</div>
-              <div>1. Tap Chrome's menu <strong>(3 vertical dots ⋮)</strong> in top right.</div>
-              <div>2. Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</div>
+              <div className="font-semibold text-white">
+                To install on Android:
+              </div>
+              <div>
+                1. Tap Chrome's menu <strong>(3 vertical dots ⋮)</strong> in top
+                right.
+              </div>
+              <div>
+                2. Tap <strong>"Install app"</strong> or{" "}
+                <strong>"Add to Home screen"</strong>.
+              </div>
             </div>
           )}
         </div>

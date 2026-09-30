@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Sparkles, Clock, Globe } from 'lucide-react';
+import React, { useState } from "react";
+import { ArrowLeft, ArrowRight, Sparkles, Clock, Globe } from "lucide-react";
 
 export type CareDuration =
-  | 'EIGHT_HOUR_DAY'
-  | 'TWELVE_HOUR_DAY_NIGHT'
-  | 'TWENTY_FOUR_HOUR_LIVE_IN'
-  | 'FLEXIBLE';
+  | "EIGHT_HOUR_DAY"
+  | "TWELVE_HOUR_DAY_NIGHT"
+  | "TWENTY_FOUR_HOUR_LIVE_IN"
+  | "FLEXIBLE";
 
 export interface PreferenceData {
   languages: string[];
@@ -35,23 +35,23 @@ interface MobilePreferencesProps {
 
 // Alphabetical language options
 const ALL_LANGUAGES = [
-  'Bengali',
-  'English',
-  'Gujarati',
-  'Hindi',
-  'Kannada',
-  'Malayalam',
-  'Marathi',
-  'Tamil',
-  'Telugu',
-  'Other',
+  "Bengali",
+  "English",
+  "Gujarati",
+  "Hindi",
+  "Kannada",
+  "Malayalam",
+  "Marathi",
+  "Tamil",
+  "Telugu",
+  "Other",
 ];
 
 export const DURATION_OPTIONS: { id: CareDuration; label: string }[] = [
-  { id: 'EIGHT_HOUR_DAY', label: '8 Hours' },
-  { id: 'TWELVE_HOUR_DAY_NIGHT', label: '12 Hours' },
-  { id: 'TWENTY_FOUR_HOUR_LIVE_IN', label: '24 Hours' },
-  { id: 'FLEXIBLE', label: 'Flexible' },
+  { id: "EIGHT_HOUR_DAY", label: "8 Hours" },
+  { id: "TWELVE_HOUR_DAY_NIGHT", label: "12 Hours" },
+  { id: "TWENTY_FOUR_HOUR_LIVE_IN", label: "24 Hours" },
+  { id: "FLEXIBLE", label: "Flexible" },
 ];
 
 export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
@@ -61,40 +61,55 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
   initialPreferences,
 }) => {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
-    initialPreferences?.languages || []
+    initialPreferences?.languages || [],
   );
-  const [otherLanguageText, setOtherLanguageText] = useState('');
+  const [otherLanguageText, setOtherLanguageText] = useState("");
   const [hasOther, setHasOther] = useState(false);
 
   // Normalize initial duration
   const resolveInitialDuration = (): CareDuration => {
-    if (initialPreferences?.careDuration) return initialPreferences.careDuration;
-    if (initialPreferences?.shiftDuration === '8_HOURS' || initialPreferences?.shiftDuration === 'EIGHT_HOUR_DAY') return 'EIGHT_HOUR_DAY';
-    if (initialPreferences?.shiftDuration === '24_HOURS' || initialPreferences?.shiftDuration === 'TWENTY_FOUR_HOUR_LIVE_IN') return 'TWENTY_FOUR_HOUR_LIVE_IN';
-    if (initialPreferences?.shiftDuration === 'FLEXIBLE') return 'FLEXIBLE';
-    return 'TWELVE_HOUR_DAY_NIGHT';
+    if (initialPreferences?.careDuration)
+      return initialPreferences.careDuration;
+    if (
+      initialPreferences?.shiftDuration === "8_HOURS" ||
+      initialPreferences?.shiftDuration === "EIGHT_HOUR_DAY"
+    )
+      return "EIGHT_HOUR_DAY";
+    if (
+      initialPreferences?.shiftDuration === "24_HOURS" ||
+      initialPreferences?.shiftDuration === "TWENTY_FOUR_HOUR_LIVE_IN"
+    )
+      return "TWENTY_FOUR_HOUR_LIVE_IN";
+    if (initialPreferences?.shiftDuration === "FLEXIBLE") return "FLEXIBLE";
+    return "TWELVE_HOUR_DAY_NIGHT";
   };
 
-  const [careDuration, setCareDuration] = useState<CareDuration>(resolveInitialDuration());
+  const [careDuration, setCareDuration] = useState<CareDuration>(
+    resolveInitialDuration(),
+  );
   const [preferredStartTime, setPreferredStartTime] = useState<string>(
-    initialPreferences?.preferredStartTime || initialPreferences?.startTime || '09:00'
+    initialPreferences?.preferredStartTime ||
+      initialPreferences?.startTime ||
+      "09:00",
   );
   const [preferredEndTime, setPreferredEndTime] = useState<string>(
-    initialPreferences?.preferredEndTime || initialPreferences?.endTime || '17:00'
+    initialPreferences?.preferredEndTime ||
+      initialPreferences?.endTime ||
+      "17:00",
   );
   const [timingError, setTimingError] = useState<string | null>(null);
 
   const [additionalPreferences, setAdditionalPreferences] = useState(
-    initialPreferences?.additionalPreferences || ''
+    initialPreferences?.additionalPreferences || "",
   );
 
   const toggleLanguage = (lang: string) => {
-    if (lang === 'Other') {
+    if (lang === "Other") {
       setHasOther(!hasOther);
       return;
     }
     setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
     );
   };
 
@@ -105,22 +120,26 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
     }
     return {
       languages: finalLangs,
-      primaryLanguage: finalLangs[0] || 'English',
+      primaryLanguage: finalLangs[0] || "English",
       careDuration,
-      preferredStartTime: careDuration === 'FLEXIBLE' ? preferredStartTime : undefined,
-      preferredEndTime: careDuration === 'FLEXIBLE' ? preferredEndTime : undefined,
+      preferredStartTime:
+        careDuration === "FLEXIBLE" ? preferredStartTime : undefined,
+      preferredEndTime:
+        careDuration === "FLEXIBLE" ? preferredEndTime : undefined,
       additionalPreferences,
     };
   };
 
   const handleFinish = () => {
-    if (careDuration === 'FLEXIBLE') {
+    if (careDuration === "FLEXIBLE") {
       if (!preferredStartTime || !preferredEndTime) {
-        setTimingError('Please select both start and end times for flexible hours.');
+        setTimingError(
+          "Please select both start and end times for flexible hours.",
+        );
         return;
       }
       if (preferredStartTime === preferredEndTime) {
-        setTimingError('Start time and end time cannot be identical.');
+        setTimingError("Start time and end time cannot be identical.");
         return;
       }
     }
@@ -167,7 +186,7 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
           <div className="flex flex-wrap gap-1.5">
             {ALL_LANGUAGES.map((lang) => {
               const isSelected =
-                lang === 'Other' ? hasOther : selectedLanguages.includes(lang);
+                lang === "Other" ? hasOther : selectedLanguages.includes(lang);
 
               return (
                 <button
@@ -176,8 +195,8 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
                   onClick={() => toggleLanguage(lang)}
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-95 ${
                     isSelected
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   {lang}
@@ -221,21 +240,25 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
                   }}
                   className={`w-full min-h-[52px] px-4 py-3 rounded-2xl border-2 text-left transition active:scale-[0.99] flex items-center justify-between ${
                     isSelected
-                      ? 'border-primary bg-teal-50/70 shadow-sm ring-1 ring-primary/30'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? "border-primary bg-teal-50/70 shadow-sm ring-1 ring-primary/30"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition ${
-                        isSelected ? 'border-primary bg-white' : 'border-slate-300 bg-white'
+                        isSelected
+                          ? "border-primary bg-white"
+                          : "border-slate-300 bg-white"
                       }`}
                     >
                       {isSelected && (
                         <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                       )}
                     </div>
-                    <span className="text-sm font-bold text-slate-800">{opt.label}</span>
+                    <span className="text-sm font-bold text-slate-800">
+                      {opt.label}
+                    </span>
                   </div>
                 </button>
               );
@@ -243,7 +266,7 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
           </div>
 
           {/* Flexible Timing Controls */}
-          {careDuration === 'FLEXIBLE' && (
+          {careDuration === "FLEXIBLE" && (
             <div className="mt-3 p-4 bg-teal-50/70 rounded-2xl border border-teal-200/80 space-y-3 animate-fadeIn">
               <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-primary" />
@@ -252,7 +275,10 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="preferred-start-time" className="block text-xs font-bold text-slate-700 mb-1">
+                  <label
+                    htmlFor="preferred-start-time"
+                    className="block text-xs font-bold text-slate-700 mb-1"
+                  >
                     From:
                   </label>
                   <input
@@ -267,7 +293,10 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
                   />
                 </div>
                 <div>
-                  <label htmlFor="preferred-end-time" className="block text-xs font-bold text-slate-700 mb-1">
+                  <label
+                    htmlFor="preferred-end-time"
+                    className="block text-xs font-bold text-slate-700 mb-1"
+                  >
                     To:
                   </label>
                   <input
@@ -283,11 +312,13 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
                 </div>
               </div>
 
-              {preferredStartTime && preferredEndTime && preferredEndTime < preferredStartTime && (
-                <div className="text-[11px] text-teal-800 font-medium flex items-center gap-1 bg-teal-100/60 px-2.5 py-1.5 rounded-lg">
-                  <span>🌙 Overnight shift (ends following day)</span>
-                </div>
-              )}
+              {preferredStartTime &&
+                preferredEndTime &&
+                preferredEndTime < preferredStartTime && (
+                  <div className="text-[11px] text-teal-800 font-medium flex items-center gap-1 bg-teal-100/60 px-2.5 py-1.5 rounded-lg">
+                    <span>🌙 Overnight shift (ends following day)</span>
+                  </div>
+                )}
 
               {timingError && (
                 <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
@@ -298,14 +329,16 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
           )}
 
           <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 leading-relaxed">
-            💡 We match your duration & timing preferences with available caregivers in your area.
+            💡 We match your duration & timing preferences with available
+            caregivers in your area.
           </div>
         </div>
 
         {/* Additional Preferences */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1">
-            Additional Preferences <span className="font-normal text-slate-400">(Optional)</span>
+            Additional Preferences{" "}
+            <span className="font-normal text-slate-400">(Optional)</span>
           </label>
           <textarea
             value={additionalPreferences}

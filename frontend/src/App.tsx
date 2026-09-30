@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { OnboardingProvider, useOnboarding } from "./context/OnboardingContext";
@@ -8,7 +7,10 @@ import type { Elder } from "./types";
 // Mobile Shell & Navigation
 import { CareConnectLogo } from "./components/common/CareConnectLogo";
 import { MobileTopBar } from "./components/mobile/MobileTopBar";
-import { MobileBottomNav, type FamilyTab } from "./components/mobile/MobileBottomNav";
+import {
+  MobileBottomNav,
+  type FamilyTab,
+} from "./components/mobile/MobileBottomNav";
 import { MobileSosModal } from "./components/mobile/MobileSosModal";
 import { PwaInstallBanner } from "./components/mobile/PwaInstallBanner";
 
@@ -50,14 +52,18 @@ import { usePwaNavigation } from "./hooks/usePwaNavigation";
 
 const AppContent: React.FC = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const { elders, activeElder, setActiveElder, refreshElders } = useOnboarding();
+  const { elders, activeElder, setActiveElder, refreshElders } =
+    useOnboarding();
 
-  const [activePortal, setActivePortal] = useState<"FAMILY" | "CAREGIVER" | "OPERATIONS">("FAMILY");
+  const [activePortal, setActivePortal] = useState<
+    "FAMILY" | "CAREGIVER" | "OPERATIONS"
+  >("FAMILY");
 
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
   const isKnownAuthenticated =
     Boolean(user) ||
-    (typeof window !== "undefined" && Boolean(localStorage.getItem("careconnect_token")));
+    (typeof window !== "undefined" &&
+      Boolean(localStorage.getItem("careconnect_token")));
 
   // Centralized PWA Navigation & Browser History synchronization
   const {
@@ -82,12 +88,15 @@ const AppContent: React.FC = () => {
     setActiveMoreModal,
     goBack,
   } = usePwaNavigation(isKnownAuthenticated, refreshElders);
-  const [draftRecipient, setDraftRecipient] = useState<"ME" | "SOMEONE_ELSE" | null>(null);
+  const [draftRecipient, setDraftRecipient] = useState<
+    "ME" | "SOMEONE_ELSE" | null
+  >(null);
   const [draftBasic, setDraftBasic] = useState<{
     name: string;
     age: number;
     gender: "FEMALE" | "MALE" | "OTHER";
     dob?: string;
+    phone?: string;
   }>({ name: "", age: 0, gender: "FEMALE" });
   const [draftLocation, setDraftLocation] = useState<{
     addressLine1: string;
@@ -103,7 +112,11 @@ const AppContent: React.FC = () => {
   const [draftPreferences, setDraftPreferences] = useState<{
     languages: string[];
     primaryLanguage: string;
-    careDuration: "EIGHT_HOUR_DAY" | "TWELVE_HOUR_DAY_NIGHT" | "TWENTY_FOUR_HOUR_LIVE_IN" | "FLEXIBLE";
+    careDuration:
+      | "EIGHT_HOUR_DAY"
+      | "TWELVE_HOUR_DAY_NIGHT"
+      | "TWENTY_FOUR_HOUR_LIVE_IN"
+      | "FLEXIBLE";
     preferredStartTime?: string;
     preferredEndTime?: string;
     additionalPreferences: string;
@@ -140,11 +153,11 @@ const AppContent: React.FC = () => {
   // Persist elder draft into backend
   const finalizeElderOnboarding = async (
     intakeOverride?: typeof draftIntake,
-    preferencesOverride?: typeof draftPreferences
+    preferencesOverride?: typeof draftPreferences,
   ) => {
     if (!user) {
       // Need login before final persistence
-      setIsAuthOpen(true, 'PHONE');
+      setIsAuthOpen(true, "PHONE");
       return;
     }
 
@@ -161,6 +174,10 @@ const AppContent: React.FC = () => {
         age: draftBasic.age || 70,
         gender: draftBasic.gender || "FEMALE",
         dateOfBirth: draftBasic.dob || null,
+        phoneNumber:
+          draftRecipient === "ME"
+            ? user?.phone || undefined
+            : draftBasic.phone || undefined,
       });
 
       // 2. Persist Location if available
@@ -186,23 +203,32 @@ const AppContent: React.FC = () => {
         shiftType: effectivePrefs.careDuration,
       };
       if (effectivePrefs.careDuration === "FLEXIBLE") {
-        dailyRoutineObj.preferredStartTime = effectivePrefs.preferredStartTime || "09:00";
-        dailyRoutineObj.preferredEndTime = effectivePrefs.preferredEndTime || "17:00";
+        dailyRoutineObj.preferredStartTime =
+          effectivePrefs.preferredStartTime || "09:00";
+        dailyRoutineObj.preferredEndTime =
+          effectivePrefs.preferredEndTime || "17:00";
       }
 
-      const formattedNotes = effectivePrefs.careDuration === "FLEXIBLE" && effectivePrefs.preferredStartTime && effectivePrefs.preferredEndTime
-        ? `${effectivePrefs.additionalPreferences || ''}${effectivePrefs.additionalPreferences ? ' | ' : ''}Preferred Care Hours: ${effectivePrefs.preferredStartTime} - ${effectivePrefs.preferredEndTime}`
-        : effectivePrefs.additionalPreferences;
+      const formattedNotes =
+        effectivePrefs.careDuration === "FLEXIBLE" &&
+        effectivePrefs.preferredStartTime &&
+        effectivePrefs.preferredEndTime
+          ? `${effectivePrefs.additionalPreferences || ""}${effectivePrefs.additionalPreferences ? " | " : ""}Preferred Care Hours: ${effectivePrefs.preferredStartTime} - ${effectivePrefs.preferredEndTime}`
+          : effectivePrefs.additionalPreferences;
 
       const updated = await api.updateElder(created.id, {
-        mobilityLevel: (draftMobility as any),
+        mobilityLevel: draftMobility as any,
         careRequirements: draftRequirements,
         languages: effectivePrefs.languages,
         primaryLanguage: effectivePrefs.primaryLanguage,
         shiftPreference: mappedShift as any,
-        medicalConditions: effectiveIntake?.medicalConditions || ["Hypertension"],
+        medicalConditions: effectiveIntake?.medicalConditions || [
+          "Hypertension",
+        ],
         medicalDevices: effectiveIntake?.medicalDevices || [],
-        dietaryPreferences: effectiveIntake?.dietaryPreferences || ["Vegetarian"],
+        dietaryPreferences: effectiveIntake?.dietaryPreferences || [
+          "Vegetarian",
+        ],
         dailyRoutine: dailyRoutineObj,
         additionalNotes: formattedNotes,
         personaStatus: "SAVED",
@@ -214,7 +240,9 @@ const AppContent: React.FC = () => {
       setOnboardingStep("MATCHMAKING");
     } catch (err: any) {
       console.error("Failed to finalize onboarding:", err);
-      setActionError(err.message || "Failed to save profile. Please try again.");
+      setActionError(
+        err.message || "Failed to save profile. Please try again.",
+      );
     } finally {
       setIsCreatingElder(false);
     }
@@ -244,7 +272,8 @@ const AppContent: React.FC = () => {
     try {
       const updatedList = await refreshElders();
       if (updatedList && updatedList.length > 0) {
-        const next = updatedList.find((e) => e.id !== deletedElderId) || updatedList[0];
+        const next =
+          updatedList.find((e) => e.id !== deletedElderId) || updatedList[0];
         setActiveElder(next);
         setDraftElder(next);
       } else {
@@ -253,7 +282,9 @@ const AppContent: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Failed to refresh elders after deletion:", err);
-      setActionError(err.message || "Failed to update elder list after deletion.");
+      setActionError(
+        err.message || "Failed to update elder list after deletion.",
+      );
     }
   };
 
@@ -321,10 +352,10 @@ const AppContent: React.FC = () => {
           <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => setOnboardingStep("WHO")}
-            onSignIn={() => setIsAuthOpen(true, 'PHONE')}
+            onSignIn={() => setIsAuthOpen(true, "PHONE")}
             onSelectRole={(role) => {
               setActivePortal(role);
-              setIsAuthOpen(true, 'PHONE');
+              setIsAuthOpen(true, "PHONE");
             }}
           />
         </div>
@@ -340,15 +371,24 @@ const AppContent: React.FC = () => {
           {actionError && (
             <div className="m-3 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-center justify-between">
               <span>{actionError}</span>
-              <button onClick={() => setActionError(null)} className="font-bold">✕</button>
+              <button
+                onClick={() => setActionError(null)}
+                className="font-bold"
+              >
+                ✕
+              </button>
             </div>
           )}
 
           {isCreatingElder && (
             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <h3 className="text-base font-bold text-slate-900">Setting up elder profile...</h3>
-              <p className="text-xs text-slate-500">Matching verified attendants in your corridor</p>
+              <h3 className="text-base font-bold text-slate-900">
+                Setting up elder profile...
+              </h3>
+              <p className="text-xs text-slate-500">
+                Matching verified attendants in your corridor
+              </p>
             </div>
           )}
 
@@ -386,7 +426,7 @@ const AppContent: React.FC = () => {
                 if (user) {
                   setOnboardingStep("REQUIREMENTS");
                 } else {
-                  setIsAuthOpen(true, 'PHONE');
+                  setIsAuthOpen(true, "PHONE");
                 }
               }}
               onBack={goBack}
@@ -437,7 +477,11 @@ const AppContent: React.FC = () => {
 
           {!isCreatingElder && onboardingStep === "MATCHMAKING" && (
             <MobileMatchmakingScreen
-              elder={draftElder || activeElder || { id: "draft", name: draftBasic.name } as Elder}
+              elder={
+                draftElder ||
+                activeElder ||
+                ({ id: "draft", name: draftBasic.name } as Elder)
+              }
               onBookingConfirmed={() => {
                 resetToHome();
                 refreshElders();
@@ -504,7 +548,9 @@ const AppContent: React.FC = () => {
         {actionError && (
           <div className="mx-4 my-2 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-center justify-between">
             <span>{actionError}</span>
-            <button onClick={() => setActionError(null)} className="font-bold">✕</button>
+            <button onClick={() => setActionError(null)} className="font-bold">
+              ✕
+            </button>
           </div>
         )}
 
@@ -522,7 +568,9 @@ const AppContent: React.FC = () => {
                   No elders added yet.
                 </h2>
                 <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-                  Start your care journey by adding an elder profile with verified attendants, 24/7 care desk oversight, and real-time health monitoring.
+                  Start your care journey by adding an elder profile with
+                  verified attendants, 24/7 care desk oversight, and real-time
+                  health monitoring.
                 </p>
               </div>
 
@@ -555,7 +603,7 @@ const AppContent: React.FC = () => {
                 </button>
               </div>
             </div>
-          ) : (activeElder || elders[0]) ? (
+          ) : activeElder || elders[0] ? (
             /* Active Family Tabs */
             <>
               {activeFamilyTab === "HOME" && (
@@ -587,7 +635,10 @@ const AppContent: React.FC = () => {
               )}
 
               {activeFamilyTab === "MESSAGES" && (
-                <FamilyMessagesScreen elder={activeElder || elders[0]} currentUser={user} />
+                <FamilyMessagesScreen
+                  elder={activeElder || elders[0]}
+                  currentUser={user}
+                />
               )}
 
               {activeFamilyTab === "MORE" && (
@@ -601,7 +652,9 @@ const AppContent: React.FC = () => {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 space-y-3">
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
-              <span className="text-xs text-slate-500">Preparing care portal...</span>
+              <span className="text-xs text-slate-500">
+                Preparing care portal...
+              </span>
             </div>
           )}
         </main>

@@ -1,23 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, ShieldCheck, Loader2 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Elder, User } from '../../../types';
-import type { ChatMessage } from '../../../types/phaseC';
+import React, { useState, useEffect, useRef } from "react";
+import { Send, ShieldCheck, Loader2 } from "lucide-react";
+import { api } from "../../../services/api";
+import type { Elder, User } from "../../../types";
+import type { ChatMessage } from "../../../types/phaseC";
 
 interface FamilyMessagesScreenProps {
   elder: Elder;
   currentUser?: User | null;
 }
 
-export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elder, currentUser }) => {
+export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({
+  elder,
+  currentUser,
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadMessages = async () => {
     try {
-      const list = await api.getChatMessages(elder.id, 'FAMILY_COORDINATOR');
+      const list = await api.getChatMessages(elder.id, "FAMILY_COORDINATOR");
       setMessages(list || []);
     } catch {
       // Fallback
@@ -31,7 +34,7 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
   }, [elder.id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
@@ -39,14 +42,14 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
     if (!inputText.trim() || isSending) return;
 
     const content = inputText.trim();
-    setInputText('');
+    setInputText("");
     setIsSending(true);
 
     try {
       const newMsg = await api.sendChatMessage({
         elderId: elder.id,
         content,
-        channel: 'FAMILY_COORDINATOR',
+        channel: "FAMILY_COORDINATOR",
       });
       setMessages((prev) => [...prev, newMsg]);
     } catch {
@@ -63,26 +66,31 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div>
-          <div className="text-sm font-bold text-slate-900">Care coordinator desk</div>
-          <div className="text-[10px] font-semibold text-emerald-600">● Active • Typical reply in under 5 mins</div>
+          <div className="text-sm font-bold text-slate-900">
+            Care coordinator desk
+          </div>
+          <div className="text-[10px] font-semibold text-emerald-600">
+            ● Active • Typical reply in under 5 mins
+          </div>
         </div>
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto py-1 pr-1">
         {messages.length === 0 ? (
           <div className="rounded-[26px] border border-dashed border-slate-200 bg-white p-8 text-center text-xs leading-relaxed text-slate-500">
-            Send a message to your assigned care coordinator for assistance or schedule updates.
+            Send a message to your assigned care coordinator for assistance or
+            schedule updates.
           </div>
         ) : (
           messages.map((m) => {
-            const isSystem = m.senderRole === 'SYSTEM';
+            const isSystem = m.senderRole === "SYSTEM";
             const isMe =
               !isSystem &&
               ((currentUser && m.senderId === currentUser.id) ||
-                m.senderRole === 'FAMILY' ||
-                m.senderRole === 'FAMILY_SPONSOR' ||
-                m.senderRole === 'CLIENT' ||
-                m.senderRole === 'SPONSOR');
+                m.senderRole === "FAMILY" ||
+                m.senderRole === "FAMILY_SPONSOR" ||
+                m.senderRole === "CLIENT" ||
+                m.senderRole === "SPONSOR");
 
             if (isSystem) {
               return (
@@ -101,7 +109,10 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
                     <p>{m.content}</p>
                   </div>
                   <span className="mt-1 mr-1 text-[9px] text-slate-400">
-                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(m.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
               );
@@ -111,17 +122,23 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
               <div key={m.id} className="my-1 flex flex-col items-start">
                 <div className="mb-1 ml-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                   <span>
-                    {m.senderName || (m.senderRole === 'COORDINATOR' ? 'Care Coordinator' : 'Attendant')}
+                    {m.senderName ||
+                      (m.senderRole === "COORDINATOR"
+                        ? "Care Coordinator"
+                        : "Attendant")}
                   </span>
                   <span className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700 border border-teal-200/60">
-                    {m.senderRole === 'COORDINATOR' ? 'Desk' : 'Caregiver'}
+                    {m.senderRole === "COORDINATOR" ? "Desk" : "Caregiver"}
                   </span>
                 </div>
                 <div className="max-w-[78%] rounded-[22px] rounded-bl-md border border-slate-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
                   <p>{m.content}</p>
                 </div>
                 <span className="mt-1 ml-1 text-[9px] text-slate-400">
-                  {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(m.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
             );
@@ -130,7 +147,10 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSend} className="flex shrink-0 items-center gap-2 pb-safe-nav pt-2">
+      <form
+        onSubmit={handleSend}
+        className="flex shrink-0 items-center gap-2 pb-safe-nav pt-2"
+      >
         <input
           type="text"
           value={inputText}
@@ -143,7 +163,11 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({ elde
           disabled={!inputText.trim() || isSending}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm transition hover:bg-primary-hover disabled:opacity-40"
         >
-          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {isSending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </button>
       </form>
     </div>

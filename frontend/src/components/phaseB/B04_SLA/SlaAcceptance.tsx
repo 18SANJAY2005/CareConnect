@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
-import { FileCheck, ShieldCheck, CheckSquare, Square, ArrowRight } from 'lucide-react';
-import type { SLAVersion, Caregiver } from '../../../types';
+import React, { useState } from "react";
+import {
+  FileCheck,
+  ShieldCheck,
+  CheckSquare,
+  Square,
+  ArrowRight,
+} from "lucide-react";
+import type { SLAVersion, Caregiver } from "../../../types";
 
 interface SlaAcceptanceProps {
   sla: SLAVersion;
@@ -17,13 +23,16 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
   onAccept,
   isSubmitting,
 }) => {
-  const [signerName, setSignerName] = useState<string>('');
-  const [relationship, setRelationship] = useState<string>('Son (Primary Sponsor)');
+  const [signerName, setSignerName] = useState<string>("");
+  const [relationship, setRelationship] = useState<string>(
+    "Son (Primary Sponsor)",
+  );
   const [agreeConduct, setAgreeConduct] = useState<boolean>(true);
   const [agreeEmergency, setAgreeEmergency] = useState<boolean>(true);
   const [agreeDPDP, setAgreeDPDP] = useState<boolean>(true);
 
-  const canSubmit = agreeConduct && agreeEmergency && agreeDPDP && signerName.trim().length > 2;
+  const canSubmit =
+    agreeConduct && agreeEmergency && agreeDPDP && signerName.trim().length > 2;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,12 +54,16 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
               {sla.title}
             </h2>
             <p className="text-sm text-on-surface-variant mt-1">
-              Binding Service Agreement for caregiver <strong>{caregiver.full_name}</strong> attending to <strong>{elderName}</strong>.
+              Binding Service Agreement for caregiver{" "}
+              <strong>{caregiver.full_name}</strong> attending to{" "}
+              <strong>{elderName}</strong>.
             </p>
           </div>
 
           <div className="text-right">
-            <span className="text-xs text-on-surface-variant block">Agreement Version</span>
+            <span className="text-xs text-on-surface-variant block">
+              Agreement Version
+            </span>
             <span className="text-xl font-extrabold font-heading text-primary bg-surface-container px-3 py-1 rounded-lg inline-block mt-1">
               Version {sla.version}
             </span>
@@ -118,7 +131,10 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
       </div>
 
       {/* Explicit Digital Acceptance Form */}
-      <form onSubmit={handleSubmit} className="bg-surface-card p-6 sm:p-8 rounded-2xl border border-outline-light/50 shadow-card space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-surface-card p-6 sm:p-8 rounded-2xl border border-outline-light/50 shadow-card space-y-6"
+      >
         <h3 className="text-lg font-bold font-heading text-on-surface border-b border-outline-light/30 pb-3">
           Digital Sign-off & Audit Acknowledgement
         </h3>
@@ -136,7 +152,9 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
             )}
           </div>
           <span className="text-xs sm:text-sm text-on-surface leading-normal">
-            I have reviewed and agree to the <strong>Caregiver Code of Conduct</strong> and understand clinical boundaries regarding oral medications.
+            I have reviewed and agree to the{" "}
+            <strong>Caregiver Code of Conduct</strong> and understand clinical
+            boundaries regarding oral medications.
           </span>
         </div>
 
@@ -153,7 +171,11 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
             )}
           </div>
           <span className="text-xs sm:text-sm text-on-surface leading-normal">
-            I acknowledge the <strong>Emergency Escalation Protocol (108 Ambulance + Care Manager alert)</strong> and the 48-hour schedule change notice terms.
+            I acknowledge the{" "}
+            <strong>
+              Emergency Escalation Protocol (108 Ambulance + Care Manager alert)
+            </strong>{" "}
+            and the 48-hour schedule change notice terms.
           </span>
         </div>
 
@@ -170,7 +192,9 @@ export const SlaAcceptance: React.FC<SlaAcceptanceProps> = ({
             )}
           </div>
           <span className="text-xs sm:text-sm text-on-surface leading-normal">
-            I grant explicit consent for caregiver check-in geofencing and encrypted vitals logging under our <strong>Data Privacy & Health Data Protection terms</strong>.
+            I grant explicit consent for caregiver check-in geofencing and
+            encrypted vitals logging under our{" "}
+            <strong>Data Privacy & Health Data Protection terms</strong>.
           </span>
         </div>
 

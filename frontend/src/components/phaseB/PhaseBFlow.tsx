@@ -318,7 +318,6 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-
       {onBackToDashboard && (
         <div className="bg-slate-100 border-b border-slate-200 px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs">
           <button
@@ -443,7 +442,8 @@ export const PhaseBFlow: React.FC<PhaseBFlowProps> = ({
         <p>© 2026 CareConnect. All rights reserved.</p>
 
         <p className="mt-1 text-[11px] text-on-surface-variant/75">
-          Data Privacy & Elder Health Data Protection • Encrypted Healthcare Infrastructure
+          Data Privacy & Elder Health Data Protection • Encrypted Healthcare
+          Infrastructure
         </p>
       </footer>
     </div>

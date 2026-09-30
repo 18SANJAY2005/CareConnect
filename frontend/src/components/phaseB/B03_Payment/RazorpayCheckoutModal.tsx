@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
-import { X, ShieldCheck, Check, Lock, Smartphone, CreditCard, Building } from 'lucide-react';
-import type { PaymentOrder } from '../../../types';
+import React, { useState } from "react";
+import {
+  X,
+  ShieldCheck,
+  Check,
+  Lock,
+  Smartphone,
+  CreditCard,
+  Building,
+} from "lucide-react";
+import type { PaymentOrder } from "../../../types";
 
 interface RazorpayCheckoutModalProps {
   order: PaymentOrder;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (paymentId: string, signature: string, method: string) => Promise<void>;
+  onSuccess: (
+    paymentId: string,
+    signature: string,
+    method: string,
+  ) => Promise<void>;
 }
 
 export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
@@ -15,8 +27,10 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const [activeMethod, setActiveMethod] = useState<'UPI' | 'CARD' | 'NETBANKING'>('UPI');
-  const [upiId, setUpiId] = useState<string>('sponsor@okaxis');
+  const [activeMethod, setActiveMethod] = useState<
+    "UPI" | "CARD" | "NETBANKING"
+  >("UPI");
+  const [upiId, setUpiId] = useState<string>("sponsor@okaxis");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -46,12 +60,16 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-base font-bold tracking-tight">Razorpay Checkout</span>
+                <span className="text-base font-bold tracking-tight">
+                  Razorpay Checkout
+                </span>
                 <span className="text-[10px] uppercase font-bold bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded">
                   Test Sandbox
                 </span>
               </div>
-              <p className="text-xs text-blue-200">CareConnect Advance Care Deposit</p>
+              <p className="text-xs text-blue-200">
+                CareConnect Advance Care Deposit
+              </p>
             </div>
           </div>
           <button
@@ -73,9 +91,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             </code>
           </div>
           <div className="text-right">
-            <span className="text-[11px] text-on-surface-variant font-medium block">Total Payable:</span>
+            <span className="text-[11px] text-on-surface-variant font-medium block">
+              Total Payable:
+            </span>
             <span className="text-xl font-extrabold text-primary font-heading">
-              ₹{order.amount.toLocaleString('en-IN')}
+              ₹{order.amount.toLocaleString("en-IN")}
             </span>
           </div>
         </div>
@@ -89,11 +109,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setActiveMethod('UPI')}
+              onClick={() => setActiveMethod("UPI")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${
-                activeMethod === 'UPI'
-                  ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20'
-                  : 'border-outline-light/60 hover:bg-surface text-on-surface'
+                activeMethod === "UPI"
+                  ? "border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20"
+                  : "border-outline-light/60 hover:bg-surface text-on-surface"
               }`}
             >
               <Smartphone className="w-5 h-5 mb-1 text-blue-600" />
@@ -102,11 +122,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
             <button
               type="button"
-              onClick={() => setActiveMethod('CARD')}
+              onClick={() => setActiveMethod("CARD")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${
-                activeMethod === 'CARD'
-                  ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20'
-                  : 'border-outline-light/60 hover:bg-surface text-on-surface'
+                activeMethod === "CARD"
+                  ? "border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20"
+                  : "border-outline-light/60 hover:bg-surface text-on-surface"
               }`}
             >
               <CreditCard className="w-5 h-5 mb-1 text-emerald-600" />
@@ -115,11 +135,11 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
             <button
               type="button"
-              onClick={() => setActiveMethod('NETBANKING')}
+              onClick={() => setActiveMethod("NETBANKING")}
               className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${
-                activeMethod === 'NETBANKING'
-                  ? 'border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20'
-                  : 'border-outline-light/60 hover:bg-surface text-on-surface'
+                activeMethod === "NETBANKING"
+                  ? "border-blue-600 bg-blue-50 text-blue-900 ring-2 ring-blue-500/20"
+                  : "border-outline-light/60 hover:bg-surface text-on-surface"
               }`}
             >
               <Building className="w-5 h-5 mb-1 text-purple-600" />
@@ -127,7 +147,7 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             </button>
           </div>
 
-          {activeMethod === 'UPI' && (
+          {activeMethod === "UPI" && (
             <div className="p-4 bg-surface rounded-xl border border-outline-light/40 space-y-3">
               <span className="text-xs font-medium text-on-surface block">
                 Instant UPI Payment (GPay, PhonePe, Paytm, BHIM):
@@ -146,24 +166,34 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             </div>
           )}
 
-          {activeMethod === 'CARD' && (
+          {activeMethod === "CARD" && (
             <div className="p-4 bg-surface rounded-xl border border-outline-light/40 text-xs text-on-surface-variant space-y-2">
               <p className="font-semibold text-on-surface">Supported Cards:</p>
-              <p>Visa, MasterCard, RuPay, and NRI International Debit/Credit Cards.</p>
+              <p>
+                Visa, MasterCard, RuPay, and NRI International Debit/Credit
+                Cards.
+              </p>
               <p className="text-[11px] text-tertiary font-semibold flex items-center">
-                <ShieldCheck className="w-3.5 h-3.5 mr-1" /> 256-bit TLS Tokenized via Razorpay
+                <ShieldCheck className="w-3.5 h-3.5 mr-1" /> 256-bit TLS
+                Tokenized via Razorpay
               </p>
             </div>
           )}
 
-          {activeMethod === 'NETBANKING' && (
+          {activeMethod === "NETBANKING" && (
             <div className="p-4 bg-surface rounded-xl border border-outline-light/40 text-xs text-on-surface-variant space-y-2">
               <p className="font-semibold text-on-surface">Popular Banks:</p>
               <div className="flex flex-wrap gap-2 text-[11px] font-medium text-on-surface">
-                <span className="px-2 py-1 bg-white rounded border">HDFC Bank</span>
-                <span className="px-2 py-1 bg-white rounded border">ICICI Bank</span>
+                <span className="px-2 py-1 bg-white rounded border">
+                  HDFC Bank
+                </span>
+                <span className="px-2 py-1 bg-white rounded border">
+                  ICICI Bank
+                </span>
                 <span className="px-2 py-1 bg-white rounded border">SBI</span>
-                <span className="px-2 py-1 bg-white rounded border">Axis Bank</span>
+                <span className="px-2 py-1 bg-white rounded border">
+                  Axis Bank
+                </span>
               </div>
             </div>
           )}
@@ -171,7 +201,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
           <div className="flex items-center space-x-2 text-xs text-on-surface-variant pt-2">
             <Lock className="w-4 h-4 text-tertiary flex-shrink-0" />
             <span>
-              Payment is held securely in <strong>CareConnect Escrow</strong> and only disbursed post-trial.
+              Payment is held securely in <strong>CareConnect Escrow</strong>{" "}
+              and only disbursed post-trial.
             </span>
           </div>
         </div>
@@ -187,7 +218,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
             {isProcessing ? (
               <span>Authenticating with Razorpay Gateway...</span>
             ) : (
-              <span>Authorize & Pay ₹{order.amount.toLocaleString('en-IN')}</span>
+              <span>
+                Authorize & Pay ₹{order.amount.toLocaleString("en-IN")}
+              </span>
             )}
           </button>
         </div>

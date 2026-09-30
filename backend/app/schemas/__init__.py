@@ -1,5 +1,5 @@
 # ============================================================
-# Phase A — Onboarding & Intake Schemas
+# Phase A - Onboarding & Intake Schemas
 # ============================================================
 
 from app.schemas.auth import (
@@ -37,7 +37,7 @@ from app.schemas.assessment import (
 
 
 # ============================================================
-# Phase B — Matching, Trial & Confirmation Schemas
+# Phase B - Matching, Trial & Confirmation Schemas
 # ============================================================
 
 from app.schemas.caregiver import (
@@ -74,7 +74,7 @@ from app.schemas.sla import (
 
 
 # ============================================================
-# Phase C — Active Care & Remote Monitoring Schemas
+# Phase C - Active Care & Remote Monitoring Schemas
 # ============================================================
 
 from app.schemas.shift import (
@@ -116,7 +116,7 @@ from app.schemas.incident import (
 # ============================================================
 
 __all__ = [
-    # Phase A — Auth
+    # Phase A - Auth
     "UserRole",
     "SendOtpRequest",
     "SendOtpResponse",
@@ -125,14 +125,14 @@ __all__ = [
     "UserResponse",
     "TokenResponse",
 
-    # Phase A — Location
+    # Phase A - Location
     "LocationVerificationStatus",
     "LocationVerifyRequest",
     "LocationVerifyResponse",
     "ElderLocationPersistRequest",
     "ElderLocationResponse",
 
-    # Phase A — Elder Persona
+    # Phase A - Elder Persona
     "MobilityLevel",
     "PersonaStatus",
     "ShiftPreference",
@@ -140,39 +140,39 @@ __all__ = [
     "ElderUpdate",
     "ElderResponse",
 
-    # Phase A — Assessment
+    # Phase A - Assessment
     "AssessmentStatus",
     "AssessmentCreate",
     "AssessmentResponse",
 
-    # Phase B — Caregiver
+    # Phase B - Caregiver
     "CaregiverBase",
     "CaregiverResponse",
     "CaregiverMatchItem",
     "CuratedMatchesResponse",
 
-    # Phase B — Assignment
+    # Phase B - Assignment
     "AssignmentCreate",
     "AssignmentStatusUpdate",
     "AssignmentResponse",
 
-    # Phase B — Intro Call
+    # Phase B - Intro Call
     "IntroCallScheduleRequest",
     "IntroCallStatusUpdate",
     "IntroCallResponse",
 
-    # Phase B — Payment
+    # Phase B - Payment
     "PaymentOrderCreate",
     "PaymentOrderResponse",
     "PaymentVerifyRequest",
     "PaymentVerifyResponse",
 
-    # Phase B — SLA
+    # Phase B - SLA
     "SLAVersionResponse",
     "SLAAcceptanceCreate",
     "SLAAcceptanceResponse",
 
-    # Phase C — Shifts & Attendance
+    # Phase C - Shifts & Attendance
     "CheckInRequest",
     "CheckOutRequest",
     "SupervisorOverrideRequest",
@@ -180,18 +180,18 @@ __all__ = [
     "ShiftDetailResponse",
     "LiveShiftMonitorItem",
 
-    # Phase C — Care Tasks
+    # Phase C - Care Tasks
     "CareTaskUpdate",
     "CareTaskItem",
     "BatchSyncTaskRequest",
     "TimelineItem",
 
-    # Phase C — Vitals
+    # Phase C - Vitals
     "VitalReadingCreate",
     "VitalReadingResponse",
     "VitalAlertItem",
 
-    # Phase C — Incidents, Media & Chat
+    # Phase C - Incidents, Media & Chat
     "SosTriggerRequest",
     "IncidentActionRequest",
     "IncidentResolveRequest",

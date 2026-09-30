@@ -28,6 +28,7 @@ async def create_elder(
         age=payload.age,
         gender=payload.gender,
         dateOfBirth=payload.dateOfBirth,
+        phoneNumber=payload.phoneNumber,
         personaStatus="DRAFT"
     )
     db.add(elder)

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import type { ReplacementRequest } from '../../types';
-import { api } from '../../services/api';
+import React, { useState } from "react";
+import type { ReplacementRequest } from "../../types";
+import { api } from "../../services/api";
 import {
   ShieldAlert,
   CheckCircle2,
@@ -9,7 +9,7 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ReplacementTrackerProps {
   request: ReplacementRequest;
@@ -17,10 +17,10 @@ interface ReplacementTrackerProps {
 }
 
 const PIPELINE_STEPS = [
-  { key: 'SUBMITTED', label: 'Submitted' },
-  { key: 'UNDER_REVIEW', label: 'Under Review' },
-  { key: 'ASSIGNED', label: 'Substitute Matched' },
-  { key: 'RESOLVED', label: 'Active & Resolved' },
+  { key: "SUBMITTED", label: "Submitted" },
+  { key: "UNDER_REVIEW", label: "Under Review" },
+  { key: "ASSIGNED", label: "Substitute Matched" },
+  { key: "RESOLVED", label: "Active & Resolved" },
 ];
 
 export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
@@ -33,16 +33,16 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
 
   const getStepIndex = (status: string) => {
     switch (status) {
-      case 'SUBMITTED':
-      case 'ACKNOWLEDGED':
+      case "SUBMITTED":
+      case "ACKNOWLEDGED":
         return 0;
-      case 'UNDER_REVIEW':
-      case 'REPLACEMENT_SEARCH':
+      case "UNDER_REVIEW":
+      case "REPLACEMENT_SEARCH":
         return 1;
-      case 'ASSIGNED':
-      case 'SCHEDULED':
+      case "ASSIGNED":
+      case "SCHEDULED":
         return 2;
-      case 'RESOLVED':
+      case "RESOLVED":
         return 3;
       default:
         return 0;
@@ -55,13 +55,13 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
     }
 
     return value
-      .split(',')
+      .split(",")
       .map((language) => language.trim())
       .filter(Boolean);
   };
 
   const currentIndex = getStepIndex(request.status);
-  const isTerminal = ['RESOLVED', 'REJECTED', 'CANCELLED'].includes(
+  const isTerminal = ["RESOLVED", "REJECTED", "CANCELLED"].includes(
     request.status,
   );
 
@@ -73,7 +73,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
       await api.confirmReplacement(request.id);
       onUpdated();
     } catch (err: any) {
-      setActionError(err.message || 'Failed to confirm replacement.');
+      setActionError(err.message || "Failed to confirm replacement.");
     } finally {
       setIsConfirming(false);
     }
@@ -82,7 +82,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
   const handleCancelRequest = async () => {
     if (
       !window.confirm(
-        'Are you sure you want to cancel this replacement request?',
+        "Are you sure you want to cancel this replacement request?",
       )
     ) {
       return;
@@ -95,7 +95,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
       await api.cancelReplacementRequest(request.id);
       onUpdated();
     } catch (err: any) {
-      setActionError(err.message || 'Failed to cancel request.');
+      setActionError(err.message || "Failed to cancel request.");
     } finally {
       setIsCancelling(false);
     }
@@ -121,24 +121,24 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
 
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  request.status === 'RESOLVED'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : request.status === 'CANCELLED' ||
-                        request.status === 'REJECTED'
-                      ? 'bg-rose-100 text-rose-800'
-                      : 'bg-amber-100 text-amber-900 animate-pulse'
+                  request.status === "RESOLVED"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : request.status === "CANCELLED" ||
+                        request.status === "REJECTED"
+                      ? "bg-rose-100 text-rose-800"
+                      : "bg-amber-100 text-amber-900 animate-pulse"
                 }`}
               >
-                {request.status.replace(/_/g, ' ')}
+                {request.status.replace(/_/g, " ")}
               </span>
             </div>
 
             <p className="text-xs text-slate-500 mt-0.5">
-              Ref:{' '}
+              Ref:{" "}
               <span className="font-mono text-slate-700 font-semibold">
                 {request.id.slice(0, 8)}
-              </span>{' '}
-              • Priority:{' '}
+              </span>{" "}
+              • Priority:{" "}
               <span className="font-semibold text-slate-700">
                 {request.priority}
               </span>
@@ -152,7 +152,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
             disabled={isCancelling}
             className="text-xs text-rose-700 hover:text-rose-900 font-semibold px-3 py-1.5 rounded-lg hover:bg-rose-50 transition border border-rose-200"
           >
-            {isCancelling ? 'Cancelling...' : 'Cancel Request'}
+            {isCancelling ? "Cancelling..." : "Cancel Request"}
           </button>
         )}
       </div>
@@ -164,7 +164,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
         </div>
       )}
 
-      {!['CANCELLED', 'REJECTED'].includes(request.status) ? (
+      {!["CANCELLED", "REJECTED"].includes(request.status) ? (
         <div className="py-2">
           <div className="grid grid-cols-4 gap-2">
             {PIPELINE_STEPS.map((step, idx) => {
@@ -175,7 +175,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
                 <div key={step.key} className="space-y-2">
                   <div
                     className={`h-1.5 rounded-full transition-all ${
-                      isPast || isCurrent ? 'bg-teal-700' : 'bg-slate-200'
+                      isPast || isCurrent ? "bg-teal-700" : "bg-slate-200"
                     }`}
                   />
 
@@ -183,10 +183,10 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
                     <span
                       className={`text-[11px] block font-semibold leading-tight ${
                         isCurrent
-                          ? 'text-teal-900 font-bold'
+                          ? "text-teal-900 font-bold"
                           : isPast
-                            ? 'text-slate-700'
-                            : 'text-slate-400'
+                            ? "text-slate-700"
+                            : "text-slate-400"
                       }`}
                     >
                       {step.label}
@@ -201,13 +201,13 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
         <div className="p-3 rounded-xl bg-slate-100 text-slate-700 text-xs flex items-center gap-2">
           <XCircle className="w-4 h-4 text-slate-500" />
           <span>
-            This request was closed with status:{' '}
+            This request was closed with status:{" "}
             <strong>{request.status}</strong>.
           </span>
         </div>
       )}
 
-      {request.status === 'ASSIGNED' && request.substituteCaregiver && (
+      {request.status === "ASSIGNED" && request.substituteCaregiver && (
         <div className="p-5 rounded-2xl bg-teal-50/80 border-2 border-teal-600 space-y-4 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-950 flex items-center gap-1.5">
@@ -224,7 +224,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
             <img
               src={
                 request.substituteCaregiver.avatarUrl ||
-                'https://images.unsplash.com/photo-1594824813687-849a62237078?w=150'
+                "https://images.unsplash.com/photo-1594824813687-849a62237078?w=150"
               }
               alt={request.substituteCaregiver.fullName}
               className="w-16 h-16 rounded-xl object-cover border border-slate-200"
@@ -301,7 +301,7 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
               >
                 <div className="space-y-0.5">
                   <span className="font-semibold text-slate-800 block">
-                    {historyItem.newStatus.replace(/_/g, ' ')}
+                    {historyItem.newStatus.replace(/_/g, " ")}
                   </span>
 
                   {historyItem.note && (
@@ -313,8 +313,8 @@ export const ReplacementTracker: React.FC<ReplacementTrackerProps> = ({
 
                 <span className="text-[10px] font-mono text-slate-400 shrink-0">
                   {new Date(historyItem.createdAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
               </div>

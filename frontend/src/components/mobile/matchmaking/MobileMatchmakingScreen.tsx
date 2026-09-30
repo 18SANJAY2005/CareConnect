@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   ShieldCheck,
@@ -13,8 +13,8 @@ import {
   CreditCard,
   FileCheck,
   Edit2,
-} from 'lucide-react';
-import { api } from '../../../services/api';
+} from "lucide-react";
+import { api } from "../../../services/api";
 import type {
   Elder,
   CaregiverMatchItem,
@@ -22,11 +22,9 @@ import type {
   IntroCall,
   PaymentOrder,
   SLAVersion,
-} from '../../../types';
-import {
-  ElderSectionEditorModal,
-} from '../profile/ElderSectionEditorModal';
-import type { EditableSection } from '../profile/ElderSectionEditorModal';
+} from "../../../types";
+import { ElderSectionEditorModal } from "../profile/ElderSectionEditorModal";
+import type { EditableSection } from "../profile/ElderSectionEditorModal";
 
 interface MobileMatchmakingScreenProps {
   elder: Elder;
@@ -37,7 +35,9 @@ interface MobileMatchmakingScreenProps {
   onEditingSectionChange?: (section: EditableSection | null) => void;
 }
 
-export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = ({
+export const MobileMatchmakingScreen: React.FC<
+  MobileMatchmakingScreenProps
+> = ({
   elder,
   onBookingConfirmed,
   onBack,
@@ -46,11 +46,14 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
   onEditingSectionChange,
 }) => {
   const [currentElder, setCurrentElder] = useState<Elder>(elder);
-  const [localEditingSection, setLocalEditingSection] = useState<EditableSection | null>(null);
+  const [localEditingSection, setLocalEditingSection] =
+    useState<EditableSection | null>(null);
   const [showElderSummary, setShowElderSummary] = useState(false);
 
   const editingSection =
-    controlledEditingSection !== undefined ? controlledEditingSection : localEditingSection;
+    controlledEditingSection !== undefined
+      ? controlledEditingSection
+      : localEditingSection;
   const setEditingSection = (sec: EditableSection | null) => {
     if (onEditingSectionChange) {
       onEditingSectionChange(sec);
@@ -63,8 +66,12 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
     setCurrentElder(elder);
   }, [elder]);
 
-  const [matchesData, setMatchesData] = useState<CuratedMatchesResponse | null>(null);
-  const [selectedMatch, setSelectedMatch] = useState<CaregiverMatchItem | null>(null);
+  const [matchesData, setMatchesData] = useState<CuratedMatchesResponse | null>(
+    null,
+  );
+  const [selectedMatch, setSelectedMatch] = useState<CaregiverMatchItem | null>(
+    null,
+  );
   const [assignmentId, setAssignmentId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -72,22 +79,27 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
 
   // Booking sub-steps: 'MATCHES' | 'CALL_SCHEDULED' | 'PAYMENT' | 'SLA' | 'SUCCESS'
   const [flowStep, setFlowStep] = useState<
-    'MATCHES' | 'CALL_SCHEDULED' | 'PAYMENT' | 'SLA' | 'SUCCESS'
-  >('MATCHES');
+    "MATCHES" | "CALL_SCHEDULED" | "PAYMENT" | "SLA" | "SUCCESS"
+  >("MATCHES");
   const [scheduledCall, setScheduledCall] = useState<IntroCall | null>(null);
   const [paymentOrder, setPaymentOrder] = useState<PaymentOrder | null>(null);
   const [slaVersion, setSlaVersion] = useState<SLAVersion | null>(null);
   const [agreedConsent, setAgreedConsent] = useState(true);
 
   // Helper to ensure assignment exists before scheduling call, payment, or SLA
-  const getOrCreateAssignment = async (cgId: string | number): Promise<number> => {
+  const getOrCreateAssignment = async (
+    cgId: string | number,
+  ): Promise<number> => {
     if (assignmentId) return assignmentId;
     try {
       const asg = await api.createAssignment({
         elder_id: currentElder.id,
         caregiver_id: Number(cgId) || 1,
-        sponsor_id: currentElder.familyId || 'sponsor',
-        shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
+          sponsor_id: currentElder.familyId || 'sponsor',
+          shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
+        sponsor_id: currentElder.familyId || "sponsor",
+        shift_type: "12_HOURS_DAY",
+>>>>>>> 4b4fff9 (feat: Add phone number to elder profile and UI)
       });
       const id = Number(asg.id) || 1;
       setAssignmentId(id);
@@ -101,8 +113,12 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
 
   // Helper to get caregiver name
   const getCaregiverName = (match: CaregiverMatchItem | null): string => {
-    if (!match) return 'Attendant';
-    return match.caregiver.full_name || match.caregiver.fullName || 'Meenakshi Sundaram';
+    if (!match) return "Attendant";
+    return (
+      match.caregiver.full_name ||
+      match.caregiver.fullName ||
+      "Meenakshi Sundaram"
+    );
   };
 
   // Load matches & SLA template
@@ -124,29 +140,38 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         const fallbackMatch: CaregiverMatchItem = {
           caregiver: {
             id: 1,
-            full_name: 'Meenakshi Sundaram',
-            locality: 'Adyar',
+            full_name: "Meenakshi Sundaram",
+            locality: "Adyar",
             experience_years: 6,
             rating: 4.9,
-            languages: ['Tamil', 'English'],
-            specializations: ['Mobility Support', 'Hypertension Monitoring', 'Medication Management'],
-            skills: 'Bedside care, BP monitoring, Diabetic routine',
+            languages: ["Tamil", "English"],
+            specializations: [
+              "Mobility Support",
+              "Hypertension Monitoring",
+              "Medication Management",
+            ],
+            skills: "Bedside care, BP monitoring, Diabetic routine",
             is_police_verified: true,
             is_clinical_certified: true,
           },
           match_score: 95,
           match_percentage: 95,
-          rationale: 'Perfect corridor proximity, fluent in preferred language, verified clinical background.',
-          matching_skills: ['Mobility Assistance', 'Vital Signs Check', 'Companionship'],
-          matching_languages: ['Tamil', 'English'],
+          rationale:
+            "Perfect corridor proximity, fluent in preferred language, verified clinical background.",
+          matching_skills: [
+            "Mobility Assistance",
+            "Vital Signs Check",
+            "Companionship",
+          ],
+          matching_languages: ["Tamil", "English"],
           locality_match: true,
         };
         setSelectedMatch(fallbackMatch);
         setMatchesData({
           elder_id: currentElder.id,
           elder_name: currentElder.name,
-          elder_locality: currentElder.location?.locality || 'Adyar',
-          required_care_tier: 'Standard 12-Hour Assisted Care',
+          elder_locality: currentElder.location?.locality || "Adyar",
+          required_care_tier: "Standard 12-Hour Assisted Care",
           total_candidates: 1,
           matches: [fallbackMatch],
         });
@@ -156,7 +181,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         setSlaVersion(slaRes);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Unable to fetch matches.');
+      setErrorMessage(err.message || "Unable to fetch matches.");
     } finally {
       setIsLoading(false);
     }
@@ -190,18 +215,18 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         setScheduledCall({
           id: 1,
           assignment_id: asgId,
-          provider: 'JITSI',
-          room_id: 'careconnect-room-' + asgId,
+          provider: "JITSI",
+          room_id: "careconnect-room-" + asgId,
           join_url: `https://meet.jit.si/careconnect-intro-${asgId}`,
           scheduled_at: new Date(Date.now() + 3600000).toISOString(),
-          timezone: 'Asia/Kolkata',
+          timezone: "Asia/Kolkata",
           duration_minutes: 15,
-          status: 'SCHEDULED',
+          status: "SCHEDULED",
         });
       }
-      setFlowStep('CALL_SCHEDULED');
+      setFlowStep("CALL_SCHEDULED");
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to schedule video introduction.');
+      setErrorMessage(err.message || "Failed to schedule video introduction.");
     } finally {
       setIsActionLoading(false);
     }
@@ -218,28 +243,28 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
       try {
         const order = await api.createPaymentOrder({
           assignment_id: asgId,
-          sponsor_id: elder.familyId || 'sponsor',
+          sponsor_id: elder.familyId || "sponsor",
           base_tier_amount: 18000,
         });
         setPaymentOrder(order);
       } catch {
         setPaymentOrder({
           order_id: 1,
-          provider_order_id: 'order_mock_' + Date.now(),
+          provider_order_id: "order_mock_" + Date.now(),
           amount: 18000,
-          currency: 'INR',
+          currency: "INR",
           base_tier_amount: 18000,
           addon_amount: 0,
           tax_amount: 0,
-          status: 'created',
-          key_id: 'rzp_test_mock',
-          receipt: 'rcpt_1',
+          status: "created",
+          key_id: "rzp_test_mock",
+          receipt: "rcpt_1",
           created_at: new Date().toISOString(),
         });
       }
-      setFlowStep('PAYMENT');
+      setFlowStep("PAYMENT");
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to initialize payment.');
+      setErrorMessage(err.message || "Failed to initialize payment.");
     } finally {
       setIsActionLoading(false);
     }
@@ -254,17 +279,17 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
       try {
         await api.verifyPayment({
           assignment_id: asgId,
-          sponsor_id: elder.familyId || 'sponsor',
-          provider_order_id: paymentOrder?.provider_order_id || 'order_mock',
-          provider_payment_id: 'pay_sim_' + Date.now(),
-          signature: 'sig_mock_success',
+          sponsor_id: elder.familyId || "sponsor",
+          provider_order_id: paymentOrder?.provider_order_id || "order_mock",
+          provider_payment_id: "pay_sim_" + Date.now(),
+          signature: "sig_mock_success",
         });
       } catch {
         // Graceful fallback for mock testing
       }
-      setFlowStep('SLA');
+      setFlowStep("SLA");
     } catch (err: any) {
-      setErrorMessage(err.message || 'Payment verification failed.');
+      setErrorMessage(err.message || "Payment verification failed.");
     } finally {
       setIsActionLoading(false);
     }
@@ -279,8 +304,8 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
       try {
         await api.acceptSLA(asgId, {
           sla_version_id: slaVersion?.id || 1,
-          sponsor_id: elder.familyId || 'sponsor',
-          signer_name: elder.name ? `${elder.name} Family` : 'Client',
+          sponsor_id: elder.familyId || "sponsor",
+          signer_name: elder.name ? `${elder.name} Family` : "Client",
           confirmed_conduct_terms: true,
           confirmed_emergency_liability: true,
           confirmed_dpdp_consent: agreedConsent,
@@ -288,9 +313,9 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
       } catch {
         // Graceful fallback
       }
-      setFlowStep('SUCCESS');
+      setFlowStep("SUCCESS");
     } catch (err: any) {
-      setErrorMessage(err.message || 'SLA acceptance failed.');
+      setErrorMessage(err.message || "SLA acceptance failed.");
     } finally {
       setIsActionLoading(false);
     }
@@ -300,8 +325,12 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <div className="text-sm font-bold text-slate-700">Matching Compatible Attendants...</div>
-        <div className="text-xs text-slate-400">Verifying locality, language, and clinical profile</div>
+        <div className="text-sm font-bold text-slate-700">
+          Matching Compatible Attendants...
+        </div>
+        <div className="text-xs text-slate-400">
+          Verifying locality, language, and clinical profile
+        </div>
       </div>
     );
   }
@@ -330,21 +359,27 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         </div>
 
         <h2 className="text-2xl font-extrabold font-heading text-slate-900">
-          {flowStep === 'MATCHES' && 'Recommended Care Match'}
-          {flowStep === 'CALL_SCHEDULED' && 'Video Introduction'}
-          {flowStep === 'PAYMENT' && 'Confirm Care Plan'}
-          {flowStep === 'SLA' && 'Service Agreement'}
-          {flowStep === 'SUCCESS' && 'Care Activated!'}
+          {flowStep === "MATCHES" && "Recommended Care Match"}
+          {flowStep === "CALL_SCHEDULED" && "Video Introduction"}
+          {flowStep === "PAYMENT" && "Confirm Care Plan"}
+          {flowStep === "SLA" && "Service Agreement"}
+          {flowStep === "SUCCESS" && "Care Activated!"}
         </h2>
 
         {/* Quick Profile Summary Bar with Section Edit Drawer */}
         <div className="mt-2.5 p-2.5 bg-teal-50/70 rounded-2xl border border-teal-200/60 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 truncate">
-            <span className="font-extrabold text-slate-900">{currentElder.name}</span>
+            <span className="font-extrabold text-slate-900">
+              {currentElder.name}
+            </span>
             <span className="text-slate-400">•</span>
-            <span className="text-slate-600 font-medium">{currentElder.age} yrs</span>
+            <span className="text-slate-600 font-medium">
+              {currentElder.age} yrs
+            </span>
             <span className="text-slate-400">•</span>
-            <span className="text-slate-600 font-medium">{currentElder.primaryLanguage || 'English'}</span>
+            <span className="text-slate-600 font-medium">
+              {currentElder.primaryLanguage || "English"}
+            </span>
           </div>
           <button
             type="button"
@@ -352,7 +387,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
             className="px-2.5 py-1 rounded-xl bg-white border border-teal-200 text-primary text-[11px] font-bold shrink-0 hover:bg-teal-50 transition shadow-2xs flex items-center gap-1"
           >
             <Edit2 className="w-3 h-3" />
-            <span>{showElderSummary ? 'Hide Details' : 'Edit Details'}</span>
+            <span>{showElderSummary ? "Hide Details" : "Edit Details"}</span>
           </button>
         </div>
 
@@ -360,61 +395,22 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         {showElderSummary && (
           <div className="mt-2 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2 text-xs animate-fadeIn">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Care Profile & Requirements (Tap Edit to update without restarting)
+              Care Profile & Requirements (Tap Edit to update without
+              restarting)
             </div>
 
             <div className="flex items-center justify-between py-1 border-b border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Name</span>
-                <span className="font-bold text-slate-800">{currentElder.name}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection('NAME')}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Age & Gender</span>
-                <span className="font-bold text-slate-800">{currentElder.age} yrs • {currentElder.gender}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection('AGE_GENDER')}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Language</span>
-                <span className="font-bold text-slate-800">{currentElder.primaryLanguage || 'English'}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection('LANGUAGE')}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Care Duration</span>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Name
+                </span>
                 <span className="font-bold text-slate-800">
-                  {(currentElder.shiftPreference as string) === 'EIGHT_HOUR_DAY' ? '8 Hours' : (currentElder.shiftPreference as string) === 'TWENTY_FOUR_HOUR_LIVE_IN' ? '24 Hours' : (currentElder.shiftPreference as string) === 'FLEXIBLE' ? 'Flexible' : '12 Hours'}
+                  {currentElder.name}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingSection('DURATION')}
+                onClick={() => setEditingSection("NAME")}
                 className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
               >
                 Edit
@@ -423,14 +419,77 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
 
             <div className="flex items-center justify-between py-1 border-b border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Care Requirements</span>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Age & Gender
+                </span>
                 <span className="font-bold text-slate-800">
-                  {currentElder.careRequirements?.join(', ') || 'Assisted Care'}
+                  {currentElder.age} yrs • {currentElder.gender}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingSection('REQUIREMENTS')}
+                onClick={() => setEditingSection("AGE_GENDER")}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Language
+                </span>
+                <span className="font-bold text-slate-800">
+                  {currentElder.primaryLanguage || "English"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection("LANGUAGE")}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Care Duration
+                </span>
+                <span className="font-bold text-slate-800">
+                  {(currentElder.shiftPreference as string) === "EIGHT_HOUR_DAY"
+                    ? "8 Hours"
+                    : (currentElder.shiftPreference as string) ===
+                        "TWENTY_FOUR_HOUR_LIVE_IN"
+                      ? "24 Hours"
+                      : (currentElder.shiftPreference as string) === "FLEXIBLE"
+                        ? "Flexible"
+                        : "12 Hours"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection("DURATION")}
+                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
+              >
+                Edit
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between py-1 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Care Requirements
+                </span>
+                <span className="font-bold text-slate-800">
+                  {currentElder.careRequirements?.join(", ") || "Assisted Care"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingSection("REQUIREMENTS")}
                 className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
               >
                 Edit
@@ -439,14 +498,16 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
 
             <div className="flex items-center justify-between py-1">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">Preferences</span>
+                <span className="text-[10px] text-slate-400 block font-medium">
+                  Preferences
+                </span>
                 <span className="font-bold text-slate-800 truncate max-w-[200px] block">
-                  {currentElder.additionalNotes || 'Standard preferences'}
+                  {currentElder.additionalNotes || "Standard preferences"}
                 </span>
               </div>
               <button
                 type="button"
-                onClick={() => setEditingSection('PREFERENCES')}
+                onClick={() => setEditingSection("PREFERENCES")}
                 className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
               >
                 Edit
@@ -466,7 +527,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
       {/* Main Viewport Content by Flow Step */}
       <div className="my-auto py-3">
         {/* 1. MATCHES VIEW */}
-        {flowStep === 'MATCHES' && selectedMatch && (
+        {flowStep === "MATCHES" && selectedMatch && (
           <div className="space-y-4 animate-fadeIn">
             {/* Main Featured Match Card */}
             <div className="p-5 rounded-3xl bg-white border-2 border-primary/40 shadow-lg relative overflow-hidden">
@@ -486,12 +547,16 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
                     <span>{selectedMatch.caregiver.locality}</span>
                     <span>•</span>
-                    <span>{selectedMatch.caregiver.experience_years || 5} yrs exp</span>
+                    <span>
+                      {selectedMatch.caregiver.experience_years || 5} yrs exp
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 mt-1 text-amber-600 text-xs font-bold">
                     <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                     <span>4.9 / 5.0</span>
-                    <span className="text-slate-400 font-normal">(42 verified reviews)</span>
+                    <span className="text-slate-400 font-normal">
+                      (42 verified reviews)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -514,13 +579,15 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
                   <span className="text-slate-400">Languages:</span>
                   <span className="font-semibold text-slate-800">
                     {Array.isArray(selectedMatch.caregiver.languages)
-                      ? selectedMatch.caregiver.languages.join(', ')
-                      : selectedMatch.caregiver.languages || 'Tamil, English'}
+                      ? selectedMatch.caregiver.languages.join(", ")
+                      : selectedMatch.caregiver.languages || "Tamil, English"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-slate-600">
                   <span className="text-slate-400">Care Focus:</span>
-                  <span className="font-semibold text-slate-800">Assisted Mobility, Daily ADL</span>
+                  <span className="font-semibold text-slate-800">
+                    Assisted Mobility, Daily ADL
+                  </span>
                 </div>
               </div>
             </div>
@@ -538,12 +605,16 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
                       onClick={() => setSelectedMatch(m)}
                       className={`px-3 py-2 rounded-2xl border text-left shrink-0 transition ${
                         selectedMatch?.caregiver.id === m.caregiver.id
-                          ? 'border-primary bg-teal-50 shadow-sm'
-                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                          ? "border-primary bg-teal-50 shadow-sm"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
                       }`}
                     >
-                      <div className="text-xs font-bold text-slate-800">{getCaregiverName(m)}</div>
-                      <div className="text-[10px] text-slate-500">{m.caregiver.locality}</div>
+                      <div className="text-xs font-bold text-slate-800">
+                        {getCaregiverName(m)}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {m.caregiver.locality}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -553,7 +624,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         )}
 
         {/* 2. CALL SCHEDULED */}
-        {flowStep === 'CALL_SCHEDULED' && scheduledCall && selectedMatch && (
+        {flowStep === "CALL_SCHEDULED" && scheduledCall && selectedMatch && (
           <div className="space-y-4 animate-fadeIn p-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-teal-50 text-primary flex items-center justify-center mx-auto">
               <Video className="w-6 h-6" />
@@ -563,13 +634,16 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
                 15-Min Intro Video Call
               </h3>
               <p className="text-xs text-slate-500">
-                Get to know {getCaregiverName(selectedMatch)} before starting care.
+                Get to know {getCaregiverName(selectedMatch)} before starting
+                care.
               </p>
             </div>
             <div className="p-3 bg-slate-50 rounded-2xl text-xs space-y-1 text-slate-600">
               <div className="flex justify-between">
                 <span>Room:</span>
-                <span className="font-bold text-slate-800">{scheduledCall.room_id || 'careconnect-room'}</span>
+                <span className="font-bold text-slate-800">
+                  {scheduledCall.room_id || "careconnect-room"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Duration:</span>
@@ -577,7 +651,10 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
               </div>
             </div>
             <a
-              href={scheduledCall.join_url || `https://meet.jit.si/${scheduledCall.room_id || 'careconnect-room'}`}
+              href={
+                scheduledCall.join_url ||
+                `https://meet.jit.si/${scheduledCall.room_id || "careconnect-room"}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
@@ -589,14 +666,18 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         )}
 
         {/* 3. PAYMENT VIEW */}
-        {flowStep === 'PAYMENT' && paymentOrder && (
+        {flowStep === "PAYMENT" && paymentOrder && (
           <div className="space-y-4 animate-fadeIn p-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-teal-50 text-primary flex items-center justify-center mx-auto">
               <CreditCard className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-900">Monthly Managed Care Plan</h3>
-              <p className="text-xs text-slate-500">12-Hour Daily Dedicated Attendant</p>
+              <h3 className="text-base font-bold text-slate-900">
+                Monthly Managed Care Plan
+              </h3>
+              <p className="text-xs text-slate-500">
+                12-Hour Daily Dedicated Attendant
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 space-y-2 border border-slate-100">
@@ -628,30 +709,45 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
         )}
 
         {/* 4. SLA VIEW */}
-        {flowStep === 'SLA' && (
+        {flowStep === "SLA" && (
           <div className="space-y-4 animate-fadeIn p-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-teal-50 text-primary flex items-center justify-center mx-auto">
               <FileCheck className="w-6 h-6" />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-base font-bold text-slate-900">Service Level Agreement</h3>
-              <p className="text-xs text-slate-500">Plain-language terms for your peace of mind</p>
+              <h3 className="text-base font-bold text-slate-900">
+                Service Level Agreement
+              </h3>
+              <p className="text-xs text-slate-500">
+                Plain-language terms for your peace of mind
+              </p>
             </div>
 
             <div className="space-y-2 text-xs text-slate-600 max-h-48 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="font-bold text-slate-800">1. Verified Attendant Standard</div>
+              <div className="font-bold text-slate-800">
+                1. Verified Attendant Standard
+              </div>
               <p className="text-[11px] leading-relaxed">
-                All assigned attendants have verified identity, police verification, and hospital-grade training. Daily attendance is tracked with geofencing.
+                All assigned attendants have verified identity, police
+                verification, and hospital-grade training. Daily attendance is
+                tracked with geofencing.
               </p>
 
-              <div className="font-bold text-slate-800 pt-1">2. Replacement Guarantee</div>
+              <div className="font-bold text-slate-800 pt-1">
+                2. Replacement Guarantee
+              </div>
               <p className="text-[11px] leading-relaxed">
-                If an attendant is on planned leave, sick, or mismatched, CareConnect assigns an approved substitute within 24 hours.
+                If an attendant is on planned leave, sick, or mismatched,
+                CareConnect assigns an approved substitute within 24 hours.
               </p>
 
-              <div className="font-bold text-slate-800 pt-1">3. Non-Emergency Disclaimer</div>
+              <div className="font-bold text-slate-800 pt-1">
+                3. Non-Emergency Disclaimer
+              </div>
               <p className="text-[11px] leading-relaxed">
-                CareConnect provides home care and remote monitoring. For life-threatening emergencies, call national emergency services (112) immediately.
+                CareConnect provides home care and remote monitoring. For
+                life-threatening emergencies, call national emergency services
+                (112) immediately.
               </p>
             </div>
 
@@ -663,22 +759,27 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
                 className="mt-0.5 rounded text-primary focus:ring-teal-500"
               />
               <span>
-                I agree to the CareConnect Service Level Agreement and consent to digital health records processing under DPDP Act.
+                I agree to the CareConnect Service Level Agreement and consent
+                to digital health records processing under DPDP Act.
               </span>
             </label>
           </div>
         )}
 
         {/* 5. SUCCESS VIEW */}
-        {flowStep === 'SUCCESS' && (
+        {flowStep === "SUCCESS" && (
           <div className="text-center space-y-4 animate-fadeIn p-6 bg-emerald-50 rounded-3xl border border-emerald-200">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-emerald-950">Care Service Activated!</h3>
+              <h3 className="text-xl font-extrabold text-emerald-950">
+                Care Service Activated!
+              </h3>
               <p className="text-xs text-emerald-800 leading-relaxed">
-                {getCaregiverName(selectedMatch)} has been assigned to {elder.name}. Today's shift and daily tracking are now live in your family portal.
+                {getCaregiverName(selectedMatch)} has been assigned to{" "}
+                {elder.name}. Today's shift and daily tracking are now live in
+                your family portal.
               </p>
             </div>
           </div>
@@ -687,7 +788,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
 
       {/* Primary Action Button by Step */}
       <div className="pt-4">
-        {flowStep === 'MATCHES' && (
+        {flowStep === "MATCHES" && (
           <div className="space-y-2">
             <button
               onClick={handleScheduleCall}
@@ -714,7 +815,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           </div>
         )}
 
-        {flowStep === 'CALL_SCHEDULED' && (
+        {flowStep === "CALL_SCHEDULED" && (
           <button
             onClick={handleProceedToPayment}
             disabled={isActionLoading}
@@ -725,7 +826,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           </button>
         )}
 
-        {flowStep === 'PAYMENT' && (
+        {flowStep === "PAYMENT" && (
           <button
             onClick={handleSimulatePaymentSuccess}
             disabled={isActionLoading}
@@ -742,7 +843,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           </button>
         )}
 
-        {flowStep === 'SLA' && (
+        {flowStep === "SLA" && (
           <button
             onClick={handleAcceptSla}
             disabled={isActionLoading || !agreedConsent}
@@ -759,7 +860,7 @@ export const MobileMatchmakingScreen: React.FC<MobileMatchmakingScreenProps> = (
           </button>
         )}
 
-        {flowStep === 'SUCCESS' && (
+        {flowStep === "SUCCESS" && (
           <button
             onClick={onBookingConfirmed}
             className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"

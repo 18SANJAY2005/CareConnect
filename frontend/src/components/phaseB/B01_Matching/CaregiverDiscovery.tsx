@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import { Filter, UserCheck, Sparkles, MapPin, Activity, ArrowRight } from 'lucide-react';
-import type { CaregiverMatchItem, CuratedMatchesResponse } from '../../../types';
-import { CaregiverCard } from './CaregiverCard';
-import { CaregiverDetailModal } from './CaregiverDetailModal';
+import React, { useState } from "react";
+import {
+  Filter,
+  UserCheck,
+  Sparkles,
+  MapPin,
+  Activity,
+  ArrowRight,
+} from "lucide-react";
+import type {
+  CaregiverMatchItem,
+  CuratedMatchesResponse,
+} from "../../../types";
+import { CaregiverCard } from "./CaregiverCard";
+import { CaregiverDetailModal } from "./CaregiverDetailModal";
 
 interface CaregiverDiscoveryProps {
   matchesData: CuratedMatchesResponse;
@@ -17,12 +27,13 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
   onSelectMatch,
   onProceedToCall,
 }) => {
-  const [activeLocality, setActiveLocality] = useState<string>('all');
-  const [activeLanguage, setActiveLanguage] = useState<string>('all');
-  const [activeModalItem, setActiveModalItem] = useState<CaregiverMatchItem | null>(null);
+  const [activeLocality, setActiveLocality] = useState<string>("all");
+  const [activeLanguage, setActiveLanguage] = useState<string>("all");
+  const [activeModalItem, setActiveModalItem] =
+    useState<CaregiverMatchItem | null>(null);
 
-  const localities = ['all', 'Adyar', 'Mylapore', 'Besant Nagar', 'Anna Nagar'];
-  const languages = ['all', 'Tamil', 'English', 'Telugu'];
+  const localities = ["all", "Adyar", "Mylapore", "Besant Nagar", "Anna Nagar"];
+  const languages = ["all", "Tamil", "English", "Telugu"];
 
   const getLanguages = (value: string | string[]): string[] => {
     if (Array.isArray(value)) {
@@ -30,23 +41,24 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
     }
 
     return value
-      .split(',')
+      .split(",")
       .map((language) => language.trim())
       .filter(Boolean);
   };
 
   const filteredMatches = matchesData.matches.filter((item) => {
     const locMatch =
-      activeLocality === 'all' ||
-      item.caregiver.locality.toLowerCase().includes(activeLocality.toLowerCase());
+      activeLocality === "all" ||
+      item.caregiver.locality
+        .toLowerCase()
+        .includes(activeLocality.toLowerCase());
 
     const caregiverLanguages = getLanguages(item.caregiver.languages);
 
     const langMatch =
-      activeLanguage === 'all' ||
-      caregiverLanguages.some(
-        (language) =>
-          language.toLowerCase().includes(activeLanguage.toLowerCase()),
+      activeLanguage === "all" ||
+      caregiverLanguages.some((language) =>
+        language.toLowerCase().includes(activeLanguage.toLowerCase()),
       );
 
     return locMatch && langMatch;
@@ -117,11 +129,11 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
                 onClick={() => setActiveLocality(loc)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                   activeLocality === loc
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-surface-container text-on-surface-variant hover:bg-surface-container-highest"
                 }`}
               >
-                {loc === 'all' ? 'All Localities' : loc}
+                {loc === "all" ? "All Localities" : loc}
               </button>
             ))}
           </div>
@@ -137,11 +149,11 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
                 onClick={() => setActiveLanguage(lang)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                   activeLanguage === lang
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-surface-container text-on-surface-variant hover:bg-surface-container-highest"
                 }`}
               >
-                {lang === 'all' ? 'Any' : lang}
+                {lang === "all" ? "Any" : lang}
               </button>
             ))}
           </div>
@@ -169,13 +181,14 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
           </h3>
 
           <p className="text-sm text-on-surface-variant mt-1">
-            Try adjusting your locality or language filters to view more candidates.
+            Try adjusting your locality or language filters to view more
+            candidates.
           </p>
 
           <button
             onClick={() => {
-              setActiveLocality('all');
-              setActiveLanguage('all');
+              setActiveLocality("all");
+              setActiveLanguage("all");
             }}
             className="mt-4 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold"
           >
@@ -200,7 +213,8 @@ export const CaregiverDiscovery: React.FC<CaregiverDiscoveryProps> = ({
                 </p>
 
                 <h4 className="text-base font-bold font-heading text-on-surface">
-                  {selectedMatch.caregiver.full_name} ({selectedMatch.match_percentage}% Match)
+                  {selectedMatch.caregiver.full_name} (
+                  {selectedMatch.match_percentage}% Match)
                 </h4>
               </div>
             </div>

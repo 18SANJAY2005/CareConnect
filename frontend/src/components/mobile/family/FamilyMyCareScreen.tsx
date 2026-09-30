@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   User,
   MapPin,
@@ -15,13 +15,11 @@ import {
   AlertTriangle,
   AlertCircle,
   Loader2,
-} from 'lucide-react';
-import type { Elder } from '../../../types';
-import { api } from '../../../services/api';
-import {
-  ElderSectionEditorModal,
-} from '../profile/ElderSectionEditorModal';
-import type { EditableSection } from '../profile/ElderSectionEditorModal';
+} from "lucide-react";
+import type { Elder } from "../../../types";
+import { api } from "../../../services/api";
+import { ElderSectionEditorModal } from "../profile/ElderSectionEditorModal";
+import type { EditableSection } from "../profile/ElderSectionEditorModal";
 
 interface FamilyMyCareScreenProps {
   elder: Elder;
@@ -44,13 +42,16 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   onDeleteModalOpenChange,
 }) => {
   const [currentElder, setCurrentElder] = useState<Elder>(elder);
-  const [localEditingSection, setLocalEditingSection] = useState<EditableSection | null>(null);
+  const [localEditingSection, setLocalEditingSection] =
+    useState<EditableSection | null>(null);
   const [localIsDeleteModalOpen, setLocalIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const editingSection =
-    controlledEditingSection !== undefined ? controlledEditingSection : localEditingSection;
+    controlledEditingSection !== undefined
+      ? controlledEditingSection
+      : localEditingSection;
   const setEditingSection = (sec: EditableSection | null) => {
     if (onEditingSectionChange) {
       onEditingSectionChange(sec);
@@ -88,7 +89,9 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
       setIsDeleteModalOpen(false);
       onDeleteElder?.(currentElder.id);
     } catch (err: any) {
-      setDeleteError(err.message || 'Failed to delete elder. Please try again.');
+      setDeleteError(
+        err.message || "Failed to delete elder. Please try again.",
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -96,30 +99,36 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
 
   const getShiftLabel = (pref?: string) => {
     switch (pref) {
-      case 'EIGHT_HOUR_DAY':
-        return 'Standard 8-Hour Day Care';
-      case 'TWENTY_FOUR_HOUR_LIVE_IN':
-        return '24-Hour Live-in Care Companion';
-      case 'FLEXIBLE':
-        return 'Flexible Care Schedule';
-      case 'TWELVE_HOUR_DAY_NIGHT':
+      case "EIGHT_HOUR_DAY":
+        return "Standard 8-Hour Day Care";
+      case "TWENTY_FOUR_HOUR_LIVE_IN":
+        return "24-Hour Live-in Care Companion";
+      case "FLEXIBLE":
+        return "Flexible Care Schedule";
+      case "TWELVE_HOUR_DAY_NIGHT":
       default:
-        return 'Standard 12-Hour Day/Night Care';
+        return "Standard 12-Hour Day/Night Care";
     }
   };
 
   const getShiftTime = () => {
     const routine = (currentElder.dailyRoutine as Record<string, any>) || {};
-    if ((currentElder.shiftPreference as string) === 'FLEXIBLE' && routine.preferredStartTime && routine.preferredEndTime) {
+    if (
+      (currentElder.shiftPreference as string) === "FLEXIBLE" &&
+      routine.preferredStartTime &&
+      routine.preferredEndTime
+    ) {
       return `${routine.preferredStartTime} – ${routine.preferredEndTime}`;
     }
-    if ((currentElder.shiftPreference as string) === 'EIGHT_HOUR_DAY') {
-      return '09:00 AM – 05:00 PM';
+    if ((currentElder.shiftPreference as string) === "EIGHT_HOUR_DAY") {
+      return "09:00 AM – 05:00 PM";
     }
-    if ((currentElder.shiftPreference as string) === 'TWENTY_FOUR_HOUR_LIVE_IN') {
-      return '24/7 Continuous Support';
+    if (
+      (currentElder.shiftPreference as string) === "TWENTY_FOUR_HOUR_LIVE_IN"
+    ) {
+      return "24/7 Continuous Support";
     }
-    return '08:00 AM – 08:00 PM';
+    return "08:00 AM – 08:00 PM";
   };
 
   return (
@@ -127,12 +136,16 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
       {/* Top Banner */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold font-heading text-slate-900">My Care Plan</h2>
-          <p className="text-xs text-slate-500">Active services & profile overview</p>
+          <h2 className="text-xl font-bold font-heading text-slate-900">
+            My Care Plan
+          </h2>
+          <p className="text-xs text-slate-500">
+            Active services & profile overview
+          </p>
         </div>
         <button
           type="button"
-          onClick={() => setEditingSection('NAME')}
+          onClick={() => setEditingSection("NAME")}
           className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100 text-xs font-bold text-primary transition"
         >
           <Edit2 className="w-3 h-3" />
@@ -158,7 +171,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('DURATION')}
+            onClick={() => setEditingSection("DURATION")}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition"
             title="Edit Care Duration"
           >
@@ -190,12 +203,16 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
         {/* Name section */}
         <div className="flex items-center justify-between py-1">
           <div>
-            <span className="text-[10px] text-slate-400 block font-medium">Full Name</span>
-            <span className="font-bold text-slate-900 text-xs">{currentElder.name}</span>
+            <span className="text-[10px] text-slate-400 block font-medium">
+              Full Name
+            </span>
+            <span className="font-bold text-slate-900 text-xs">
+              {currentElder.name}
+            </span>
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('NAME')}
+            onClick={() => setEditingSection("NAME")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -206,14 +223,16 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
         {/* Age & Gender section */}
         <div className="flex items-center justify-between py-1 border-t border-slate-100/80">
           <div>
-            <span className="text-[10px] text-slate-400 block font-medium">Age & Gender</span>
+            <span className="text-[10px] text-slate-400 block font-medium">
+              Age & Gender
+            </span>
             <span className="font-bold text-slate-900 text-xs">
               {currentElder.age} yrs • {currentElder.gender}
             </span>
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('AGE_GENDER')}
+            onClick={() => setEditingSection("AGE_GENDER")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -224,20 +243,50 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
         {/* Language section */}
         <div className="flex items-center justify-between py-1 border-t border-slate-100/80">
           <div>
-            <span className="text-[10px] text-slate-400 block font-medium">Languages</span>
+            <span className="text-[10px] text-slate-400 block font-medium">
+              Languages
+            </span>
             <span className="font-bold text-slate-900 text-xs">
-              {currentElder.primaryLanguage || 'English'}
+              {currentElder.primaryLanguage || "English"}
               {currentElder.languages && currentElder.languages.length > 1 && (
                 <span className="font-normal text-slate-500">
-                  {' '}
-                  ({currentElder.languages.filter((l) => l !== currentElder.primaryLanguage).join(', ')})
+                  {" "}
+                  (
+                  {currentElder.languages
+                    .filter((l) => l !== currentElder.primaryLanguage)
+                    .join(", ")}
+                  )
                 </span>
               )}
             </span>
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('LANGUAGE')}
+            onClick={() => setEditingSection("LANGUAGE")}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
+          >
+            <Edit2 className="w-3 h-3" />
+            <span>Edit</span>
+          </button>
+        </div>
+
+        {/* Phone Number section */}
+        <div className="flex items-center justify-between py-1 border-t border-slate-100/80">
+          <div>
+            <span className="text-[10px] text-slate-400 block font-medium">
+              Contact Number
+            </span>
+            <span className="font-bold text-slate-900 text-xs">
+              {currentElder.phoneNumber ? (
+                currentElder.phoneNumber
+              ) : (
+                <span className="text-slate-400 font-normal">Not provided</span>
+              )}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEditingSection("NAME")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -278,7 +327,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('REQUIREMENTS')}
+            onClick={() => setEditingSection("REQUIREMENTS")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -288,15 +337,17 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
 
         <div className="space-y-2 text-xs">
           <div>
-            <span className="text-[10px] text-slate-400 block font-medium">Mobility Status</span>
+            <span className="text-[10px] text-slate-400 block font-medium">
+              Mobility Status
+            </span>
             <span className="font-bold text-slate-800">
-              {currentElder.mobilityLevel === 'INDEPENDENT'
-                ? 'Independent'
-                : currentElder.mobilityLevel === 'CANE_WALKER'
-                ? 'Assisted Walking (Cane/Walker)'
-                : currentElder.mobilityLevel === 'WHEELCHAIR'
-                ? 'Wheelchair Assisted'
-                : 'Bedridden / Maximum Support'}
+              {currentElder.mobilityLevel === "INDEPENDENT"
+                ? "Independent"
+                : currentElder.mobilityLevel === "CANE_WALKER"
+                  ? "Assisted Walking (Cane/Walker)"
+                  : currentElder.mobilityLevel === "WHEELCHAIR"
+                    ? "Wheelchair Assisted"
+                    : "Bedridden / Maximum Support"}
             </span>
           </div>
 
@@ -305,7 +356,8 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
               Required Care Support
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {currentElder.careRequirements && currentElder.careRequirements.length > 0 ? (
+              {currentElder.careRequirements &&
+              currentElder.careRequirements.length > 0 ? (
                 currentElder.careRequirements.map((r, i) => (
                   <span
                     key={i}
@@ -315,7 +367,9 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
                   </span>
                 ))
               ) : (
-                <span className="text-slate-400 text-xs">General elder support</span>
+                <span className="text-slate-400 text-xs">
+                  General elder support
+                </span>
               )}
             </div>
           </div>
@@ -331,7 +385,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('DETAILED_CARE')}
+            onClick={() => setEditingSection("DETAILED_CARE")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -339,7 +393,8 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           </button>
         </div>
 
-        {currentElder.medicalConditions && currentElder.medicalConditions.length > 0 ? (
+        {currentElder.medicalConditions &&
+        currentElder.medicalConditions.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {currentElder.medicalConditions.map((c, i) => (
               <span
@@ -351,7 +406,9 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
             ))}
           </div>
         ) : (
-          <div className="text-xs text-slate-400">No medical conditions reported.</div>
+          <div className="text-xs text-slate-400">
+            No medical conditions reported.
+          </div>
         )}
       </div>
 
@@ -364,7 +421,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setEditingSection('PREFERENCES')}
+            onClick={() => setEditingSection("PREFERENCES")}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-100 text-[11px] font-semibold text-primary transition"
           >
             <Edit2 className="w-3 h-3" />
@@ -373,7 +430,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
         </div>
 
         <p className="text-xs text-slate-600 leading-relaxed italic">
-          {currentElder.additionalNotes || 'No special instructions provided.'}
+          {currentElder.additionalNotes || "No special instructions provided."}
         </p>
       </div>
 
@@ -384,10 +441,13 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           <span>Service Location</span>
         </div>
         <div className="text-xs text-slate-700 leading-relaxed">
-          {currentElder.location?.addressLine1 || 'Elder Residence'},{' '}
-          {currentElder.location?.locality || 'Corridor'}
+          {currentElder.location?.addressLine1 || "Elder Residence"},{" "}
+          {currentElder.location?.locality || "Corridor"}
           <br />
-          PIN: <span className="font-mono font-bold">{currentElder.location?.postalCode || '600020'}</span>
+          PIN:{" "}
+          <span className="font-mono font-bold">
+            {currentElder.location?.postalCode || "600020"}
+          </span>
         </div>
         <div className="pt-1 text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -438,7 +498,8 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
                   Delete this elder?
                 </h3>
                 <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Are you sure you want to delete this elder? This action may remove the elder from your active CareConnect profile.
+                  Are you sure you want to delete this elder? This action may
+                  remove the elder from your active CareConnect profile.
                 </p>
               </div>
             </div>

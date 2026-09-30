@@ -1,11 +1,18 @@
-import React from 'react';
-import { CareConnectLogo } from '../common/CareConnectLogo';
-import { ShieldCheck, Heart, Activity, ArrowRight, UserCheck, Sparkles } from 'lucide-react';
+import React from "react";
+import { CareConnectLogo } from "../common/CareConnectLogo";
+import {
+  ShieldCheck,
+  Heart,
+  Activity,
+  ArrowRight,
+  UserCheck,
+  Sparkles,
+} from "lucide-react";
 
 interface MobileEntryScreenProps {
   onGetStarted: () => void;
   onSignIn: () => void;
-  onSelectRole?: (role: 'FAMILY' | 'CAREGIVER' | 'OPERATIONS') => void;
+  onSelectRole?: (role: "FAMILY" | "CAREGIVER" | "OPERATIONS") => void;
 }
 
 export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
@@ -44,23 +51,41 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
             Compassionate care for the ones who matter most.
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            Verified attendants, daily health support, and a real care team designed for comfort and peace of mind.
+            Verified attendants, daily health support, and a real care team
+            designed for comfort and peace of mind.
           </p>
         </div>
 
         <div className="space-y-2.5">
           {[
-            { icon: UserCheck, title: 'Verified attendants', text: 'Background-checked and trained for elder care.' },
-            { icon: Activity, title: 'Daily health support', text: 'Vitals, routines, and medication reminders.' },
-            { icon: Sparkles, title: 'Care that feels personal', text: 'Simple onboarding and a caring support desk.' },
+            {
+              icon: UserCheck,
+              title: "Verified attendants",
+              text: "Background-checked and trained for elder care.",
+            },
+            {
+              icon: Activity,
+              title: "Daily health support",
+              text: "Vitals, routines, and medication reminders.",
+            },
+            {
+              icon: Sparkles,
+              title: "Care that feels personal",
+              text: "Simple onboarding and a caring support desk.",
+            },
           ].map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+            <div
+              key={title}
+              className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm"
+            >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
                 <Icon className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-sm font-bold text-slate-800">{title}</div>
-                <div className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{text}</div>
+                <div className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                  {text}
+                </div>
               </div>
             </div>
           ))}
@@ -77,8 +102,11 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
         </button>
 
         <div className="text-center text-xs text-slate-500">
-          Already have an account?{' '}
-          <button onClick={onSignIn} className="ml-1 font-bold text-primary underline-offset-2 hover:underline">
+          Already have an account?{" "}
+          <button
+            onClick={onSignIn}
+            className="ml-1 font-bold text-primary underline-offset-2 hover:underline"
+          >
             Sign In
           </button>
         </div>

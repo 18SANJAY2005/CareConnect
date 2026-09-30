@@ -1,28 +1,34 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { 
-  MapContainer, 
-  TileLayer, 
-  Marker, 
-  Popup, 
-  useMap, 
-  useMapEvents 
-} from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { 
-  Navigation, 
-  MapPin, 
-  Check, 
-  AlertCircle, 
-  Loader2, 
-  Compass, 
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import {
+  Navigation,
+  MapPin,
+  Check,
+  AlertCircle,
+  Loader2,
+  Compass,
   RefreshCw,
   Building,
-  Home
-} from 'lucide-react';
+  Home,
+} from "lucide-react";
 
 // Vite bundler fix for Leaflet missing default marker icon assets
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -70,13 +76,13 @@ const MapResizer: React.FC = () => {
     const handleResize = () => {
       map.invalidateSize();
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [map]);
 
@@ -84,7 +90,10 @@ const MapResizer: React.FC = () => {
 };
 
 // Sub-component to smoothly pan map center when coordinates change externally
-const MapCenterController: React.FC<{ center: [number, number]; zoom?: number }> = ({ center, zoom }) => {
+const MapCenterController: React.FC<{
+  center: [number, number];
+  zoom?: number;
+}> = ({ center, zoom }) => {
   const map = useMap();
   const [lat, lng] = center;
 
@@ -96,7 +105,9 @@ const MapCenterController: React.FC<{ center: [number, number]; zoom?: number }>
 };
 
 // Sub-component to capture map clicks and move pin
-const MapClickHandler: React.FC<{ onMapClick: (lat: number, lng: number) => void }> = ({ onMapClick }) => {
+const MapClickHandler: React.FC<{
+  onMapClick: (lat: number, lng: number) => void;
+}> = ({ onMapClick }) => {
   useMapEvents({
     click(e) {
       onMapClick(e.latlng.lat, e.latlng.lng);
@@ -113,17 +124,22 @@ const DEFAULT_LNG = 80.2565;
 export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
   initialLatitude,
   initialLongitude,
-  initialAddress = '',
-  initialPostalCode = '',
+  initialAddress = "",
+  initialPostalCode = "",
   onLocationSelect,
   onCancel,
-  confirmButtonLabel = 'Confirm Exact Location',
+  confirmButtonLabel = "Confirm Exact Location",
   compact = false,
-  className = '',
+  className = "",
 }) => {
   // Coordinates state
   const [position, setPosition] = useState<[number, number]>(() => {
-    if (initialLatitude && initialLongitude && !isNaN(initialLatitude) && !isNaN(initialLongitude)) {
+    if (
+      initialLatitude &&
+      initialLongitude &&
+      !isNaN(initialLatitude) &&
+      !isNaN(initialLongitude)
+    ) {
       return [initialLatitude, initialLongitude];
     }
     return [DEFAULT_LAT, DEFAULT_LNG];
@@ -131,10 +147,10 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
 
   // Controlled form states
   const [street, setStreet] = useState(initialAddress);
-  const [locality, setLocality] = useState('');
-  const [houseNumber, setHouseNumber] = useState('');
-  const [city, setCity] = useState('Chennai');
-  const [state, setState] = useState('Tamil Nadu');
+  const [locality, setLocality] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [city, setCity] = useState("Chennai");
+  const [state, setState] = useState("Tamil Nadu");
   const [pinCode, setPinCode] = useState(initialPostalCode);
 
   // UI status
@@ -148,140 +164,189 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
 
   // Sync position if initialLatitude or initialLongitude change externally
   useEffect(() => {
-    if (initialLatitude && initialLongitude && !isNaN(initialLatitude) && !isNaN(initialLongitude)) {
+    if (
+      initialLatitude &&
+      initialLongitude &&
+      !isNaN(initialLatitude) &&
+      !isNaN(initialLongitude)
+    ) {
       setPosition([initialLatitude, initialLongitude]);
     }
   }, [initialLatitude, initialLongitude]);
 
   // Robust reverse geocoding handler with proper headers, extraction, and fallback
-  const performReverseGeocode = useCallback(async (lat: number, lon: number) => {
-    setIsGeocoding(true);
-    setErrorMessage(null);
-    setStatusMessage('Detecting address from map...');
+  const performReverseGeocode = useCallback(
+    async (lat: number, lon: number) => {
+      setIsGeocoding(true);
+      setErrorMessage(null);
+      setStatusMessage("Detecting address from map...");
 
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
-      
-      let data: any = null;
       try {
-        const response = await fetch(url, {
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'CareConnect-ElderCare-App/1.0',
-          },
-        });
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
 
-        if (!response.ok) {
-          throw new Error(`Geocode failed: ${response.status}`);
-        }
-        data = await response.json();
-      } catch (fetchErr: any) {
-        console.warn('Nominatim fetch notice:', fetchErr.message || fetchErr);
-        // Robust Fallback: Open client reverse geocode endpoint (CORS-enabled, no key required)
+        let data: any = null;
         try {
-          const fbRes = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
-          );
-          if (fbRes.ok) {
-            const fbData = await fbRes.json();
-            data = {
-              address: {
-                road: fbData.localityInfo?.administrative?.find((a: any) => a.order >= 6 && a.order <= 8)?.name || '',
-                suburb: fbData.locality || '',
-                city: fbData.city || 'Chennai',
-                postcode: fbData.postcode || '',
-              },
-            };
+          const response = await fetch(url, {
+            headers: {
+              Accept: "application/json",
+              "User-Agent": "CareConnect-ElderCare-App/1.0",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`Geocode failed: ${response.status}`);
           }
-        } catch (fallbackErr) {
-          console.warn('Fallback geocoding also failed:', fallbackErr);
+          data = await response.json();
+        } catch (fetchErr: any) {
+          console.warn("Nominatim fetch notice:", fetchErr.message || fetchErr);
+          // Robust Fallback: Open client reverse geocode endpoint (CORS-enabled, no key required)
+          try {
+            const fbRes = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+            );
+            if (fbRes.ok) {
+              const fbData = await fbRes.json();
+              data = {
+                address: {
+                  road:
+                    fbData.localityInfo?.administrative?.find(
+                      (a: any) => a.order >= 6 && a.order <= 8,
+                    )?.name || "",
+                  suburb: fbData.locality || "",
+                  city: fbData.city || "Chennai",
+                  postcode: fbData.postcode || "",
+                },
+              };
+            }
+          } catch (fallbackErr) {
+            console.warn("Fallback geocoding also failed:", fallbackErr);
+          }
         }
+
+        if (data && (data.address || data.display_name)) {
+          const addr = data.address || {};
+
+          // 1. House / Flat / Building
+          const houseVal =
+            addr.house_number ||
+            addr.building ||
+            addr.amenity ||
+            addr.shop ||
+            addr.office ||
+            "";
+
+          // 2. Road / Street
+          const roadVal =
+            addr.road ||
+            addr.street ||
+            addr.pedestrian ||
+            addr.path ||
+            addr.residential ||
+            addr.hamlet ||
+            "";
+
+          // 3. Locality / Suburb (Reject any administrative zone names like "Zone 5")
+          let localityVal =
+            (addr.suburb && !/^zone/i.test(addr.suburb) ? addr.suburb : "") ||
+            (addr.neighbourhood && !/^zone/i.test(addr.neighbourhood)
+              ? addr.neighbourhood
+              : "") ||
+            (addr.residential && !/^zone/i.test(addr.residential)
+              ? addr.residential
+              : "");
+          if (
+            !localityVal &&
+            addr.city_district &&
+            !/^zone/i.test(addr.city_district)
+          ) {
+            localityVal = addr.city_district;
+          }
+          if (!localityVal) {
+            localityVal = addr.village || addr.town || addr.quarter || "";
+          }
+          if (!localityVal && addr.suburb) {
+            // If only "Zone X Suburb" was returned, strip the administrative prefix
+            localityVal = addr.suburb.replace(/^zone\s*\d+\s*/i, "").trim();
+          }
+
+          // Deduplication if road and locality are identical
+          if (
+            roadVal &&
+            localityVal &&
+            roadVal.trim().toLowerCase() === localityVal.trim().toLowerCase()
+          ) {
+            localityVal = addr.quarter || addr.city_district || "";
+          }
+
+          // 4. City
+          const rawCity =
+            addr.city ||
+            addr.town ||
+            addr.municipality ||
+            addr.state_district ||
+            "Chennai";
+          const cityVal = /^zone/i.test(rawCity) ? "Chennai" : rawCity;
+
+          // 5. PIN Code
+          const pinVal = addr.postcode ? addr.postcode.replace(/\s+/g, "") : "";
+
+          // Immediate Form State Update
+          setStreet(roadVal);
+          setLocality(localityVal);
+          if (houseVal) {
+            setHouseNumber(houseVal);
+          }
+          setCity(cityVal);
+          if (pinVal) {
+            setPinCode(pinVal);
+          }
+          if (addr.state) {
+            setState(addr.state);
+          }
+
+          setStatusMessage(null);
+        } else if (data?.display_name) {
+          const parts = data.display_name
+            .split(",")
+            .map((p: string) => p.trim())
+            .filter((p: string) => !/^zone\s*\d+/i.test(p));
+          if (parts[0]) setStreet(parts[0]);
+          if (parts[1]) setLocality(parts[1]);
+          setStatusMessage(null);
+        } else {
+          setStatusMessage(
+            "Coordinates captured. You can type your street and area name below.",
+          );
+        }
+      } catch (err: any) {
+        console.warn("Geocoding notice:", err);
+        setStatusMessage(
+          "Coordinates captured. You can type your street and area name below.",
+        );
+      } finally {
+        setIsGeocoding(false);
       }
-
-      if (data && (data.address || data.display_name)) {
-        const addr = data.address || {};
-
-        // 1. House / Flat / Building
-        const houseVal = addr.house_number || addr.building || addr.amenity || addr.shop || addr.office || '';
-
-        // 2. Road / Street
-        const roadVal = addr.road || addr.street || addr.pedestrian || addr.path || addr.residential || addr.hamlet || '';
-
-        // 3. Locality / Suburb (Reject any administrative zone names like "Zone 5")
-        let localityVal = (addr.suburb && !/^zone/i.test(addr.suburb) ? addr.suburb : '') ||
-                          (addr.neighbourhood && !/^zone/i.test(addr.neighbourhood) ? addr.neighbourhood : '') ||
-                          (addr.residential && !/^zone/i.test(addr.residential) ? addr.residential : '');
-        if (!localityVal && addr.city_district && !/^zone/i.test(addr.city_district)) {
-          localityVal = addr.city_district;
-        }
-        if (!localityVal) {
-          localityVal = addr.village || addr.town || addr.quarter || '';
-        }
-        if (!localityVal && addr.suburb) {
-          // If only "Zone X Suburb" was returned, strip the administrative prefix
-          localityVal = addr.suburb.replace(/^zone\s*\d+\s*/i, '').trim();
-        }
-
-        // Deduplication if road and locality are identical
-        if (roadVal && localityVal && roadVal.trim().toLowerCase() === localityVal.trim().toLowerCase()) {
-          localityVal = addr.quarter || addr.city_district || '';
-        }
-
-        // 4. City
-        const rawCity = addr.city || addr.town || addr.municipality || addr.state_district || 'Chennai';
-        const cityVal = /^zone/i.test(rawCity) ? 'Chennai' : rawCity;
-
-        // 5. PIN Code
-        const pinVal = addr.postcode ? addr.postcode.replace(/\s+/g, '') : '';
-
-        // Immediate Form State Update
-        setStreet(roadVal);
-        setLocality(localityVal);
-        if (houseVal) {
-          setHouseNumber(houseVal);
-        }
-        setCity(cityVal);
-        if (pinVal) {
-          setPinCode(pinVal);
-        }
-        if (addr.state) {
-          setState(addr.state);
-        }
-
-        setStatusMessage(null);
-      } else if (data?.display_name) {
-        const parts = data.display_name
-          .split(',')
-          .map((p: string) => p.trim())
-          .filter((p: string) => !/^zone\s*\d+/i.test(p));
-        if (parts[0]) setStreet(parts[0]);
-        if (parts[1]) setLocality(parts[1]);
-        setStatusMessage(null);
-      } else {
-        setStatusMessage('Coordinates captured. You can type your street and area name below.');
-      }
-    } catch (err: any) {
-      console.warn('Geocoding notice:', err);
-      setStatusMessage('Coordinates captured. You can type your street and area name below.');
-    } finally {
-      setIsGeocoding(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Debounced reverse geocoding caller
-  const triggerReverseGeocode = useCallback((lat: number, lon: number, delayMs = 0) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
+  const triggerReverseGeocode = useCallback(
+    (lat: number, lon: number, delayMs = 0) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
 
-    if (delayMs > 0) {
-      debounceTimerRef.current = setTimeout(() => {
+      if (delayMs > 0) {
+        debounceTimerRef.current = setTimeout(() => {
+          performReverseGeocode(lat, lon);
+        }, delayMs);
+      } else {
         performReverseGeocode(lat, lon);
-      }, delayMs);
-    } else {
-      performReverseGeocode(lat, lon);
-    }
-  }, [performReverseGeocode]);
+      }
+    },
+    [performReverseGeocode],
+  );
 
   // Perform reverse geocoding on initial mount or coordinate change
   useEffect(() => {
@@ -304,20 +369,25 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
         }
       },
     }),
-    [triggerReverseGeocode]
+    [triggerReverseGeocode],
   );
 
   // Handle click on the map to reposition pin
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    const newPos: [number, number] = [lat, lng];
-    setPosition(newPos);
-    triggerReverseGeocode(lat, lng, 0);
-  }, [triggerReverseGeocode]);
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      const newPos: [number, number] = [lat, lng];
+      setPosition(newPos);
+      triggerReverseGeocode(lat, lng, 0);
+    },
+    [triggerReverseGeocode],
+  );
 
   // Request browser GPS location
   const handleUseCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setErrorMessage('Browser geolocation is not supported on this device. You can tap or drag the pin on the map.');
+      setErrorMessage(
+        "Browser geolocation is not supported on this device. You can tap or drag the pin on the map.",
+      );
       return;
     }
 
@@ -335,11 +405,14 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
       },
       (error) => {
         setIsGpsLoading(false);
-        let msg = 'Could not access device GPS. Please pick your location by dragging or tapping the pin.';
+        let msg =
+          "Could not access device GPS. Please pick your location by dragging or tapping the pin.";
         if (error.code === error.PERMISSION_DENIED) {
-          msg = 'Location permission was denied. Tap the map or drag the pin to set your door location manually.';
+          msg =
+            "Location permission was denied. Tap the map or drag the pin to set your door location manually.";
         } else if (error.code === error.TIMEOUT) {
-          msg = 'Location request timed out. Please try again or tap the pin on the map.';
+          msg =
+            "Location request timed out. Please try again or tap the pin on the map.";
         }
         setErrorMessage(msg);
       },
@@ -347,7 +420,7 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
         enableHighAccuracy: true,
         timeout: 15000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
@@ -362,13 +435,14 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
 
   // Submit selected location
   const handleConfirm = () => {
-    const isMunicipalZone = (val?: string) => Boolean(val && /^zone\s*\d+/i.test(val.trim()));
+    const isMunicipalZone = (val?: string) =>
+      Boolean(val && /^zone\s*\d+/i.test(val.trim()));
 
-    const cleanDoor = !isMunicipalZone(houseNumber) ? houseNumber.trim() : '';
-    const cleanStreet = !isMunicipalZone(street) ? street.trim() : '';
-    const cleanLocality = !isMunicipalZone(locality) ? locality.trim() : '';
-    const cleanCity = !isMunicipalZone(city) ? city.trim() : 'Chennai';
-    const cleanPin = pinCode && pinCode.trim() ? `PIN ${pinCode.trim()}` : '';
+    const cleanDoor = !isMunicipalZone(houseNumber) ? houseNumber.trim() : "";
+    const cleanStreet = !isMunicipalZone(street) ? street.trim() : "";
+    const cleanLocality = !isMunicipalZone(locality) ? locality.trim() : "";
+    const cleanCity = !isMunicipalZone(city) ? city.trim() : "Chennai";
+    const cleanPin = pinCode && pinCode.trim() ? `PIN ${pinCode.trim()}` : "";
 
     const fullFormatted = [
       cleanDoor,
@@ -378,11 +452,15 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
       cleanPin,
     ]
       .filter((part): part is string => Boolean(part && !isMunicipalZone(part)))
-      .join(', ');
+      .join(", ");
 
-    const fullAddressLine1 = cleanDoor && cleanStreet
-      ? `${cleanDoor}, ${cleanStreet}`
-      : cleanDoor || cleanStreet || cleanLocality || 'Residential Care Location';
+    const fullAddressLine1 =
+      cleanDoor && cleanStreet
+        ? `${cleanDoor}, ${cleanStreet}`
+        : cleanDoor ||
+          cleanStreet ||
+          cleanLocality ||
+          "Residential Care Location";
 
     onLocationSelect({
       latitude: Number(position[0].toFixed(6)),
@@ -390,10 +468,10 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
       formattedAddress: fullFormatted,
       addressLine1: fullAddressLine1,
       addressLine2: cleanLocality || undefined,
-      locality: cleanLocality || 'Care Corridor',
-      city: cleanCity || 'Chennai',
-      state: state || 'Tamil Nadu',
-      postalCode: pinCode ? pinCode.trim() : '600020',
+      locality: cleanLocality || "Care Corridor",
+      city: cleanCity || "Chennai",
+      state: state || "Tamil Nadu",
+      postalCode: pinCode ? pinCode.trim() : "600020",
       doorOrLandmark: cleanDoor || undefined,
     });
   };
@@ -426,7 +504,9 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
           <span>
             {position[0].toFixed(4)}°N, {position[1].toFixed(4)}°E
           </span>
-          {isGeocoding && <Loader2 className="w-3 h-3 animate-spin text-teal-600 ml-1" />}
+          {isGeocoding && (
+            <Loader2 className="w-3 h-3 animate-spin text-teal-600 ml-1" />
+          )}
         </div>
       </div>
 
@@ -447,12 +527,14 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
 
       {/* Interactive Leaflet Map Container */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-slate-200 shadow-sm bg-slate-100">
-        <div className={`w-full ${compact ? 'h-52 sm:h-60' : 'h-64 sm:h-72'} relative z-0`}>
+        <div
+          className={`w-full ${compact ? "h-52 sm:h-60" : "h-64 sm:h-72"} relative z-0`}
+        >
           <MapContainer
             center={position}
             zoom={16}
             scrollWheelZoom={true}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: "100%", height: "100%" }}
             className="z-0"
           >
             {/* Tile Layer: OpenStreetMap */}
@@ -470,8 +552,12 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
             >
               <Popup>
                 <div className="text-center font-sans p-1">
-                  <p className="font-bold text-xs text-slate-900">Care Location</p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">Drag to adjust your exact door</p>
+                  <p className="font-bold text-xs text-slate-900">
+                    Care Location
+                  </p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Drag to adjust your exact door
+                  </p>
                 </div>
               </Popup>
             </Marker>
@@ -519,14 +605,19 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
         {/* Flat / Door / House Refinement */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-            House / Flat No., Floor, Apartment Name <span className="text-slate-400 font-normal">(Optional)</span>
+            House / Flat No., Floor, Apartment Name{" "}
+            <span className="text-slate-400 font-normal">(Optional)</span>
           </label>
           <div className="relative">
             <input
               type="text"
               value={houseNumber}
               onChange={(e) => setHouseNumber(e.target.value)}
-              placeholder={isGeocoding ? "Detecting address..." : "e.g. Flat 302, Shanthi Heights, Gate #2"}
+              placeholder={
+                isGeocoding
+                  ? "Detecting address..."
+                  : "e.g. Flat 302, Shanthi Heights, Gate #2"
+              }
               className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-teal-600 bg-slate-50/50"
             />
             {isGeocoding && (
@@ -542,7 +633,10 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-[11px] font-semibold text-slate-700">
-                Detected Street / Road <span className="text-[10px] text-teal-600 font-normal">(Editable)</span>
+                Detected Street / Road{" "}
+                <span className="text-[10px] text-teal-600 font-normal">
+                  (Editable)
+                </span>
               </label>
             </div>
             <div className="relative">
@@ -550,7 +644,11 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
                 type="text"
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
-                placeholder={isGeocoding ? "Detecting street..." : "e.g. 2nd Main Road, Gandhi Nagar"}
+                placeholder={
+                  isGeocoding
+                    ? "Detecting street..."
+                    : "e.g. 2nd Main Road, Gandhi Nagar"
+                }
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-teal-600 bg-white"
               />
               {isGeocoding && (
@@ -564,7 +662,10 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-[11px] font-semibold text-slate-700">
-                Locality / Neighborhood <span className="text-[10px] text-teal-600 font-normal">(Editable)</span>
+                Locality / Neighborhood{" "}
+                <span className="text-[10px] text-teal-600 font-normal">
+                  (Editable)
+                </span>
               </label>
             </div>
             <div className="relative">
@@ -572,7 +673,11 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
                 type="text"
                 value={locality}
                 onChange={(e) => setLocality(e.target.value)}
-                placeholder={isGeocoding ? "Detecting locality..." : "e.g. Adyar / Besant Nagar"}
+                placeholder={
+                  isGeocoding
+                    ? "Detecting locality..."
+                    : "e.g. Adyar / Besant Nagar"
+                }
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-teal-600 bg-white"
               />
               {isGeocoding && (
@@ -585,7 +690,8 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
         </div>
 
         <p className="text-[11px] text-slate-500 italic">
-          💡 You can manually refine or type your exact street and locality above. Accurate map GPS coordinates remain locked.
+          💡 You can manually refine or type your exact street and locality
+          above. Accurate map GPS coordinates remain locked.
         </p>
 
         {/* PIN Code & City Grid */}
@@ -614,7 +720,7 @@ export const PreciseLocationPicker: React.FC<PreciseLocationPickerProps> = ({
                 type="text"
                 maxLength={6}
                 value={pinCode}
-                onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
                 placeholder={isGeocoding ? "Detecting..." : "e.g. 600020"}
                 className="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl border border-slate-300 focus:border-teal-600"
               />

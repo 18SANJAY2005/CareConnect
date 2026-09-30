@@ -1,6 +1,6 @@
-import type { OfflineQueueItem } from '../types/phaseC';
+import type { OfflineQueueItem } from "../types/phaseC";
 
-const QUEUE_STORAGE_KEY = 'careconnect_offline_queue';
+const QUEUE_STORAGE_KEY = "careconnect_offline_queue";
 
 type QueueListener = (items: OfflineQueueItem[]) => void;
 
@@ -12,13 +12,13 @@ class OfflineQueueService {
 
   constructor() {
     this.loadQueue();
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => {
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", () => {
         if (!this.isSimulatedOffline) {
           this.notifyListeners();
         }
       });
-      window.addEventListener('offline', () => {
+      window.addEventListener("offline", () => {
         this.notifyListeners();
       });
     }
@@ -57,12 +57,14 @@ class OfflineQueueService {
   }
 
   generateIdempotencyKey(): string {
-    return 'idemp_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+    return (
+      "idemp_" + Math.random().toString(36).substring(2, 9) + "_" + Date.now()
+    );
   }
 
   get isOnline(): boolean {
     if (this.isSimulatedOffline) return false;
-    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+    return typeof navigator !== "undefined" ? navigator.onLine : true;
   }
 
   setSimulatedOffline(simulated: boolean) {
@@ -75,25 +77,35 @@ class OfflineQueueService {
   }
 
   getPendingCount(): number {
-    return this.queue.filter((item) => item.status === 'PENDING' || item.status === 'FAILED').length;
+    return this.queue.filter(
+      (item) => item.status === "PENDING" || item.status === "FAILED",
+    ).length;
   }
 
   getQueue(): OfflineQueueItem[] {
     return [...this.queue];
   }
 
-  enqueue(endpoint: string, method: 'POST' | 'PATCH' | 'PUT', body: any): OfflineQueueItem {
+  enqueue(
+    endpoint: string,
+    method: "POST" | "PATCH" | "PUT",
+    body: any,
+  ): OfflineQueueItem {
     const key = body.idempotencyKey || this.generateIdempotencyKey();
     body.idempotencyKey = key;
 
     const item: OfflineQueueItem = {
-      id: 'queue_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id:
+        "queue_" +
+        Date.now() +
+        "_" +
+        Math.random().toString(36).substring(2, 6),
       endpoint,
       method,
       body,
       idempotencyKey: key,
       timestamp: Date.now(),
-      status: 'PENDING',
+      status: "PENDING",
       retryCount: 0,
     };
 
@@ -102,7 +114,9 @@ class OfflineQueueService {
     return item;
   }
 
-  async processQueue(fetchExecutor: (item: OfflineQueueItem) => Promise<any>): Promise<{ processed: number; failed: number }> {
+  async processQueue(
+    fetchExecutor: (item: OfflineQueueItem) => Promise<any>,
+  ): Promise<{ processed: number; failed: number }> {
     if (this.isProcessing || !this.isOnline || this.queue.length === 0) {
       return { processed: 0, failed: 0 };
     }
@@ -114,7 +128,7 @@ class OfflineQueueService {
     const remainingQueue: OfflineQueueItem[] = [];
 
     for (const item of this.queue) {
-      item.status = 'SYNCING';
+      item.status = "SYNCING";
       this.notifyListeners();
 
       try {
@@ -123,7 +137,7 @@ class OfflineQueueService {
         // Item succeeded, do not retain in remainingQueue
       } catch (err) {
         failed++;
-        item.status = 'FAILED';
+        item.status = "FAILED";
         item.retryCount += 1;
         remainingQueue.push(item);
       }
@@ -142,4 +156,3 @@ class OfflineQueueService {
 }
 
 export const offlineQueue = new OfflineQueueService();
-

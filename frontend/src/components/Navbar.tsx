@@ -68,7 +68,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-3 cursor-pointer shrink-0"
           onClick={() => {
             setActivePortal("SPONSOR");
-            if (user) setCurrentStep("DASHBOARD"); else setCurrentStep("LANDING");
+            if (user) setCurrentStep("DASHBOARD");
+            else setCurrentStep("LANDING");
           }}
         >
           <CareConnectLogo size="md" showWordmark />
@@ -182,7 +183,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="flex flex-col text-left truncate">
                         <span className="truncate">{elder.name}</span>
                         <span className="text-[10px] text-slate-400">
-                          {elder.age} yrs • {elder.location?.locality || "Care Zone"}
+                          {elder.age} yrs •{" "}
+                          {elder.location?.locality || "Care Zone"}
                         </span>
                       </div>
                       {isCurrent && (

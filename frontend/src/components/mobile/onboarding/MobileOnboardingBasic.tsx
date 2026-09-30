@@ -1,11 +1,23 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, AlertCircle, Calendar } from 'lucide-react';
+import React, { useState } from "react";
+import { ArrowLeft, ArrowRight, AlertCircle, Calendar } from "lucide-react";
 
 interface MobileOnboardingBasicProps {
-  recipient: 'ME' | 'SOMEONE_ELSE';
-  onNext: (data: { name: string; age: number; gender: 'FEMALE' | 'MALE' | 'OTHER'; dob?: string }) => void;
+  recipient: "ME" | "SOMEONE_ELSE";
+  onNext: (data: {
+    name: string;
+    age: number;
+    gender: "FEMALE" | "MALE" | "OTHER";
+    dob?: string;
+    phone?: string;
+  }) => void;
   onBack: () => void;
-  initialData?: { name?: string; age?: number; gender?: 'FEMALE' | 'MALE' | 'OTHER'; dob?: string };
+  initialData?: {
+    name?: string;
+    age?: number;
+    gender?: "FEMALE" | "MALE" | "OTHER";
+    dob?: string;
+    phone?: string;
+  };
 }
 
 export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
@@ -14,30 +26,37 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
   onBack,
   initialData,
 }) => {
-  const isSelf = recipient === 'ME';
+  const isSelf = recipient === "ME";
 
-  const [name, setName] = useState(initialData?.name || '');
-  const [ageStr, setAgeStr] = useState(initialData?.age ? String(initialData.age) : '');
-  const [gender, setGender] = useState<'FEMALE' | 'MALE' | 'OTHER' | null>(initialData?.gender || null);
+  const [name, setName] = useState(initialData?.name || "");
+  const [ageStr, setAgeStr] = useState(
+    initialData?.age ? String(initialData.age) : "",
+  );
+  const [gender, setGender] = useState<"FEMALE" | "MALE" | "OTHER" | null>(
+    initialData?.gender || null,
+  );
   const [showDob, setShowDob] = useState(Boolean(initialData?.dob));
-  const [dob, setDob] = useState(initialData?.dob || '');
+  const [dob, setDob] = useState(initialData?.dob || "");
+  const [phone, setPhone] = useState(initialData?.phone || "");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) {
-      setErrorMessage(isSelf ? 'Please enter your name.' : "Please enter the elder's name.");
+      setErrorMessage(
+        isSelf ? "Please enter your name." : "Please enter the elder's name.",
+      );
       return;
     }
 
     const ageNum = parseInt(ageStr, 10);
     if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
-      setErrorMessage('Please enter a valid age between 18 and 120.');
+      setErrorMessage("Please enter a valid age between 18 and 120.");
       return;
     }
 
     if (!gender) {
-      setErrorMessage('Please select a gender.');
+      setErrorMessage("Please select a gender.");
       return;
     }
 
@@ -47,6 +66,7 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
       age: ageNum,
       gender,
       dob: dob || undefined,
+      phone: !isSelf ? phone.trim() : undefined,
     });
   };
 
@@ -67,12 +87,12 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
         </div>
 
         <h2 className="text-2xl font-extrabold font-heading text-slate-900">
-          {isSelf ? 'Tell us about yourself' : 'Who will be receiving care?'}
+          {isSelf ? "Tell us about yourself" : "Who will be receiving care?"}
         </h2>
         <p className="text-xs text-slate-500 mt-1">
           {isSelf
-            ? 'We will use your name and age to organize your care plan.'
-            : 'Enter basic details to personalize the caregiver match.'}
+            ? "We will use your name and age to organize your care plan."
+            : "Enter basic details to personalize the caregiver match."}
         </p>
       </div>
 
@@ -88,18 +108,35 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
         {/* Name */}
         <div>
           <label className="block text-xs font-bold text-slate-700 mb-1.5">
-            {isSelf ? 'Full Name' : "Elder's Full Name"}
+            {isSelf ? "Full Name" : "Elder's Full Name"}
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={isSelf ? 'e.g. S. Ramanathan' : 'e.g. Meenakshi Ammal'}
+            placeholder={isSelf ? "e.g. S. Ramanathan" : "e.g. Meenakshi Ammal"}
             className="w-full h-14 px-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
             required
             autoFocus
           />
         </div>
+
+        {/* Elder's Phone Number (Only if SOMEONE_ELSE) */}
+        {!isSelf && (
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Elder's Phone Number{" "}
+              <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 9876543210"
+              className="w-full h-14 px-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+            />
+          </div>
+        )}
 
         {/* Age (Numeric Keypad on Mobile) */}
         <div>
@@ -122,20 +159,22 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
 
         {/* Gender Selection */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            Gender
+          </label>
           <div className="grid grid-cols-3 gap-2">
-            {(['FEMALE', 'MALE', 'OTHER'] as const).map((g) => (
+            {(["FEMALE", "MALE", "OTHER"] as const).map((g) => (
               <button
                 key={g}
                 type="button"
                 onClick={() => setGender(g)}
                 className={`py-3 rounded-2xl text-xs font-bold border transition ${
                   gender === g
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                    ? "bg-primary text-white border-primary shadow-sm"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                {g === 'FEMALE' ? 'Female' : g === 'MALE' ? 'Male' : 'Other'}
+                {g === "FEMALE" ? "Female" : g === "MALE" ? "Male" : "Other"}
               </button>
             ))}
           </div>
@@ -155,7 +194,8 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
           ) : (
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Date of Birth <span className="font-normal text-slate-400">(Optional)</span>
+                Date of Birth{" "}
+                <span className="font-normal text-slate-400">(Optional)</span>
               </label>
               <input
                 type="date"
@@ -182,4 +222,3 @@ export const MobileOnboardingBasic: React.FC<MobileOnboardingBasicProps> = ({
     </div>
   );
 };
-

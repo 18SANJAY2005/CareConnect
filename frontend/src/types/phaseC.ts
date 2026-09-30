@@ -1,17 +1,14 @@
-export type ShiftStatus = 
-  | 'SCHEDULED' 
-  | 'CHECKED_IN' 
-  | 'ACTIVE' 
-  | 'LATE' 
-  | 'MISSED' 
-  | 'EXCEPTION' 
-  | 'CHECKED_OUT';
+export type ShiftStatus =
+  | "SCHEDULED"
+  | "CHECKED_IN"
+  | "ACTIVE"
+  | "LATE"
+  | "MISSED"
+  | "EXCEPTION"
+  | "CHECKED_OUT";
 
-export type AttendanceVerificationStatus = 
-  | 'VERIFIED' 
-  | 'OUT_OF_RANGE' 
-  | 'SUPERVISOR_OVERRIDE' 
-  | 'OTP_OVERRIDE';
+export type AttendanceVerificationStatus =
+  "VERIFIED" | "OUT_OF_RANGE" | "SUPERVISOR_OVERRIDE" | "OTP_OVERRIDE";
 
 export interface Shift {
   id: string;
@@ -69,7 +66,7 @@ export interface LiveShiftMonitorItem {
   supervisorNotes?: string;
 }
 
-export type TimeOfDay = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
+export type TimeOfDay = "MORNING" | "AFTERNOON" | "EVENING" | "NIGHT";
 
 export interface CareTask {
   id: string;
@@ -79,7 +76,7 @@ export interface CareTask {
   timeOfDay: TimeOfDay;
   category: string;
   taskName: string;
-  status: 'PENDING' | 'COMPLETED' | 'SKIPPED';
+  status: "PENDING" | "COMPLETED" | "SKIPPED";
   details: Record<string, any>;
   notes?: string;
   recordedAt?: string;
@@ -96,7 +93,7 @@ export interface TimelineItem {
   caregiverName: string;
 }
 
-export type VitalAlertSeverity = 'NORMAL' | 'WARNING' | 'CRITICAL';
+export type VitalAlertSeverity = "NORMAL" | "WARNING" | "CRITICAL";
 
 export interface VitalReading {
   id: string;
@@ -108,9 +105,9 @@ export interface VitalReading {
   diastolicBp?: number | null;
   pulse?: number | null;
   bloodGlucose?: number | null;
-  glucoseContext?: 'FASTING' | 'POST_PRANDIAL' | 'RANDOM' | string;
+  glucoseContext?: "FASTING" | "POST_PRANDIAL" | "RANDOM" | string;
   temperatureCelsius?: number | null;
-  source: 'MANUAL' | 'DEVICE_SYNC' | string;
+  source: "MANUAL" | "DEVICE_SYNC" | string;
   isAbnormal: boolean;
   alertSeverity: VitalAlertSeverity;
   alertMessage?: string;
@@ -173,8 +170,9 @@ export interface VitalsTrendData {
   } | null;
 }
 
-export type IncidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'ESCALATING' | 'RESOLVED';
-export type IncidentPriority = 'P1' | 'P2' | 'P3';
+export type IncidentStatus =
+  "OPEN" | "ACKNOWLEDGED" | "ESCALATING" | "RESOLVED";
+export type IncidentPriority = "P1" | "P2" | "P3";
 
 export interface Incident {
   id: string;
@@ -208,7 +206,7 @@ export interface CareMedia {
   shiftId?: string;
   uploadedById: string;
   mediaUrl: string;
-  mediaType: 'PHOTO' | 'VIDEO' | string;
+  mediaType: "PHOTO" | "VIDEO" | string;
   category: string;
   caption?: string;
   status: string;
@@ -221,7 +219,7 @@ export interface ChatMessage {
   senderId: string;
   senderName: string;
   senderRole: string;
-  channel: 'FAMILY_COORDINATOR' | 'CAREGIVER_COORDINATOR' | string;
+  channel: "FAMILY_COORDINATOR" | "CAREGIVER_COORDINATOR" | string;
   content: string;
   isRead: boolean;
   createdAt: string;
@@ -230,11 +228,10 @@ export interface ChatMessage {
 export interface OfflineQueueItem {
   id: string;
   endpoint: string;
-  method: 'POST' | 'PATCH' | 'PUT';
+  method: "POST" | "PATCH" | "PUT";
   body: any;
   idempotencyKey: string;
   timestamp: number;
-  status: 'PENDING' | 'SYNCING' | 'FAILED';
+  status: "PENDING" | "SYNCING" | "FAILED";
   retryCount: number;
 }
-

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Clock,
   HeartPulse,
@@ -10,9 +10,9 @@ import {
   ChevronRight,
   Sparkles,
   ShieldCheck,
-} from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Elder, CareAssignment } from '../../../types';
+} from "lucide-react";
+import { api } from "../../../services/api";
+import type { Elder, CareAssignment } from "../../../types";
 
 interface FamilyHomeScreenProps {
   elder: Elder;
@@ -58,13 +58,16 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
     return (
       <div className="flex flex-1 flex-col items-center justify-center space-y-4 p-8">
         <Clock className="h-8 w-8 animate-spin text-primary" />
-        <span className="text-sm font-bold text-slate-700">Loading Care Dashboard...</span>
+        <span className="text-sm font-bold text-slate-700">
+          Loading Care Dashboard...
+        </span>
       </div>
     );
   }
 
   const caregiver = assignment?.caregiver;
-  const isOnDuty = shiftStatus?.status === 'ACTIVE' || shiftStatus?.status === 'CHECKED_IN';
+  const isOnDuty =
+    shiftStatus?.status === "ACTIVE" || shiftStatus?.status === "CHECKED_IN";
 
   return (
     <div className="animate-fadeIn space-y-4 overflow-y-auto px-4 py-4 pb-safe-nav text-slate-900">
@@ -74,9 +77,11 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
             <Sparkles className="h-3.5 w-3.5" />
             <span>Good morning</span>
           </div>
-          <h2 className="mt-1 truncate text-2xl font-extrabold tracking-[-0.04em]">{elder.name}</h2>
+          <h2 className="mt-1 truncate text-2xl font-extrabold tracking-[-0.04em]">
+            {elder.name}
+          </h2>
           <div className="mt-1 text-sm text-teal-100">
-            {elder.location?.locality || 'Care Corridor'} • Age {elder.age}
+            {elder.location?.locality || "Care Corridor"} • Age {elder.age}
           </div>
         </div>
 
@@ -97,25 +102,37 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           </span>
           <span
             className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-              isOnDuty ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' : 'border border-amber-200 bg-amber-50 text-amber-800'
+              isOnDuty
+                ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border border-amber-200 bg-amber-50 text-amber-800"
             }`}
           >
-            <span className={`h-2 w-2 rounded-full ${isOnDuty ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`} />
-            {isOnDuty ? 'On duty now' : 'Shift scheduled'}
+            <span
+              className={`h-2 w-2 rounded-full ${isOnDuty ? "bg-emerald-500 animate-ping" : "bg-amber-500"}`}
+            />
+            {isOnDuty ? "On duty now" : "Shift scheduled"}
           </span>
         </div>
 
         <div className="mt-4 flex items-center gap-3.5">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-teal-200 bg-teal-50 text-xl font-extrabold text-primary">
-            {(caregiver?.full_name || caregiver?.fullName || 'Attendant').charAt(0)}
+            {(
+              caregiver?.full_name ||
+              caregiver?.fullName ||
+              "Attendant"
+            ).charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-bold text-slate-900">
-              {caregiver?.full_name || caregiver?.fullName || 'Verified attendant assigned'}
+              {caregiver?.full_name ||
+                caregiver?.fullName ||
+                "Verified attendant assigned"}
             </div>
             <div className="mt-0.5 text-xs text-slate-500">
-              {caregiver?.experience_years ? `${caregiver.experience_years} yrs experience • ` : ''}
-              {caregiver?.languages || 'Tamil, English'}
+              {caregiver?.experience_years
+                ? `${caregiver.experience_years} yrs experience • `
+                : ""}
+              {caregiver?.languages || "Tamil, English"}
             </div>
           </div>
           <a
@@ -131,7 +148,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
 
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => onOpenTab('UPDATES')}
+          onClick={() => onOpenTab("UPDATES")}
           className="flex min-h-[72px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
@@ -139,12 +156,14 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-slate-900">Updates</div>
-            <div className="text-[11px] text-slate-500">Vitals & activities</div>
+            <div className="text-[11px] text-slate-500">
+              Vitals & activities
+            </div>
           </div>
         </button>
 
         <button
-          onClick={() => onOpenTab('MESSAGES')}
+          onClick={() => onOpenTab("MESSAGES")}
           className="flex min-h-[72px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
@@ -164,7 +183,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
             <span>Today’s care timeline</span>
           </div>
           <button
-            onClick={() => onOpenTab('UPDATES')}
+            onClick={() => onOpenTab("UPDATES")}
             className="flex items-center gap-1 text-[11px] font-bold text-primary"
           >
             <span>View all</span>
@@ -181,15 +200,20 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
               >
                 <div className="flex min-w-0 items-center gap-2.5 pr-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                  <span className="truncate font-semibold text-slate-900">{item.title || item.taskName}</span>
+                  <span className="truncate font-semibold text-slate-900">
+                    {item.title || item.taskName}
+                  </span>
                 </div>
-                <span className="shrink-0 font-mono text-[10px] text-slate-500">{item.time || 'Completed'}</span>
+                <span className="shrink-0 font-mono text-[10px] text-slate-500">
+                  {item.time || "Completed"}
+                </span>
               </div>
             ))}
           </div>
         ) : (
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-center text-xs leading-relaxed text-slate-500">
-            Shift routine starts at 8:00 AM. Updates will appear here as care progresses.
+            Shift routine starts at 8:00 AM. Updates will appear here as care
+            progresses.
           </div>
         )}
       </div>
@@ -202,14 +226,23 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
 
         <div className="mt-4 grid grid-cols-3 gap-2.5">
           {[
-            { label: 'Blood Pressure', value: '120/80', status: 'Normal' },
-            { label: 'Pulse Rate', value: '72 bpm', status: 'Steady' },
-            { label: 'Blood Sugar', value: '110 mg/dL', status: 'Normal' },
+            { label: "Blood Pressure", value: "120/80", status: "Normal" },
+            { label: "Pulse Rate", value: "72 bpm", status: "Steady" },
+            { label: "Blood Sugar", value: "110 mg/dL", status: "Normal" },
           ].map(({ label, value, status }) => (
-            <div key={label} className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3 text-center">
-              <div className="text-[10px] font-bold text-slate-600">{label}</div>
-              <div className="mt-1 text-base font-extrabold text-slate-900">{value}</div>
-              <div className="mt-0.5 text-[10px] font-bold text-emerald-700">{status}</div>
+            <div
+              key={label}
+              className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3 text-center"
+            >
+              <div className="text-[10px] font-bold text-slate-600">
+                {label}
+              </div>
+              <div className="mt-1 text-base font-extrabold text-slate-900">
+                {value}
+              </div>
+              <div className="mt-0.5 text-[10px] font-bold text-emerald-700">
+                {status}
+              </div>
             </div>
           ))}
         </div>
@@ -221,7 +254,8 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           <span>Care supervision</span>
         </div>
         <div className="mt-2 text-xs leading-relaxed text-slate-600">
-          Your care is being monitored by the CareConnect desk for continuity and safety.
+          Your care is being monitored by the CareConnect desk for continuity
+          and safety.
         </div>
       </div>
     </div>

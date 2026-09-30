@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import type { Elder, HomeAssessment } from "../types";
 import { api } from "../services/api";
 import { useAuth } from "./AuthContext";
@@ -50,9 +56,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (list.length > 0) {
           const targetId = preferredElderId || activeElder?.id;
-          const matched = targetId
-            ? list.find((e) => e.id === targetId)
-            : null;
+          const matched = targetId ? list.find((e) => e.id === targetId) : null;
           const chosen = matched || list[0];
           setActiveElder(chosen);
           return list;

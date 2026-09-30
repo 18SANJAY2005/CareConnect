@@ -1,5 +1,5 @@
-import React from 'react';
-import type { CareAssignment } from '../../types';
+import React from "react";
+import type { CareAssignment } from "../../types";
 import {
   UserCheck,
   Star,
@@ -11,7 +11,7 @@ import {
   ReceiptIndianRupee,
   RefreshCw,
   PhoneCall,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface ActiveCareCardProps {
   assignment: CareAssignment;
@@ -36,7 +36,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
     ? Array.isArray(cg.languages)
       ? cg.languages
       : cg.languages
-          .split(',')
+          .split(",")
           .map((language) => language.trim())
           .filter(Boolean)
     : [];
@@ -45,13 +45,13 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
     ? Array.isArray(cg.specializations)
       ? cg.specializations
       : cg.specializations
-          .split(',')
+          .split(",")
           .map((specialization) => specialization.trim())
           .filter(Boolean)
     : [];
 
   const monthlyRate = assignment.monthlyRate ?? 0;
-  const shiftType = assignment.shiftType ?? 'EIGHT_HOUR_DAY';
+  const shiftType = assignment.shiftType ?? "EIGHT_HOUR_DAY";
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -84,7 +84,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
           </div>
 
           <div className="text-lg font-bold text-white font-mono">
-            ₹{monthlyRate.toLocaleString('en-IN')}
+            ₹{monthlyRate.toLocaleString("en-IN")}
             <span className="text-xs font-normal text-teal-300">/mo</span>
           </div>
         </div>
@@ -96,9 +96,9 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             <img
               src={
                 cg?.avatarUrl ||
-                'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=150'
+                "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=150"
               }
-              alt={cg?.fullName || 'Caregiver'}
+              alt={cg?.fullName || "Caregiver"}
               className="w-20 h-20 rounded-2xl object-cover border-2 border-teal-100 shadow-sm"
             />
 
@@ -111,7 +111,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  {cg?.fullName || 'Assigned Attendant'}
+                  {cg?.fullName || "Assigned Attendant"}
                 </h3>
 
                 <div className="flex items-center gap-3 text-xs text-slate-500 mt-0.5">
@@ -128,7 +128,7 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
 
                   <span className="flex items-center gap-1 text-slate-600">
                     <MapPin className="w-3.5 h-3.5 text-teal-600" />
-                    {cg?.locality || 'Care Zone'}
+                    {cg?.locality || "Care Zone"}
                   </span>
                 </div>
               </div>
@@ -147,9 +147,9 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-teal-50 text-teal-900 border border-teal-200">
                 <Clock className="w-3 h-3 text-teal-700" />
-                {shiftType === 'EIGHT_HOUR_DAY'
-                  ? '8-Hour Day Shift'
-                  : shiftType.replace(/_/g, ' ')}
+                {shiftType === "EIGHT_HOUR_DAY"
+                  ? "8-Hour Day Shift"
+                  : shiftType.replace(/_/g, " ")}
               </span>
 
               {languages.map((lang: string) => (
@@ -166,9 +166,9 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             {specializations.length > 0 && (
               <div className="text-xs text-slate-600 pt-1">
                 <span className="font-semibold text-slate-800">
-                  Specializations:{' '}
+                  Specializations:{" "}
                 </span>
-                {specializations.join(' • ')}
+                {specializations.join(" • ")}
               </div>
             )}
           </div>
@@ -179,15 +179,15 @@ export const ActiveCareCard: React.FC<ActiveCareCardProps> = ({
             onClick={onRequestReplacement}
             className={`min-h-[56px] px-4 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm border ${
               hasActiveReplacement
-                ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
-                : 'bg-rose-50 text-rose-900 border-rose-200 hover:bg-rose-100'
+                ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                : "bg-rose-50 text-rose-900 border-rose-200 hover:bg-rose-100"
             }`}
           >
             <ShieldAlert className="w-4 h-4 text-rose-700" />
             <span>
               {hasActiveReplacement
-                ? 'Track Replacement Request'
-                : 'Request Replacement'}
+                ? "Track Replacement Request"
+                : "Request Replacement"}
             </span>
           </button>
 

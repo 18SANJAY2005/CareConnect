@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Sparkles, Check, HeartPulse, Stethoscope, Sun, Utensils } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Sparkles,
+  Check,
+  HeartPulse,
+  Stethoscope,
+  Sun,
+  Utensils,
+} from "lucide-react";
 
 interface MobileDetailedIntakeProps {
   onComplete: (data: {
@@ -14,30 +23,30 @@ interface MobileDetailedIntakeProps {
 }
 
 const CONDITIONS = [
-  'Hypertension (BP)',
-  'Type 2 Diabetes',
-  'Mild Dementia / Memory Support',
-  'Arthritis / Joint Pain',
-  'Post-Surgery Recovery',
-  'Cardiac History',
-  'Parkinson’s Support',
-  'None / General Age Care',
+  "Hypertension (BP)",
+  "Type 2 Diabetes",
+  "Mild Dementia / Memory Support",
+  "Arthritis / Joint Pain",
+  "Post-Surgery Recovery",
+  "Cardiac History",
+  "Parkinson’s Support",
+  "None / General Age Care",
 ];
 
 const DEVICES = [
-  'Wheelchair',
-  'Walker / Zimmer Frame',
-  'Walking Stick',
-  'BP Monitor',
-  'Glucometer',
-  'None',
+  "Wheelchair",
+  "Walker / Zimmer Frame",
+  "Walking Stick",
+  "BP Monitor",
+  "Glucometer",
+  "None",
 ];
 
 const DIET_OPTIONS = [
-  'Vegetarian',
-  'Non-Vegetarian',
-  'Diabetic / Low-Sodium',
-  'Soft / Pureed Food',
+  "Vegetarian",
+  "Non-Vegetarian",
+  "Diabetic / Low-Sodium",
+  "Soft / Pureed Food",
 ];
 
 export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
@@ -45,13 +54,21 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
   onSkip,
   onBack,
 }) => {
-  const [selectedConditions, setSelectedConditions] = useState<string[]>(['Hypertension (BP)']);
-  const [selectedDevices, setSelectedDevices] = useState<string[]>(['BP Monitor']);
-  const [selectedDiets, setSelectedDiets] = useState<string[]>(['Vegetarian']);
-  const [wakeTime, setWakeTime] = useState('06:30 AM');
-  const [bedTime, setBedTime] = useState('09:30 PM');
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([
+    "Hypertension (BP)",
+  ]);
+  const [selectedDevices, setSelectedDevices] = useState<string[]>([
+    "BP Monitor",
+  ]);
+  const [selectedDiets, setSelectedDiets] = useState<string[]>(["Vegetarian"]);
+  const [wakeTime, setWakeTime] = useState("06:30 AM");
+  const [bedTime, setBedTime] = useState("09:30 PM");
 
-  const toggleItem = (list: string[], setList: (items: string[]) => void, item: string) => {
+  const toggleItem = (
+    list: string[],
+    setList: (items: string[]) => void,
+    item: string,
+  ) => {
     if (list.includes(item)) {
       setList(list.filter((i) => i !== item));
     } else {
@@ -92,9 +109,12 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
         <div className="p-3.5 bg-teal-50/70 border border-teal-200/60 rounded-2xl mb-4 flex items-start gap-2.5">
           <Sparkles className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div>
-            <div className="text-xs font-bold text-primary">Want a more tailored care match?</div>
+            <div className="text-xs font-bold text-primary">
+              Want a more tailored care match?
+            </div>
             <div className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-              Adding a few optional details helps our clinical team match the attendant best suited to your routine.
+              Adding a few optional details helps our clinical team match the
+              attendant best suited to your routine.
             </div>
           </div>
         </div>
@@ -119,11 +139,13 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
                 <button
                   key={cond}
                   type="button"
-                  onClick={() => toggleItem(selectedConditions, setSelectedConditions, cond)}
+                  onClick={() =>
+                    toggleItem(selectedConditions, setSelectedConditions, cond)
+                  }
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-95 flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -147,11 +169,13 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
                 <button
                   key={dev}
                   type="button"
-                  onClick={() => toggleItem(selectedDevices, setSelectedDevices, dev)}
+                  onClick={() =>
+                    toggleItem(selectedDevices, setSelectedDevices, dev)
+                  }
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-95 flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -170,7 +194,9 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
           </label>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <span className="text-[11px] text-slate-500 block mb-1">Wake up around</span>
+              <span className="text-[11px] text-slate-500 block mb-1">
+                Wake up around
+              </span>
               <input
                 type="text"
                 value={wakeTime}
@@ -180,7 +206,9 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
               />
             </div>
             <div>
-              <span className="text-[11px] text-slate-500 block mb-1">Bed time around</span>
+              <span className="text-[11px] text-slate-500 block mb-1">
+                Bed time around
+              </span>
               <input
                 type="text"
                 value={bedTime}
@@ -205,11 +233,13 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
                 <button
                   key={diet}
                   type="button"
-                  onClick={() => toggleItem(selectedDiets, setSelectedDiets, diet)}
+                  onClick={() =>
+                    toggleItem(selectedDiets, setSelectedDiets, diet)
+                  }
                   className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition active:scale-95 flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      ? "bg-primary text-white border-primary shadow-sm"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -242,4 +272,3 @@ export const MobileDetailedIntake: React.FC<MobileDetailedIntakeProps> = ({
     </div>
   );
 };
-

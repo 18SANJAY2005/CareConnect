@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Video, Clock, ExternalLink, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
-import type { Caregiver, IntroCall } from '../../../types';
+import React, { useState, useEffect } from "react";
+import {
+  Video,
+  Clock,
+  ExternalLink,
+  CheckCircle2,
+  ShieldCheck,
+  AlertCircle,
+} from "lucide-react";
+import type { Caregiver, IntroCall } from "../../../types";
 
 interface JitsiCallViewProps {
   introCall: IntroCall;
@@ -33,7 +40,7 @@ export const JitsiCallView: React.FC<JitsiCallViewProps> = ({
   const formatTimer = (secs: number) => {
     const mins = Math.floor(secs / 60);
     const remainingSecs = secs % 60;
-    return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -57,7 +64,10 @@ export const JitsiCallView: React.FC<JitsiCallViewProps> = ({
               Introductory Call with {caregiver.full_name}
             </h3>
             <p className="text-xs text-on-surface-variant">
-              Room ID: <code className="bg-surface-container px-1.5 py-0.5 rounded text-[11px] font-mono">{introCall.room_id}</code>
+              Room ID:{" "}
+              <code className="bg-surface-container px-1.5 py-0.5 rounded text-[11px] font-mono">
+                {introCall.room_id}
+              </code>
             </p>
           </div>
         </div>
@@ -87,7 +97,9 @@ export const JitsiCallView: React.FC<JitsiCallViewProps> = ({
               Ready to meet {caregiver.full_name}?
             </h4>
             <p className="text-sm text-slate-300 max-w-md">
-              Your moderated Jitsi Meet video connection is configured and waiting. You will have 10 minutes to discuss your elder's care routine.
+              Your moderated Jitsi Meet video connection is configured and
+              waiting. You will have 10 minutes to discuss your elder's care
+              routine.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
@@ -132,7 +144,8 @@ export const JitsiCallView: React.FC<JitsiCallViewProps> = ({
         <div className="flex items-center space-x-2 text-xs text-on-surface-variant">
           <AlertCircle className="w-4 h-4 text-secondary flex-shrink-0" />
           <span>
-            Satisfied with the conversation? Complete the call to unlock your 7-day care trial advance deposit.
+            Satisfied with the conversation? Complete the call to unlock your
+            7-day care trial advance deposit.
           </span>
         </div>
 

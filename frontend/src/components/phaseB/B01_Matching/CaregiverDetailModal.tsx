@@ -1,6 +1,14 @@
-import React from 'react';
-import { X, ShieldCheck, Star, MapPin, Award, CheckCircle2, HeartHandshake } from 'lucide-react';
-import type { CaregiverMatchItem } from '../../../types';
+import React from "react";
+import {
+  X,
+  ShieldCheck,
+  Star,
+  MapPin,
+  Award,
+  CheckCircle2,
+  HeartHandshake,
+} from "lucide-react";
+import type { CaregiverMatchItem } from "../../../types";
 
 interface CaregiverDetailModalProps {
   matchItem: CaregiverMatchItem;
@@ -21,7 +29,7 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
 
   const skills = caregiver.skills
     ? caregiver.skills
-        .split(',')
+        .split(",")
         .map((skill) => skill.trim())
         .filter(Boolean)
     : [];
@@ -72,7 +80,8 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
 
                 <span className="flex items-center">
                   <Star className="w-4 h-4 text-amber-500 fill-amber-500 mr-1" />
-                  <strong>{caregiver.rating.toFixed(2)}</strong> ({caregiver.review_count ?? 0} verified reviews)
+                  <strong>{caregiver.rating.toFixed(2)}</strong> (
+                  {caregiver.review_count ?? 0} verified reviews)
                 </span>
               </div>
             </div>
@@ -86,20 +95,32 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg bg-surface-card border border-outline-light/30">
                 <ShieldCheck className="w-5 h-5 text-tertiary mb-1.5" />
-                <p className="text-xs font-bold text-on-surface">Police Verification</p>
-                <p className="text-[11px] text-on-surface-variant">Cleared & Verified by Local Authority</p>
+                <p className="text-xs font-bold text-on-surface">
+                  Police Verification
+                </p>
+                <p className="text-[11px] text-on-surface-variant">
+                  Cleared & Verified by Local Authority
+                </p>
               </div>
 
               <div className="p-3 rounded-lg bg-surface-card border border-outline-light/30">
                 <Award className="w-5 h-5 text-primary mb-1.5" />
-                <p className="text-xs font-bold text-on-surface">Clinical Credential</p>
-                <p className="text-[11px] text-on-surface-variant">Geriatric Care Certified</p>
+                <p className="text-xs font-bold text-on-surface">
+                  Clinical Credential
+                </p>
+                <p className="text-[11px] text-on-surface-variant">
+                  Geriatric Care Certified
+                </p>
               </div>
 
               <div className="p-3 rounded-lg bg-surface-card border border-outline-light/30">
                 <CheckCircle2 className="w-5 h-5 text-secondary mb-1.5" />
-                <p className="text-xs font-bold text-on-surface">Identity & Address</p>
-                <p className="text-[11px] text-on-surface-variant">Verified & Reference Checked</p>
+                <p className="text-xs font-bold text-on-surface">
+                  Identity & Address
+                </p>
+                <p className="text-[11px] text-on-surface-variant">
+                  Verified & Reference Checked
+                </p>
               </div>
             </div>
           </div>
@@ -110,7 +131,8 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
             </h4>
 
             <p className="text-sm text-on-surface-variant leading-relaxed bg-surface/60 p-4 rounded-xl border border-outline-light/30">
-              {caregiver.bio || 'Professional elder-care attendant with verified caregiving experience.'}
+              {caregiver.bio ||
+                "Professional elder-care attendant with verified caregiving experience."}
             </p>
           </div>
 
@@ -147,12 +169,14 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
 
         <div className="sticky bottom-0 bg-surface-card p-4 sm:p-6 border-t border-outline-light/40 flex items-center justify-between space-x-4">
           <div>
-            <span className="text-xs text-on-surface-variant block">Deposit Shift Rate</span>
+            <span className="text-xs text-on-surface-variant block">
+              Deposit Shift Rate
+            </span>
 
             <span className="text-xl font-extrabold text-primary font-heading">
               ₹{caregiver.daily_rate ?? 0}
               <span className="text-xs font-normal text-on-surface-variant">
-                {' '}
+                {" "}
                 / 10-Hr Day
               </span>
             </span>

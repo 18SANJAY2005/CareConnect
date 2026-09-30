@@ -1,19 +1,30 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User } from '../types';
-import { api } from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import type { User } from "../types";
+import { api } from "../services/api";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  loginWithOtp: (phone: string, otp: string, fullName?: string, email?: string) => Promise<User>;
-  loginWithGoogle: (idToken: string, fullName?: string, email?: string) => Promise<User>;
+  loginWithOtp: (
+    phone: string,
+    otp: string,
+    fullName?: string,
+    email?: string,
+  ) => Promise<User>;
+  loginWithGoogle: (
+    idToken: string,
+    fullName?: string,
+    email?: string,
+  ) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -30,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('careconnect_token');
+    const token = localStorage.getItem("careconnect_token");
     if (token) {
       refreshUser();
     } else {
@@ -38,13 +49,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const loginWithOtp = async (phone: string, otp: string, fullName?: string, email?: string): Promise<User> => {
+  const loginWithOtp = async (
+    phone: string,
+    otp: string,
+    fullName?: string,
+    email?: string,
+  ): Promise<User> => {
     const res = await api.verifyOtp(phone, otp, fullName, email);
     setUser(res.user);
     return res.user;
   };
 
-  const loginWithGoogle = async (idToken: string, fullName?: string, email?: string): Promise<User> => {
+  const loginWithGoogle = async (
+    idToken: string,
+    fullName?: string,
+    email?: string,
+  ): Promise<User> => {
     const res = await api.loginWithGoogle(idToken, fullName, email);
     setUser(res.user);
     return res.user;
@@ -56,7 +76,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, loginWithOtp, loginWithGoogle, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        loginWithOtp,
+        loginWithGoogle,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -65,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
