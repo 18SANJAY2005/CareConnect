@@ -5,8 +5,6 @@ import {
   Activity,
   HeartPulse,
   Pill,
-  Users,
-  Utensils,
   Eye,
 } from "lucide-react";
 
@@ -42,18 +40,6 @@ const CARE_OPTIONS: CareOption[] = [
     label: "Medication Reminders",
     desc: "Timely medicine support according to instructions",
     icon: Pill,
-  },
-  {
-    id: "COMPANIONSHIP",
-    label: "Companionship",
-    desc: "Conversation, emotional support, and daily connection",
-    icon: Users,
-  },
-  {
-    id: "DAILY_ASSISTANCE",
-    label: "Daily Assistance",
-    desc: "Meals, personal care, hygiene, and dressing support",
-    icon: Utensils,
   },
   {
     id: "MONITORING",
@@ -192,3 +178,5 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
     </div>
   );
 };
+
+

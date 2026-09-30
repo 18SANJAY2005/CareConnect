@@ -47,11 +47,12 @@ import {
   ArrowRight,
   Loader2,
   RotateCw,
+  LogOut,
 } from "lucide-react";
 import { usePwaNavigation } from "./hooks/usePwaNavigation";
 
 const AppContent: React.FC = () => {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
   const { elders, activeElder, setActiveElder, refreshElders } =
     useOnboarding();
 
@@ -401,6 +402,7 @@ const AppContent: React.FC = () => {
                 setOnboardingStep("BASIC");
               }}
               onBack={goBack}
+              onLogout={elders.length === 0 ? logout : undefined}
             />
           )}
 
@@ -544,7 +546,7 @@ const AppContent: React.FC = () => {
           onAddElder={onboardingStep === null ? () => {
             setDraftRecipient(null);
             setDraftBasic({ name: "", age: 0, gender: "FEMALE" });
-            setOnboardingStep("WHO_IS_CARE_FOR");
+            setOnboardingStep("WHO");
           } : undefined}
           userName={user?.fullName || "Client"}
         />
@@ -605,6 +607,14 @@ const AppContent: React.FC = () => {
                       <span>Load Demo Active Care (Kalyani Ammal)</span>
                     </>
                   )}
+                </button>
+
+                <button
+                  onClick={logout}
+                  className="w-full min-h-[48px] bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 active:scale-98 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log Out</span>
                 </button>
               </div>
             </div>
@@ -699,6 +709,10 @@ export function App() {
 }
 
 export default App;
+
+
+
+
 
 
 
