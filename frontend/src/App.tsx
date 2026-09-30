@@ -541,6 +541,11 @@ const AppContent: React.FC = () => {
             if (chosen) setActiveElder(chosen);
           }}
           onOpenSos={() => setIsSosOpen(true)}
+          onAddElder={onboardingStep === null ? () => {
+            setDraftRecipient(null);
+            setDraftBasic({ name: "", age: 0, gender: "FEMALE" });
+            setOnboardingStep("WHO_IS_CARE_FOR");
+          } : undefined}
           userName={user?.fullName || "Client"}
         />
 
@@ -694,3 +699,6 @@ export function App() {
 }
 
 export default App;
+
+
+

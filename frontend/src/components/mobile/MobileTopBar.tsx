@@ -9,6 +9,7 @@ interface MobileTopBarProps {
   activeElder?: Elder | null;
   onSelectElder?: (elderId: string) => void;
   onOpenSos: () => void;
+  onAddElder?: () => void;
   title?: string;
   userName?: string;
 }
@@ -18,6 +19,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
   elders = [],
   activeElder,
   onSelectElder,
+  onAddElder,
   onOpenSos,
   title,
 }) => {
@@ -36,7 +38,17 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {activePortal === "FAMILY" && elders.length > 1 && (
+          {activePortal === "FAMILY" && onAddElder && (
+            <button
+              onClick={onAddElder}
+              className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-50 text-primary border border-teal-100 shadow-sm transition hover:bg-teal-100"
+              title="Add New Care Request"
+              aria-label="Add New Care Request"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            </button>
+          )}
+          {activePortal === "FAMILY" && elders.length > 0 && (
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -90,3 +102,4 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
     </header>
   );
 };
+
