@@ -95,11 +95,8 @@ export const MobileMatchmakingScreen: React.FC<
       const asg = await api.createAssignment({
         elder_id: currentElder.id,
         caregiver_id: Number(cgId) || 1,
-          sponsor_id: currentElder.familyId || 'sponsor',
-          shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
-        sponsor_id: currentElder.familyId || "sponsor",
-        shift_type: "12_HOURS_DAY",
->>>>>>> 4b4fff9 (feat: Add phone number to elder profile and UI)
+        sponsor_id: currentElder.familyId || 'sponsor',
+        shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
       });
       const id = Number(asg.id) || 1;
       setAssignmentId(id);
@@ -883,4 +880,5 @@ export const MobileMatchmakingScreen: React.FC<
     </div>
   );
 };
+
 
