@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, ArrowRight, Sparkles, Clock, Globe } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Clock, Globe, Calendar } from "lucide-react";
 
 export type CareDuration =
   | "EIGHT_HOUR_DAY"
@@ -10,6 +10,8 @@ export type CareDuration =
 export interface PreferenceData {
   languages: string[];
   primaryLanguage: string;
+  startDate?: string;
+  endDate?: string;
   careDuration: CareDuration;
   preferredStartTime?: string;
   preferredEndTime?: string;
@@ -23,6 +25,8 @@ interface MobilePreferencesProps {
   initialPreferences?: {
     languages?: string[];
     primaryLanguage?: string;
+    startDate?: string;
+    endDate?: string;
     careDuration?: CareDuration;
     shiftDuration?: string;
     preferredStartTime?: string;
@@ -87,6 +91,10 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
   const [careDuration, setCareDuration] = useState<CareDuration>(
     resolveInitialDuration(),
   );
+
+  const [startDate, setStartDate] = useState<string>(initialPreferences?.startDate || "");
+  const [endDate, setEndDate] = useState<string>(initialPreferences?.endDate || "");
+
   const [preferredStartTime, setPreferredStartTime] = useState<string>(
     initialPreferences?.preferredStartTime ||
       initialPreferences?.startTime ||
@@ -121,6 +129,8 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
     return {
       languages: finalLangs,
       primaryLanguage: finalLangs[0] || "English",
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       careDuration,
       preferredStartTime:
         careDuration === "FLEXIBLE" ? preferredStartTime : undefined,
@@ -131,6 +141,12 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
   };
 
   const handleFinish = () => {
+
+    if (!startDate || !endDate) {
+      setTimingError("Please select both a start date and an end date.");
+      return;
+    }
+
     if (careDuration === "FLEXIBLE") {
       if (!preferredStartTime || !preferredEndTime) {
         setTimingError(
@@ -218,6 +234,58 @@ export const MobilePreferences: React.FC<MobilePreferencesProps> = ({
               />
             </div>
           )}
+        </div>
+
+        
+        {/* Care Period */}
+        <div>
+          <label className="block text-sm font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+            <Calendar className="w-4 h-4 text-primary" />
+            <span>Care Period</span>
+          </label>
+          <div className="p-4 rounded-2xl border-2 border-slate-200 bg-white space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  min={new Date().toISOString().split("T")[0]}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setTimingError(null);
+                  }}
+                  className="w-full h-11 px-2.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold text-xs focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setTimingError(null);
+                  }}
+                  className="w-full h-11 px-2.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-bold text-xs focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                />
+              </div>
+            </div>
+            
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500">Duration</span>
+              <span className="text-sm font-bold text-slate-800">
+                {startDate && endDate && !isNaN(new Date(startDate).getTime()) && !isNaN(new Date(endDate).getTime()) && new Date(endDate) >= new Date(startDate)
+                  ? `${Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1} days`
+                  : "--"}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Care Duration */}
