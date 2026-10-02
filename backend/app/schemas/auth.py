@@ -11,6 +11,7 @@ class UserRole(str):
 class SendOtpRequest(BaseModel):
     phone: str
     channel: str = "WHATSAPP"
+    countryCode: Optional[str] = None
 
 class SendOtpResponse(BaseModel):
     success: bool
@@ -23,6 +24,7 @@ class VerifyOtpRequest(BaseModel):
     otp: str
     fullName: Optional[str] = "Family Sponsor"
     email: Optional[str] = None
+    countryCode: Optional[str] = None
 
 class GoogleAuthRequest(BaseModel):
     idToken: str

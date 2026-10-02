@@ -11,19 +11,24 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/otp/send", response_model=SendOtpResponse, status_code=status.HTTP_200_OK)
 async def send_otp(payload: SendOtpRequest):
-    """Dispatch OTP via WhatsApp or SMS to sponsor's mobile number."""
-    result = AuthService.send_otp(phone=payload.phone, channel=payload.channel)
+    """Dispatch OTP via WhatsApp or SMS to mobile number with strict phone validation."""
+    result = AuthService.send_otp(
+        phone=payload.phone,
+        channel=payload.channel,
+        country_code=payload.countryCode
+    )
     return result
 
 @router.post("/otp/verify", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def verify_otp(payload: VerifyOtpRequest, db: AsyncSession = Depends(get_db)):
-    """Verify submitted OTP and authenticate or register family sponsor."""
+    """Verify submitted OTP and authenticate or register family sponsor/caregiver."""
     result = await AuthService.verify_otp_and_login(
         db=db,
         phone=payload.phone,
         otp=payload.otp,
         fullName=payload.fullName,
-        email=payload.email
+        email=payload.email,
+        country_code=payload.countryCode
     )
     return result
 

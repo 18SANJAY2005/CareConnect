@@ -71,10 +71,10 @@ async def get_current_caregiver_shift(
             "gender": elder.gender if elder else "FEMALE",
             "mobilityLevel": elder.mobilityLevel if elder else "INDEPENDENT",
             "primaryLanguage": elder.primaryLanguage if elder else "Tamil",
-            "locality": elder_loc.locality if elder_loc else "Adyar, Chennai",
-            "addressLine1": elder_loc.addressLine1 if elder_loc else "14 Gandhi Road",
-            "latitude": elder_loc.latitude if elder_loc else 13.0012,
-            "longitude": elder_loc.longitude if elder_loc else 80.2565
+            "locality": (elder_loc.locality if elder_loc and elder_loc.locality else (elder.locality if elder and getattr(elder, "locality", None) else "Adyar")),
+            "addressLine1": (elder_loc.addressLine1 if elder_loc and elder_loc.addressLine1 and elder_loc.addressLine1 != "Verified Residence" else (elder.address if elder and getattr(elder, "address", None) else "14/2, 2nd Main Road, Gandhi Nagar")),
+            "latitude": elder_loc.latitude if elder_loc and elder_loc.latitude else 13.0012,
+            "longitude": elder_loc.longitude if elder_loc and elder_loc.longitude else 80.2565
         },
         "latestAttendance": {
             "checkInTime": latest_log.checkInTime.isoformat() if latest_log else None,
@@ -288,6 +288,35 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
         elder.familyId = sponsor.id
         await db.flush()
 
+    # Ensure Kalyani Ammal has the correct verified location in Adyar
+    loc_res = await db.execute(select(ElderLocation).where(ElderLocation.elderId == elder.id))
+    loc = loc_res.scalars().first()
+    if not loc:
+        loc = ElderLocation(
+            elderId=elder.id,
+            addressLine1="14/2, 2nd Main Road, Gandhi Nagar",
+            locality="Adyar",
+            city="Chennai",
+            state="Tamil Nadu",
+            postalCode="600020",
+            latitude=13.0012,
+            longitude=80.2565,
+            verificationStatus="VERIFIED",
+            serviceable=True
+        )
+        db.add(loc)
+    else:
+        loc.addressLine1 = "14/2, 2nd Main Road, Gandhi Nagar"
+        loc.locality = "Adyar"
+        loc.city = "Chennai"
+        loc.state = "Tamil Nadu"
+        loc.postalCode = "600020"
+        loc.latitude = 13.0012
+        loc.longitude = 80.2565
+        loc.verificationStatus = "VERIFIED"
+        loc.serviceable = True
+    await db.flush()
+
     # 4. Create or reset Shift for today
     shift_res = await db.execute(select(CareShift).where(CareShift.elderId == elder.id))
     shift = shift_res.scalars().first()
@@ -320,6 +349,9 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
     else:
         shift.status = "ACTIVE"
         shift.caregiverId = caregiver.id
+        shift.scheduledStart = now.replace(hour=8, minute=0, second=0, microsecond=0)
+        shift.scheduledEnd = now.replace(hour=16, minute=0, second=0, microsecond=0)
+        shift.supervisorNotes = "Elder prefers Tamil communication. Routine vitals at 09:00 and 14:00."
         await db.flush()
 
     await db.commit()

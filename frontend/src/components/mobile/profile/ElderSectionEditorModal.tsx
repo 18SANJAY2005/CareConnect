@@ -278,6 +278,19 @@ export const ElderSectionEditorModal: React.FC<
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Contact Number (Optional)
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="e.g. 9876543210"
+                  className="w-full h-12 px-3.5 bg-white rounded-xl border border-slate-300 text-slate-900 font-medium text-sm focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                />
+              </div>
+
               {onTriggerDelete && (
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div>

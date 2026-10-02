@@ -6,11 +6,22 @@ import { useLanguage } from '../../context/LanguageContext';
 import { caregiverApi } from '../../services/api';
 import type { SupportedLanguage } from '../../types';
 
+const COUNTRY_CODES = [
+  { code: '+91', label: '+91 (India)', digits: 10, placeholder: '9876543210' },
+  { code: '+1', label: '+1 (US/Canada)', digits: 10, placeholder: '2025550143' },
+  { code: '+44', label: '+44 (UK)', digits: 10, placeholder: '7911123456' },
+  { code: '+65', label: '+65 (Singapore)', digits: 8, placeholder: '81234567' },
+  { code: '+971', label: '+971 (UAE)', digits: 9, placeholder: '501234567' },
+];
+
 export const CaregiverLogin: React.FC = () => {
   const { loginWithOtp } = useCaregiverAuth();
   const { language, setLanguage, t } = useLanguage();
 
-  const [phone, setPhone] = useState<string>('+919876500001');
+  const [countryCode, setCountryCode] = useState<string>('+91');
+  const [phoneNumber, setPhoneNumber] = useState<string>('9876500001');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
   const [otp, setOtp] = useState<string>('123456');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [loading, setLoading] = useState<boolean>(false);
@@ -18,14 +29,75 @@ export const CaregiverLogin: React.FC = () => {
   const [info, setInfo] = useState<string | null>(null);
   const [seeding, setSeeding] = useState<boolean>(false);
 
+  const validatePhone = (rawPhone: string, code: string): string | null => {
+    const trimmed = rawPhone.trim();
+    if (!trimmed) {
+      return 'Mobile number is required.';
+    }
+    const selected = COUNTRY_CODES.find((c) => c.code === code) || { digits: 10 };
+    if (trimmed.length !== selected.digits) {
+      if (code === '+91') {
+        return 'Please enter a valid 10-digit Indian mobile number.';
+      }
+      return `Please enter a valid ${selected.digits}-digit mobile number.`;
+    }
+    return null;
+  };
+
+  const handleCountryCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newCode = e.target.value;
+    setCountryCode(newCode);
+    const selected = COUNTRY_CODES.find((c) => c.code === newCode) || { digits: 10 };
+    const truncated = phoneNumber.slice(0, selected.digits);
+    setPhoneNumber(truncated);
+    if (truncated.length > 0 && truncated.length !== selected.digits) {
+      if (newCode === '+91') {
+        setPhoneError('Please enter a valid 10-digit Indian mobile number.');
+      } else {
+        setPhoneError(`Please enter a valid ${selected.digits}-digit mobile number.`);
+      }
+    } else {
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawVal = e.target.value;
+    // Reject non-numeric characters: strictly numbers only
+    const digitsOnly = rawVal.replace(/\D/g, '');
+    const selected = COUNTRY_CODES.find((c) => c.code === countryCode) || { digits: 10 };
+    // Prevent additional digits beyond allowed max
+    const truncated = digitsOnly.slice(0, selected.digits);
+    setPhoneNumber(truncated);
+
+    if (truncated.length > 0 && truncated.length < selected.digits) {
+      if (countryCode === '+91') {
+        setPhoneError('Please enter a valid 10-digit Indian mobile number.');
+      } else {
+        setPhoneError(`Please enter a valid ${selected.digits}-digit mobile number.`);
+      }
+    } else {
+      setPhoneError(null);
+    }
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
+
+    const validationErr = validatePhone(phoneNumber, countryCode);
+    if (validationErr) {
+      setPhoneError(validationErr);
+      return;
+    }
+    setPhoneError(null);
     setLoading(true);
 
+    const fullPhone = `${countryCode}${phoneNumber}`;
+
     try {
-      const res = await caregiverApi.sendOtp(phone);
+      const res = await caregiverApi.sendOtp(fullPhone, 'WHATSAPP', countryCode);
       if (res.success) {
         setStep('OTP');
         setInfo(res.dev_otp ? `Verification code sent. Dev OTP: ${res.dev_otp}` : 'Verification code sent via WhatsApp/SMS.');
@@ -45,8 +117,10 @@ export const CaregiverLogin: React.FC = () => {
     setInfo(null);
     setLoading(true);
 
+    const fullPhone = `${countryCode}${phoneNumber}`;
+
     try {
-      const result = await loginWithOtp(phone, otp);
+      const result = await loginWithOtp(fullPhone, otp, countryCode);
       if (!result.success) {
         setError(result.error || 'Verification failed.');
       }
@@ -58,11 +132,13 @@ export const CaregiverLogin: React.FC = () => {
   };
 
   const handleQuickDemoFill = () => {
-    setPhone('+919876500001');
+    setCountryCode('+91');
+    setPhoneNumber('9876500001');
+    setPhoneError(null);
     setOtp('123456');
     setStep('OTP');
     setError(null);
-    setInfo('Loaded demo caregiver credentials: Meenakshi Sundaram (+919876500001)');
+    setInfo('Loaded demo caregiver credentials: Meenakshi Sundaram (+91 9876500001)');
   };
 
   const handleSeedDemo = async () => {
@@ -128,31 +204,81 @@ export const CaregiverLogin: React.FC = () => {
 
           {step === 'PHONE' ? (
             <form onSubmit={handleSendOtp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                  Registered Caregiver Mobile
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Phone className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <div className="grid grid-cols-12 gap-2">
+                  {/* Country Code Field */}
+                  <div className="col-span-4">
+                    <label 
+                      htmlFor="caregiver-country-code"
+                      className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide truncate"
+                    >
+                      Country Code
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="caregiver-country-code"
+                        value={countryCode}
+                        onChange={handleCountryCodeChange}
+                        className="w-full px-3 py-3 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 bg-slate-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all cursor-pointer"
+                      >
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.code}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <input
-                    type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+919876500001"
-                    className="w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-medium"
-                  />
+
+                  {/* Phone Number Field */}
+                  <div className="col-span-8">
+                    <label 
+                      htmlFor="caregiver-phone-number"
+                      className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide"
+                    >
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <input
+                        id="caregiver-phone-number"
+                        type="tel"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        required
+                        maxLength={countryCode === '+91' ? 10 : 15}
+                        value={phoneNumber}
+                        onChange={handlePhoneNumberChange}
+                        placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
+                        className={`w-full pl-10 pr-3 py-3 border ${
+                          phoneError ? 'border-red-400 bg-red-50/20' : 'border-slate-300'
+                        } rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-medium tracking-wide`}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1.5">
-                  Enter your 10-digit registered number with +91 country code.
-                </p>
+
+                {/* Inline Validation Error Message */}
+                {phoneError && (
+                  <p className="text-xs text-red-600 mt-1.5 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{phoneError}</span>
+                  </p>
+                )}
+                {!phoneError && (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {countryCode === '+91'
+                      ? 'Enter 10-digit Indian mobile number.'
+                      : 'Enter registered mobile number.'}
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!phoneError}
                 className="w-full py-3.5 px-4 min-h-[52px] bg-primary hover:bg-primary-hover text-white font-bold text-sm rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2 touch-action-manipulation"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Send Verification OTP'}
@@ -188,7 +314,7 @@ export const CaregiverLogin: React.FC = () => {
                   />
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1.5 text-center">
-                  Sent to {phone} (Default test OTP: 123456)
+                  Sent to {countryCode} {phoneNumber} (Default test OTP: 123456)
                 </p>
               </div>
 

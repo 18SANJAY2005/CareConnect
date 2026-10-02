@@ -107,3 +107,25 @@ export interface VitalReading {
 }
 
 export type SupportedLanguage = 'ta' | 'en' | 'te';
+
+export type KycDocumentType =
+  | 'AADHAAR'
+  | 'PAN'
+  | 'PASSPORT'
+  | 'DRIVING_LICENCE'
+  | 'VOTER_ID'
+  | 'OTHER';
+
+export type KycVerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+export interface CaregiverKyc {
+  id: string;
+  caregiver_id: string;
+  document_type: KycDocumentType;
+  masked_document_number: string;
+  document_storage_reference?: string | null;
+  verification_status: KycVerificationStatus;
+  rejection_reason?: string | null;
+  created_at: string;
+  updated_at: string;
+}

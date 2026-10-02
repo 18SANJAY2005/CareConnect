@@ -8,6 +8,7 @@ from app.models.assessment import HomeAssessmentRequest
 # ============================================================
 
 from app.models.caregiver import Caregiver
+from app.models.caregiver_kyc import CaregiverKYC
 from app.models.matching import CaregiverMatchResult
 from app.models.assignment import CareAssignment
 from app.models.call import IntroCall

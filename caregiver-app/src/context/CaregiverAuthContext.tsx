@@ -6,7 +6,7 @@ interface CaregiverAuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  loginWithOtp: (phone: string, otp: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithOtp: (phone: string, otp: string, countryCode?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -51,9 +51,9 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkCurrentUser();
   }, []);
 
-  const loginWithOtp = async (phone: string, otp: string): Promise<{ success: boolean; error?: string }> => {
+  const loginWithOtp = async (phone: string, otp: string, countryCode?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await caregiverApi.verifyOtp(phone, otp);
+      const result = await caregiverApi.verifyOtp(phone, otp, countryCode);
       if (result.user.role !== 'CAREGIVER' && result.user.role !== 'OPS_MANAGER' && result.user.role !== 'ADMIN') {
         caregiverApi.clearToken();
         setToken(null);

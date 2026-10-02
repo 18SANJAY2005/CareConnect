@@ -7,16 +7,18 @@ from fastapi import HTTPException, status
 from app.models.user import User
 from app.core.security import create_access_token
 from app.core.config import settings
+from app.core.phone_validator import validate_and_normalize_phone
 
 # In-memory OTP storage: phone -> {code, expires_at, send_count, verify_count, last_sent}
 _otp_store: Dict[str, Dict[str, Any]] = {}
 
 class AuthService:
     @staticmethod
-    def send_otp(phone: str, channel: str = "WHATSAPP") -> Dict[str, Any]:
-        """Generate and dispatch OTP with rate limiting."""
+    def send_otp(phone: str, channel: str = "WHATSAPP", country_code: Optional[str] = None) -> Dict[str, Any]:
+        """Generate and dispatch OTP with rate limiting and strict phone validation."""
+        normalized_phone = validate_and_normalize_phone(phone, country_code)
         now = time.time()
-        record = _otp_store.get(phone, {
+        record = _otp_store.get(normalized_phone, {
             "send_count": 0,
             "verify_count": 0,
             "first_send_at": now,
@@ -41,12 +43,12 @@ class AuthService:
         record["expires_at"] = now + 600  # 10 minute expiry
         record["send_count"] += 1
         record["verify_count"] = 0
-        _otp_store[phone] = record
+        _otp_store[normalized_phone] = record
 
         return {
             "success": True,
-            "message": f"Verification code sent via {channel} to {phone}",
-            "phone": phone,
+            "message": f"Verification code sent via {channel} to {normalized_phone}",
+            "phone": normalized_phone,
             "dev_otp": code if settings.ENVIRONMENT in ["development", "test"] else None
         }
 
@@ -56,10 +58,12 @@ class AuthService:
         phone: str,
         otp: str,
         fullName: Optional[str] = "Family Sponsor",
-        email: Optional[str] = None
+        email: Optional[str] = None,
+        country_code: Optional[str] = None
     ) -> Dict[str, Any]:
         """Verify OTP code and authenticate or create user."""
-        record = _otp_store.get(phone)
+        normalized_phone = validate_and_normalize_phone(phone, country_code)
+        record = _otp_store.get(normalized_phone)
         now = time.time()
 
         # Allow '123456' as master test code in dev/test, otherwise require active record
@@ -90,18 +94,18 @@ class AuthService:
                 )
 
         # Clear OTP upon successful verification
-        if phone in _otp_store:
-            del _otp_store[phone]
+        if normalized_phone in _otp_store:
+            del _otp_store[normalized_phone]
 
         # Query or create user
-        result = await db.execute(select(User).where(User.phone == phone))
+        result = await db.execute(select(User).where(User.phone == normalized_phone))
         user = result.scalars().first()
 
         if not user:
             user = User(
                 role="FAMILY_SPONSOR",
                 fullName=fullName or "Family Sponsor",
-                phone=phone,
+                phone=normalized_phone,
                 email=email,
                 authProvider="PHONE_OTP"
             )

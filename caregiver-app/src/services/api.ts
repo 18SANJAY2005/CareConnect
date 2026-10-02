@@ -3,6 +3,7 @@ import type {
   CareTask,
   User,
   VitalReading,
+  CaregiverKyc,
 } from '../types';
 import { offlineQueue } from './offlineQueue';
 
@@ -62,22 +63,22 @@ class CaregiverApiService {
   }
 
   // --- Auth ---
-  async sendOtp(phone: string, channel: string = 'WHATSAPP') {
+  async sendOtp(phone: string, channel: string = 'WHATSAPP', countryCode?: string) {
     return this.request<{ success: boolean; message: string; phone: string; dev_otp?: string }>(
       '/auth/otp/send',
       {
         method: 'POST',
-        body: JSON.stringify({ phone, channel }),
+        body: JSON.stringify({ phone, channel, countryCode }),
       }
     );
   }
 
-  async verifyOtp(phone: string, otp: string) {
+  async verifyOtp(phone: string, otp: string, countryCode?: string) {
     const res = await this.request<{ access_token: string; token_type: string; user: User }>(
       '/auth/otp/verify',
       {
         method: 'POST',
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone, otp, countryCode }),
       }
     );
     if (res.access_token) {
@@ -255,6 +256,38 @@ class CaregiverApiService {
     });
   }
 
+  // --- Caregiver KYC & Identity Verification ---
+  async getMyKyc(): Promise<CaregiverKyc> {
+    return this.request<CaregiverKyc>('/caregivers/kyc/me', { method: 'GET' });
+  }
+
+  async submitMyKyc(payload: {
+    document_type: string;
+    document_number: string;
+    document_storage_reference?: string;
+  }): Promise<CaregiverKyc> {
+    return this.request<CaregiverKyc>('/caregivers/kyc/me', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getCaregiverKyc(caregiverId: string): Promise<CaregiverKyc> {
+    return this.request<CaregiverKyc>(`/caregivers/kyc/${caregiverId}`, {
+      method: 'GET',
+    });
+  }
+
+  async updateCaregiverKycStatus(
+    caregiverId: string,
+    payload: { verification_status: string; rejection_reason?: string }
+  ): Promise<CaregiverKyc> {
+    return this.request<CaregiverKyc>(`/caregivers/kyc/${caregiverId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // --- Demo Seeding Helper (dev only) ---
   async seedDemoScenario() {
     return this.request<any>('/shifts/seed-demo', { method: 'POST' });
@@ -262,3 +295,4 @@ class CaregiverApiService {
 }
 
 export const caregiverApi = new CaregiverApiService();
+

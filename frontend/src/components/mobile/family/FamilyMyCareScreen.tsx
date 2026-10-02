@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Loader2,
+  Navigation,
 } from "lucide-react";
 import type { Elder } from "../../../types";
 import { api } from "../../../services/api";
@@ -453,6 +454,21 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>Within active primary care corridor</span>
         </div>
+        {currentElder.location && (
+          <a
+            href={
+              currentElder.location.latitude && currentElder.location.longitude
+                ? `https://www.google.com/maps/dir/?api=1&destination=${currentElder.location.latitude},${currentElder.location.longitude}`
+                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${currentElder.location.addressLine1 || ''}, ${currentElder.location.locality || ''}, Chennai`)}`
+            }
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 w-full py-2 bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Open in Google Maps</span>
+          </a>
+        )}
       </div>
 
       {/* 7. Care Coordination Contact */}

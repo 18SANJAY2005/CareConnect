@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { offlineQueue } from '../../services/offlineQueue';
+import { CaregiverKycModal } from '../profile/CaregiverKycModal';
 import type { OfflineQueueItem } from '../../types';
 
 export const SupportScreen: React.FC = () => {
@@ -20,6 +21,7 @@ export const SupportScreen: React.FC = () => {
   const [queueItems, setQueueItems] = useState<OfflineQueueItem[]>([]);
   const [isSimulated, setIsSimulated] = useState<boolean>(offlineQueue.getSimulatedOffline());
   const [syncing, setSyncing] = useState<boolean>(false);
+  const [isKycOpen, setIsKycOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = offlineQueue.subscribe((items) => {
@@ -55,6 +57,28 @@ export const SupportScreen: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto pb-24">
+      {/* Caregiver Identity & KYC Card */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-teal-50 text-primary rounded-xl">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-slate-900">Identity & KYC Verification</h3>
+              <p className="text-[11px] text-slate-500">Government ID & verification status</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsKycOpen(true)}
+            className="px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary-hover transition-colors touch-action-manipulation"
+          >
+            Manage KYC
+          </button>
+        </div>
+      </div>
+
       {/* 24/7 Operations Command Hotline */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
         <div className="flex items-center gap-2.5">
@@ -197,6 +221,10 @@ export const SupportScreen: React.FC = () => {
           </li>
         </ul>
       </div>
+
+      {/* KYC Modal */}
+      <CaregiverKycModal isOpen={isKycOpen} onClose={() => setIsKycOpen(false)} />
     </div>
   );
 };
+

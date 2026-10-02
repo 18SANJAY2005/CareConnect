@@ -19,6 +19,7 @@ import { CheckInModal } from './CheckInModal';
 import { CheckOutModal } from './CheckOutModal';
 import { SosModal } from './SosModal';
 import { caregiverApi } from '../../services/api';
+import { getGoogleMapsNavigationUrl } from '../../utils/mapUtils';
 import type { ShiftDetails } from '../../types';
 
 interface TodayScreenProps {
@@ -154,10 +155,10 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
             <div className="text-slate-500 text-[11px] mt-0.5 leading-snug">{elder.addressLine1}</div>
           </div>
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${elder.latitude},${elder.longitude}`}
+            href={getGoogleMapsNavigationUrl(elder)}
             target="_blank"
             rel="noreferrer"
-            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1"
+            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 rounded-lg text-[11px] font-semibold flex items-center gap-1 touch-action-manipulation"
           >
             <Navigation className="w-3 h-3" />
             <span>Map</span>

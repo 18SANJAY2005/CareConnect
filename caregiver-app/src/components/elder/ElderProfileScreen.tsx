@@ -11,6 +11,7 @@ import {
   AlertCircle 
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { getGoogleMapsNavigationUrl } from '../../utils/mapUtils';
 import type { ShiftDetails } from '../../types';
 
 interface ElderProfileScreenProps {
@@ -92,7 +93,7 @@ export const ElderProfileScreen: React.FC<ElderProfileScreenProps> = ({ shiftDet
         </div>
 
         <a
-          href={`https://www.google.com/maps/search/?api=1&query=${elder.latitude},${elder.longitude}`}
+          href={getGoogleMapsNavigationUrl(elder)}
           target="_blank"
           rel="noreferrer"
           className="w-full py-3 px-3 min-h-[48px] bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors touch-action-manipulation"
