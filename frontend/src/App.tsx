@@ -36,10 +36,9 @@ import { FamilyUpdatesScreen } from "./components/mobile/family/FamilyUpdatesScr
 import { FamilyMessagesScreen } from "./components/mobile/family/FamilyMessagesScreen";
 import { FamilyMoreScreen } from "./components/mobile/family/FamilyMoreScreen";
 
-// Caregiver, Operations & Admin Web Portals
+// Caregiver & Operations Portals
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
 import { MobileOperationsApp } from "./components/mobile/operations/MobileOperationsApp";
-import { AdminPortal } from "./pages/admin/AdminPortal";
 
 import {
   Heart,
@@ -58,7 +57,7 @@ const AppContent: React.FC = () => {
     useOnboarding();
 
   const [activePortal, setActivePortal] = useState<
-    "FAMILY" | "CAREGIVER" | "OPERATIONS" | "ADMIN"
+    "FAMILY" | "CAREGIVER" | "OPERATIONS"
   >("FAMILY");
 
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
@@ -66,32 +65,6 @@ const AppContent: React.FC = () => {
     Boolean(user) ||
     (typeof window !== "undefined" &&
       Boolean(localStorage.getItem("careconnect_token")));
-
-  // Track Admin Web Portal Route (#admin, /admin, or activePortal === 'ADMIN')
-  const [isAdminRoute, setIsAdminRoute] = useState(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.toLowerCase();
-      const path = window.location.pathname.toLowerCase();
-      return hash.startsWith("#admin") || path.startsWith("/admin");
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const handleHashSync = () => {
-      if (typeof window !== "undefined") {
-        const hash = window.location.hash.toLowerCase();
-        const path = window.location.pathname.toLowerCase();
-        setIsAdminRoute(hash.startsWith("#admin") || path.startsWith("/admin"));
-      }
-    };
-    window.addEventListener("hashchange", handleHashSync);
-    window.addEventListener("popstate", handleHashSync);
-    return () => {
-      window.removeEventListener("hashchange", handleHashSync);
-      window.removeEventListener("popstate", handleHashSync);
-    };
-  }, []);
 
   // Centralized PWA Navigation & Browser History synchronization
   const {
@@ -174,7 +147,7 @@ const AppContent: React.FC = () => {
     if (user?.role === "CAREGIVER") {
       setActivePortal("CAREGIVER");
     } else if (user?.role === "OPS_MANAGER" || user?.role === "ADMIN") {
-      setActivePortal("ADMIN");
+      setActivePortal("OPERATIONS");
     }
   }, [user?.role]);
 
@@ -347,11 +320,6 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 0. Admin Web Portal (Desktop-First Dashboard at /#admin or /admin or activePortal === 'ADMIN')
-  if (isAdminRoute || activePortal === "ADMIN") {
-    return <AdminPortal />;
-  }
-
   // 1. Auth Screen Modal (renders when isAuthOpen is true and user is not yet logged in)
   if (isAuthOpen && !user) {
     return (
@@ -387,16 +355,8 @@ const AppContent: React.FC = () => {
             onGetStarted={() => setOnboardingStep("WHO")}
             onSignIn={() => setIsAuthOpen(true, "PHONE")}
             onSelectRole={(role) => {
-              if (role === "OPERATIONS") {
-                setActivePortal("ADMIN");
-                setIsAdminRoute(true);
-                if (typeof window !== "undefined") {
-                  window.location.hash = "#admin";
-                }
-              } else {
-                setActivePortal(role);
-                setIsAuthOpen(true, "PHONE");
-              }
+              setActivePortal(role);
+              setIsAuthOpen(true, "PHONE");
             }}
           />
         </div>
