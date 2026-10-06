@@ -55,8 +55,13 @@ if %ERRORLEVEL% neq 0 (
 )
 
 set "CAREGIVER_DIR=%PROJECT_ROOT%caregiver-app"
+set "ADMIN_DIR=%PROJECT_ROOT%admin-web"
 
-:: Clear any leftover processes on ports 8000, 5173, and 5174
+echo [*] Caregiver Dir: %CAREGIVER_DIR%
+echo [*] Admin Dir    : %ADMIN_DIR%
+echo.
+
+:: Clear any leftover processes on ports 8000, 5173, 5174, and 5175
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING"') do (
     echo [*] Port 8000 is occupied by PID %%a. Freeing port...
     taskkill /f /pid %%a >nul 2>&1
@@ -72,16 +77,24 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5174" ^| findstr "LISTENING
     taskkill /f /pid %%a >nul 2>&1
 )
 
-echo [1/4] Launching FastAPI Backend on Port 8000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5175" ^| findstr "LISTENING"') do (
+    echo [*] Port 5175 is occupied by PID %%a. Freeing port...
+    taskkill /f /pid %%a >nul 2>&1
+)
+
+echo [1/5] Launching FastAPI Backend on Port 8000...
 start "CareConnect Backend" cmd /k "cd /d %BACKEND_DIR% && python run.py"
 
-echo [2/4] Launching Vite Family Frontend on Port 5173...
+echo [2/5] Launching Vite Family Frontend on Port 5173...
 start "CareConnect Family Frontend" cmd /k "cd /d %FRONTEND_DIR% && npm run dev"
 
-echo [3/4] Launching Vite Caregiver PWA on Port 5174...
+echo [3/5] Launching Vite Caregiver PWA on Port 5174...
 start "CareConnect Caregiver PWA" cmd /k "cd /d %CAREGIVER_DIR% && npm run dev"
 
-echo [4/4] Waiting for services to initialize...
+echo [4/5] Launching Vite Admin Portal on Port 5175...
+start "CareConnect Admin Portal" cmd /k "cd /d %ADMIN_DIR% && npm run dev"
+
+echo [5/5] Waiting for services to initialize...
 ping -n 6 127.0.0.1 >nul
 
 echo.
@@ -110,19 +123,28 @@ if %ERRORLEVEL% equ 0 (
     echo   [!] Caregiver PWA is still starting or failed. See Caregiver window.
 )
 
+netstat -ano | findstr ":5175" | findstr "LISTENING" >nul
+if %ERRORLEVEL% equ 0 (
+    echo   [OK] Admin Portal  is LISTENING on http://localhost:5175
+) else (
+    echo   [!] Admin Portal is still starting or failed. See Admin window.
+)
+
 echo.
 echo ===================================================
 echo           CareConnect Platform is Ready!
 echo ===================================================
 echo   - Family PWA      : http://localhost:5173
 echo   - Caregiver PWA   : http://localhost:5174
+echo   - Admin Portal    : http://localhost:5175
 echo   - Backend REST API: http://localhost:8000
 echo   - Swagger Docs    : http://localhost:8000/docs
 echo ===================================================
 echo.
-echo Opening web browsers to Family PWA and Caregiver PWA...
+echo Opening web browsers to Family PWA, Caregiver PWA, and Admin Portal...
 start http://localhost:5173
 start http://localhost:5174
+start http://localhost:5175
 
 echo.
 echo Leave this and the spawned server windows open while using the platform.

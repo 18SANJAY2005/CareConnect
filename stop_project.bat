@@ -21,6 +21,11 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5174" ^| findstr "LISTENING
     taskkill /f /pid %%a 2>nul
 )
 
+echo [*] Terminating Admin Portal processes on port 5175...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5175" ^| findstr "LISTENING"') do (
+    taskkill /f /pid %%a 2>nul
+)
+
 echo [*] Terminating Cloudflare Tunnel processes...
 taskkill /f /im cloudflared.exe 2>nul
 

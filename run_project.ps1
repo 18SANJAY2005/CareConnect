@@ -21,11 +21,13 @@ if (Test-Path "$ScriptDir\backend\run.py") {
 $BackendDir = Join-Path $ProjectRoot "backend"
 $FrontendDir = Join-Path $ProjectRoot "frontend"
 $CaregiverDir = Join-Path $ProjectRoot "caregiver-app"
+$AdminDir = Join-Path $ProjectRoot "admin-web"
 
 Write-Host "[*] Project Root  : $ProjectRoot" -ForegroundColor Gray
 Write-Host "[*] Backend Dir   : $BackendDir" -ForegroundColor Gray
 Write-Host "[*] Frontend Dir  : $FrontendDir" -ForegroundColor Gray
 Write-Host "[*] Caregiver Dir : $CaregiverDir" -ForegroundColor Gray
+Write-Host "[*] Admin Dir     : $AdminDir" -ForegroundColor Gray
 Write-Host ""
 
 # Verify Python
@@ -42,22 +44,25 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Free ports 8000, 5173, and 5174 if occupied by prior or orphaned processes
-Get-NetTCPConnection -LocalPort 8000, 5173, 5174 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+# Free ports 8000, 5173, 5174, and 5175 if occupied by prior or orphaned processes
+Get-NetTCPConnection -LocalPort 8000, 5173, 5174, 5175 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
     Write-Host "[*] Freeing occupied port $($_.LocalPort) (PID: $($_.OwningProcess))..." -ForegroundColor Yellow
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host "[1/4] Starting FastAPI Backend on Port 8000..." -ForegroundColor Green
+Write-Host "[1/5] Starting FastAPI Backend on Port 8000..." -ForegroundColor Green
 Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$BackendDir`" && title CareConnect Backend [FastAPI :8000] && python run.py"
 
-Write-Host "[2/4] Starting Vite Family Frontend on Port 5173..." -ForegroundColor Green
+Write-Host "[2/5] Starting Vite Family Frontend on Port 5173..." -ForegroundColor Green
 Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$FrontendDir`" && title CareConnect Family Frontend [Vite :5173] && npm run dev"
 
-Write-Host "[3/4] Starting Vite Caregiver PWA on Port 5174..." -ForegroundColor Green
+Write-Host "[3/5] Starting Vite Caregiver PWA on Port 5174..." -ForegroundColor Green
 Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$CaregiverDir`" && title CareConnect Caregiver PWA [Vite :5174] && npm run dev"
 
-Write-Host "[4/4] Waiting for servers to initialize..." -ForegroundColor Yellow
+Write-Host "[4/5] Starting Vite Admin Portal on Port 5175..." -ForegroundColor Green
+Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$AdminDir`" && title CareConnect Admin Portal [Vite :5175] && npm run dev"
+
+Write-Host "[5/5] Waiting for servers to initialize..." -ForegroundColor Yellow
 Start-Sleep -Seconds 5
 
 Write-Host ""
@@ -86,15 +91,24 @@ if ($caregiverTest) {
     Write-Host "  [!] Caregiver PWA is still initializing or encountered an error. Check Caregiver window." -ForegroundColor Yellow
 }
 
+$adminTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 5175 -InformationLevel Quiet -WarningAction SilentlyContinue
+if ($adminTest) {
+    Write-Host "  [OK] Admin Portal   is LISTENING on http://localhost:5175" -ForegroundColor Green
+} else {
+    Write-Host "  [!] Admin Portal is still initializing or encountered an error. Check Admin window." -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host "         CareConnect is now running!               " -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host "  - Family PWA       : http://localhost:5173" -ForegroundColor White
 Write-Host "  - Caregiver PWA    : http://localhost:5174" -ForegroundColor White
+Write-Host "  - Admin Portal     : http://localhost:5175" -ForegroundColor White
 Write-Host "  - Backend REST API : http://localhost:8000" -ForegroundColor White
 Write-Host "  - Swagger API Docs : http://localhost:8000/docs" -ForegroundColor White
 Write-Host ""
 
 Start-Process "http://localhost:5173"
 Start-Process "http://localhost:5174"
+Start-Process "http://localhost:5175"
