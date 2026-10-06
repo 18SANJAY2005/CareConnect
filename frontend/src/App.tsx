@@ -146,7 +146,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (user?.role === "CAREGIVER") {
       setActivePortal("CAREGIVER");
-    } else if (user?.role === "OPS_MANAGER" || user?.role === "ADMIN") {
+    } else if (user?.role === "OPS_MANAGER") {
       setActivePortal("OPERATIONS");
     }
   }, [user?.role]);
