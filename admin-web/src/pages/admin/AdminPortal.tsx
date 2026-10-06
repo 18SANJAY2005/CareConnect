@@ -388,15 +388,21 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
               onStatusChange={handleStatusChange}
               onAddElder={onAddElderFromAdmin}
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
           {activeTab === 'CAREGIVERS' && (
-            <AdminCaregiversView caregivers={caregivers} />
+            <AdminCaregiversView
+              caregivers={caregivers}
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+            />
           )}
 
           {activeTab === 'CARE_PLANS' && (
-            <AdminCarePlansView />
+            <AdminCarePlansView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+            />
           )}
 
           {activeTab === 'MAP' && (
@@ -406,6 +412,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               alerts={alerts}
               focusedCoordinates={focusedCoordinates}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
@@ -415,6 +422,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               onResolveAlert={handleResolveAlert}
               onDispatchSupervisor={handleDispatchSupervisor}
               onViewOnMap={handleViewAlertOnMap}
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
         </main>

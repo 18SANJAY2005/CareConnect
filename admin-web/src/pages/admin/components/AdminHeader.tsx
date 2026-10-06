@@ -5,6 +5,7 @@ import {
   Radio,
   Shield,
   LogOut,
+  ArrowLeft,
 } from 'lucide-react';
 import type { AdminTab, AdminMetrics } from '../types';
 
@@ -48,9 +49,28 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header className="sticky top-0 z-20 h-16 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 flex items-center justify-between gap-3 shadow-xs">
       {/* View Title & Breadcrumb */}
       <div className="flex items-center gap-3 min-w-0 shrink-0">
+        {activeTab !== 'OVERVIEW' && (
+          <button
+            onClick={() => onNavigateTab('OVERVIEW')}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 group shadow-2xs"
+            title="Back to Dashboard"
+            aria-label="Back to Dashboard"
+          >
+            <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-teal-700 transition group-hover:-translate-x-0.5" />
+          </button>
+        )}
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
-            <span className="shrink-0">CareConnect HQ</span>
+            {activeTab !== 'OVERVIEW' ? (
+              <button
+                onClick={() => onNavigateTab('OVERVIEW')}
+                className="shrink-0 hover:text-teal-700 transition cursor-pointer"
+              >
+                CareConnect HQ
+              </button>
+            ) : (
+              <span className="shrink-0">CareConnect HQ</span>
+            )}
             <span>/</span>
             <span className="text-teal-700 font-extrabold truncate">{getTabTitle()}</span>
           </div>

@@ -8,14 +8,19 @@ import {
   Award,
   Layers,
   MapPin,
+  ArrowLeft,
 } from 'lucide-react';
 import type { AdminCaregiverItem } from '../types';
 
 interface AdminCaregiversViewProps {
   caregivers: AdminCaregiverItem[];
+  onBackToDashboard?: () => void;
 }
 
-export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({ caregivers }) => {
+export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
+  caregivers,
+  onBackToDashboard,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'BUFFER' | 'ON_DUTY'>('ALL');
@@ -45,13 +50,25 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({ caregi
     <div className="space-y-5 animate-fadeIn pb-12">
       {/* Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-heading font-extrabold text-slate-900">
-            Caregiver Network & Buffer Pool
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Monitor clinical certifications, identity verifications, live shift assignments, and SLA emergency buffer attendants.
-          </p>
+        <div className="flex items-center gap-3.5">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
+              title="Return to Dashboard Overview"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+            </button>
+          )}
+          <div>
+            <h2 className="text-xl font-heading font-extrabold text-slate-900">
+              Caregiver Network & Buffer Pool
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Monitor clinical certifications, identity verifications, live shift assignments, and SLA emergency buffer attendants.
+            </p>
+          </div>
         </div>
 
         {/* Quick Summary Badges */}

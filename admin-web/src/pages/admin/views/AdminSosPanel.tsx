@@ -8,6 +8,7 @@ import {
   Send,
   ShieldCheck,
   AlertCircle,
+  ArrowLeft,
 } from 'lucide-react';
 import type { AdminSosAlert } from '../types';
 import { SupervisorDispatchModal } from '../components/SupervisorDispatchModal';
@@ -17,6 +18,7 @@ interface AdminSosPanelProps {
   onResolveAlert: (alertId: string, resolutionNotes: string) => void;
   onDispatchSupervisor: (alertId: string, supervisorName: string, notes: string) => void;
   onViewOnMap: (lat: number, lng: number) => void;
+  onBackToDashboard?: () => void;
 }
 
 export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
@@ -24,6 +26,7 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
   onResolveAlert,
   onDispatchSupervisor,
   onViewOnMap,
+  onBackToDashboard,
 }) => {
   const [selectedAlertForDispatch, setSelectedAlertForDispatch] = useState<AdminSosAlert | null>(null);
   const [resolvingAlertId, setResolvingAlertId] = useState<string | null>(null);
@@ -49,16 +52,28 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
     <div className="space-y-5 animate-fadeIn pb-12">
       {/* Top Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping" />
-            <h2 className="text-xl font-heading font-extrabold text-slate-900">
-              Emergency SOS & Escalations Desk
-            </h2>
+        <div className="flex items-center gap-3.5">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
+              title="Return to Dashboard Overview"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping" />
+              <h2 className="text-xl font-heading font-extrabold text-slate-900">
+                Emergency SOS & Escalations Desk
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              24/7 centralized safety triage. Immediately dispatch corridor supervisors or coordinate emergency medical services.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            24/7 centralized safety triage. Immediately dispatch corridor supervisors or coordinate emergency medical services.
-          </p>
         </div>
 
         {/* Quick Triage Badges */}

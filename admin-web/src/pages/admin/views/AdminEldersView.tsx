@@ -6,6 +6,7 @@ import {
   MapPin,
   Phone,
   Eye,
+  ArrowLeft,
 } from 'lucide-react';
 import type { AdminElderItem } from '../types';
 
@@ -14,6 +15,7 @@ interface AdminEldersViewProps {
   onSelectElder: (elder: AdminElderItem) => void;
   onStatusChange: (elderId: string, newStatus: 'ACTIVE' | 'PENDING' | 'INACTIVE') => void;
   onAddElder?: () => void;
+  onBackToDashboard?: () => void;
 }
 
 export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
@@ -21,6 +23,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
   onSelectElder,
   onStatusChange,
   onAddElder,
+  onBackToDashboard,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPin, setSelectedPin] = useState('ALL');
@@ -54,13 +57,25 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
     <div className="space-y-5 animate-fadeIn pb-12">
       {/* Top Controls Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-heading font-extrabold text-slate-900">
-            Elders & Family Directory
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage registered care beneficiaries, verify service locations, and assign certified caregivers.
-          </p>
+        <div className="flex items-center gap-3.5">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
+              title="Return to Dashboard Overview"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+            </button>
+          )}
+          <div>
+            <h2 className="text-xl font-heading font-extrabold text-slate-900">
+              Elders & Family Directory
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manage registered care beneficiaries, verify service locations, and assign certified caregivers.
+            </p>
+          </div>
         </div>
 
         {onAddElder && (

@@ -16,6 +16,7 @@ import {
   MapPin,
   AlertTriangle,
   Radio,
+  ArrowLeft,
 } from 'lucide-react';
 import type { AdminElderItem, AdminCaregiverItem, AdminSosAlert } from '../types';
 import { serviceableCorridors } from '../mockData';
@@ -128,6 +129,7 @@ interface AdminLiveMapViewProps {
   alerts: AdminSosAlert[];
   focusedCoordinates?: [number, number] | null;
   onSelectElder: (elder: AdminElderItem) => void;
+  onBackToDashboard?: () => void;
 }
 
 export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
@@ -136,6 +138,7 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
   alerts,
   focusedCoordinates,
   onSelectElder,
+  onBackToDashboard,
 }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'ELDERS' | 'CAREGIVERS' | 'SOS'>('ALL');
   const [showGeofences, setShowGeofences] = useState(true);
@@ -157,16 +160,28 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
     <div className="space-y-4 animate-fadeIn pb-12">
       {/* Top Controls Bar */}
       <div className="p-4 md:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <h2 className="text-xl font-heading font-extrabold text-slate-900">
-              Live Geographic Serviceability Map
-            </h2>
+        <div className="flex items-center gap-3.5">
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
+              title="Return to Dashboard Overview"
+            >
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+              <h2 className="text-xl font-heading font-extrabold text-slate-900">
+                Live Geographic Serviceability Map
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Plotting real-time GPS locations, active elder home visits, attendant coverage, and emergency alerts across Chennai.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Plotting real-time GPS locations, active elder home visits, attendant coverage, and emergency alerts across Chennai.
-          </p>
         </div>
 
         {/* Filter Badges */}
@@ -366,24 +381,6 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
             ))}
           </MapContainer>
 
-          {/* Quick Legend Overlay */}
-          <div className="absolute bottom-4 left-4 z-20 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-slate-200 text-xs shadow-md space-y-1.5">
-            <span className="font-bold text-slate-800 block text-[10px] uppercase tracking-wider">
-              Map Legend
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-teal-800" />
-              <span className="text-slate-700 text-[11px]">Active Elder Home</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
-              <span className="text-rose-700 font-bold text-[11px]">SOS Alert Triggered</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full border border-teal-600 bg-teal-100/60" />
-              <span className="text-slate-700 text-[11px]">2km Corridor Geofence</span>
-            </div>
-          </div>
         </div>
 
         {/* Corridor & Elder List Sidebar */}

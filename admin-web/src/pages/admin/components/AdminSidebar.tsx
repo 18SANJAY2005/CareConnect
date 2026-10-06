@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Building2,
 } from 'lucide-react';
 import type { AdminTab } from '../types';
 
@@ -142,19 +141,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           );
         })}
       </nav>
-
-      {/* Corridor Coverage Quick Card */}
-      {!isCollapsed && (
-        <div className="mx-3 my-2 p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-[11px]">
-          <div className="flex items-center gap-2 text-teal-400 font-bold mb-1">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Chennai Corridors</span>
-          </div>
-          <p className="text-slate-400 text-[10px] leading-relaxed">
-            6 zones live (Adyar, Besant Nagar, T. Nagar, Anna Nagar, Mylapore, Velachery).
-          </p>
-        </div>
-      )}
 
       {/* Footer / System Status */}
       <div className="p-3 border-t border-slate-800">
