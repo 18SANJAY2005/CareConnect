@@ -35,7 +35,6 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
   onBack,
   initialPostalCode = "",
 }) => {
-  const [activeTab, setActiveTab] = useState<"MAP" | "PIN">("MAP");
   const [postalCode, setPostalCode] = useState(initialPostalCode);
   const [locality, setLocality] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
@@ -87,39 +86,6 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
     }
   };
 
-  // Verify directly with PIN
-  const verifyWithPin = async (pin: string) => {
-    if (pin.length !== 6) return;
-    setIsVerifying(true);
-    setErrorMessage(null);
-
-    try {
-      const isMunicipalZone = (val?: string) =>
-        Boolean(val && /^zone\s*\d+/i.test(val.trim()));
-      const res = await api.verifyLocation({
-        postalCode: pin,
-      });
-
-      setVerifyResult(res);
-      if (res.locality && !isMunicipalZone(res.locality))
-        setLocality(res.locality);
-      if (res.city && !isMunicipalZone(res.city)) setCity(res.city);
-      if (res.latitude) setLatitude(res.latitude);
-      if (res.longitude) setLongitude(res.longitude);
-    } catch (err: any) {
-      setErrorMessage(err.message || "Unable to verify postal code.");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleManualCheck = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (postalCode.length === 6) {
-      verifyWithPin(postalCode);
-    }
-  };
-
   const handleProceed = () => {
     if (!verifyResult || !verifyResult.serviceable) return;
     onSuccess({
@@ -152,41 +118,12 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
           Where is care needed?
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Pinpoint your exact doorstep on the map or check coverage by PIN code.
+          Pinpoint your exact doorstep on the map to check coverage.
         </p>
-
-        {/* View Mode Toggle */}
-        <div className="flex bg-slate-200/80 p-1 rounded-xl mt-3 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveTab("MAP")}
-            className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition ${
-              activeTab === "MAP"
-                ? "bg-white text-teal-800 shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <MapIcon className="w-3.5 h-3.5" />
-            <span>Interactive Map</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("PIN")}
-            className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition ${
-              activeTab === "PIN"
-                ? "bg-white text-teal-800 shadow-xs font-bold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span>Enter PIN Code</span>
-          </button>
-        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="my-3 space-y-3">
-        {activeTab === "MAP" ? (
           /* Interactive Ola/Uber Precise Location Picker */
           <div className="space-y-3">
             <PreciseLocationPicker
@@ -203,46 +140,6 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
               compact={true}
             />
           </div>
-        ) : (
-          /* PIN Input Form Tab */
-          <div className="space-y-4 py-2">
-            <form onSubmit={handleManualCheck} className="space-y-3">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={6}
-                  value={postalCode}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, "");
-                    setPostalCode(val);
-                    setVerifyResult(null);
-                    if (val.length === 6) {
-                      verifyWithPin(val);
-                    }
-                  }}
-                  placeholder="Enter 6-digit PIN code (e.g. 600020)"
-                  className="w-full h-14 pl-12 pr-28 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={isVerifying || postalCode.length < 6}
-                  className="absolute right-2 top-2 bottom-2 px-4 bg-teal-700 hover:bg-teal-800 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition"
-                >
-                  {isVerifying ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Check"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* Global Error Banner */}
         {errorMessage && (
