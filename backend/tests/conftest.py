@@ -117,6 +117,10 @@ async def caregiver_user(test_db: AsyncSession) -> User:
         phone="+919876500001",
         email="meenakshi.care@careconnect.in",
         role="CAREGIVER",
+        dob="1990-05-15",
+        gender="FEMALE",
+        locality="Adyar",
+        avatarUrl="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400",
         authProvider="PHONE_OTP",
     )
 

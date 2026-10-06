@@ -86,7 +86,12 @@ export interface User {
   fullName: string;
   phone?: string;
   email?: string;
+  dob?: string;
+  gender?: string;
+  locality?: string;
+  avatarUrl?: string;
   authProvider: string;
+  isProfileComplete?: boolean;
 }
 
 export interface VitalReading {
@@ -106,7 +111,7 @@ export interface VitalReading {
   recordedAt: string;
 }
 
-export type SupportedLanguage = 'ta' | 'en' | 'te';
+export type SupportedLanguage = 'en';
 
 export type KycDocumentType =
   | 'AADHAAR'

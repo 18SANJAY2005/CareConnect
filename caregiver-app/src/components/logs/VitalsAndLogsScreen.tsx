@@ -47,7 +47,7 @@ export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftD
   // Care note state
   const [careNote, setCareNote] = useState<string>('');
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [speechLanguage, setSpeechLanguage] = useState<'ta-IN' | 'te-IN' | 'en-IN'>('ta-IN');
+  const speechLanguage = 'en-IN';
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
 
   // Status feedback
@@ -551,40 +551,6 @@ export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftD
             </button>
           </div>
 
-          {/* Voice Language Selector */}
-          <div className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-            <span className="font-semibold text-slate-600">Voice Language:</span>
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => setSpeechLanguage('ta-IN')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] touch-action-manipulation ${
-                  speechLanguage === 'ta-IN' ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200'
-                }`}
-              >
-                தமிழ்
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpeechLanguage('te-IN')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] touch-action-manipulation ${
-                  speechLanguage === 'te-IN' ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200'
-                }`}
-              >
-                తెలుగు
-              </button>
-              <button
-                type="button"
-                onClick={() => setSpeechLanguage('en-IN')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] touch-action-manipulation ${
-                  speechLanguage === 'en-IN' ? 'bg-primary text-white' : 'bg-white text-slate-600 border border-slate-200'
-                }`}
-              >
-                EN
-              </button>
-            </div>
-          </div>
-
           {!speechSupported && (
             <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
               Note: Speech recognition is not available in this browser. Please type observations directly in the box below.
@@ -594,7 +560,7 @@ export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftD
           {isListening && (
             <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2 animate-pulse">
               <span className="w-2 h-2 rounded-full bg-red-500" />
-              <span>Listening in {speechLanguage === 'ta-IN' ? 'Tamil' : speechLanguage === 'te-IN' ? 'Telugu' : 'English'}... speak clearly.</span>
+              <span>Listening in English... speak clearly.</span>
             </div>
           )}
 

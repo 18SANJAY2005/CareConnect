@@ -12,6 +12,7 @@ from app.core.phone_validator import validate_and_normalize_phone
 from app.models.caregiver import Caregiver
 from app.models.caregiver_kyc import CaregiverKYC
 from app.models.user import User
+from app.schemas.auth import UserResponse, UpdateProfileRequest
 from app.schemas.caregiver import CaregiverResponse, CuratedMatchesResponse
 from app.schemas.kyc import (
     KycSubmitRequest,
@@ -289,6 +290,49 @@ async def update_caregiver_kyc_status(
         created_at=kyc.created_at,
         updated_at=kyc.updated_at,
     )
+
+
+@router.patch("/me/profile", response_model=UserResponse)
+async def update_my_caregiver_profile(
+    payload: UpdateProfileRequest,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update caregiver profile details for the authenticated caregiver only.
+    Enforces that caregivers cannot update another user's profile.
+    """
+    from app.api.me import update_my_profile
+    return await update_my_profile(payload=payload, current_user=current_user, db=db)
+
+
+@router.patch("/{caregiver_id}", response_model=UserResponse)
+async def update_caregiver_by_id(
+    caregiver_id: int,
+    payload: UpdateProfileRequest,
+    current_user: User = Depends(require_role(["CAREGIVER", "OPS_MANAGER", "ADMIN"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update caregiver profile by ID.
+    Enforces authorization: Caregiver A cannot modify Caregiver B (403 Forbidden).
+    """
+    target_cg = await db.get(Caregiver, caregiver_id)
+    if not target_cg:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Caregiver with id {caregiver_id} not found.",
+        )
+
+    if current_user.role == "CAREGIVER":
+        if not current_user.phone or target_cg.phone != current_user.phone:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Unauthorized: You cannot modify another caregiver's profile.",
+            )
+
+    from app.api.me import update_my_profile
+    return await update_my_profile(payload=payload, current_user=current_user, db=db)
 
 
 @router.get("/{caregiver_id}", response_model=CaregiverResponse)

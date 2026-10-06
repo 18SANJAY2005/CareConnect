@@ -78,7 +78,7 @@ class CaregiverApiService {
       '/auth/otp/verify',
       {
         method: 'POST',
-        body: JSON.stringify({ phone, otp, countryCode }),
+        body: JSON.stringify({ phone, otp, countryCode, role: 'CAREGIVER' }),
       }
     );
     if (res.access_token) {
@@ -89,6 +89,20 @@ class CaregiverApiService {
 
   async getMe(): Promise<User> {
     return this.request<User>('/me', { method: 'GET' });
+  }
+
+  async updateProfile(payload: {
+    fullName: string;
+    dob?: string;
+    gender?: string;
+    email?: string;
+    locality?: string;
+    avatarUrl?: string;
+  }): Promise<User> {
+    return this.request<User>('/me', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   }
 
   // --- Shift & Attendance ---

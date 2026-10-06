@@ -228,6 +228,9 @@ async def test_kyc_role_isolation(
         phone="+919876500002",
         email="kavitha@careconnect.in",
         role="CAREGIVER",
+        dob="1992-05-10",
+        gender="FEMALE",
+        locality="Besant Nagar",
         authProvider="PHONE_OTP",
     )
     test_db.add(caregiver_b)

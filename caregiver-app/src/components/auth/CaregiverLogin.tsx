@@ -4,7 +4,6 @@ import { CareConnectLogo } from '../common/CareConnectLogo';
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { caregiverApi } from '../../services/api';
-import type { SupportedLanguage } from '../../types';
 
 const COUNTRY_CODES = [
   { code: '+91', label: '+91 (India)', digits: 10, placeholder: '9876543210' },
@@ -16,7 +15,7 @@ const COUNTRY_CODES = [
 
 export const CaregiverLogin: React.FC = () => {
   const { loginWithOtp } = useCaregiverAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   const [countryCode, setCountryCode] = useState<string>('+91');
   const [phoneNumber, setPhoneNumber] = useState<string>('9876500001');
@@ -157,24 +156,6 @@ export const CaregiverLogin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center px-4 py-8">
-      {/* Top Language Switcher */}
-      <div className="w-full max-w-md flex justify-end mb-4 gap-1.5">
-        {(['ta', 'en', 'te'] as SupportedLanguage[]).map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => setLanguage(lang)}
-            className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-              language === lang
-                ? 'bg-primary text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-            }`}
-          >
-            {lang === 'ta' ? 'தமிழ்' : lang === 'te' ? 'తెలుగు' : 'English'}
-          </button>
-        ))}
-      </div>
-
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
         {/* Header Banner */}
         <div className="bg-primary px-6 py-8 text-white text-center">

@@ -59,7 +59,8 @@ class AuthService:
         otp: str,
         fullName: Optional[str] = "Family Sponsor",
         email: Optional[str] = None,
-        country_code: Optional[str] = None
+        country_code: Optional[str] = None,
+        role: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Verify OTP code and authenticate or create user."""
         normalized_phone = validate_and_normalize_phone(phone, country_code)
@@ -102,21 +103,61 @@ class AuthService:
         user = result.scalars().first()
 
         if not user:
+            from app.models.caregiver import Caregiver
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == normalized_phone))
+            existing_cg = cg_res.scalars().first()
+
+            cg_gender = None
+            cg_locality = None
+            cg_dob = None
+            cg_avatar = None
+
+            if existing_cg:
+                assigned_role = "CAREGIVER"
+                user_full_name = existing_cg.full_name
+                cg_gender = existing_cg.gender
+                cg_locality = existing_cg.locality
+                cg_dob = getattr(existing_cg, "dob", None)
+                cg_avatar = getattr(existing_cg, "avatarUrl", None) or getattr(existing_cg, "photo_url", None)
+            elif role in ["CAREGIVER", "OPS_MANAGER", "ADMIN"]:
+                assigned_role = role
+                user_full_name = fullName if (fullName and fullName != "Family Sponsor") else "Caregiver"
+            else:
+                assigned_role = "FAMILY_SPONSOR"
+                user_full_name = fullName or "Family Sponsor"
+
             user = User(
-                role="FAMILY_SPONSOR",
-                fullName=fullName or "Family Sponsor",
+                role=assigned_role,
+                fullName=user_full_name,
                 phone=normalized_phone,
                 email=email,
+                dob=cg_dob,
+                gender=cg_gender,
+                locality=cg_locality,
+                avatarUrl=cg_avatar,
                 authProvider="PHONE_OTP"
             )
             db.add(user)
             await db.commit()
             await db.refresh(user)
         else:
-            if fullName and fullName != "Family Sponsor" and user.fullName == "Family Sponsor":
+            if fullName and fullName not in ["Family Sponsor", "Caregiver"] and user.fullName in ["Family Sponsor", "Caregiver"]:
                 user.fullName = fullName
             if email and not user.email:
                 user.email = email
+            if user.role == "CAREGIVER":
+                from app.models.caregiver import Caregiver
+                cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == normalized_phone))
+                existing_cg = cg_res.scalars().first()
+                if existing_cg:
+                    if not user.locality and existing_cg.locality:
+                        user.locality = existing_cg.locality
+                    if not user.gender and existing_cg.gender:
+                        user.gender = existing_cg.gender
+                    if not user.dob and getattr(existing_cg, "dob", None):
+                        user.dob = existing_cg.dob
+                    if not user.avatarUrl and (getattr(existing_cg, "avatarUrl", None) or getattr(existing_cg, "photo_url", None)):
+                        user.avatarUrl = existing_cg.avatarUrl or existing_cg.photo_url
             await db.commit()
             await db.refresh(user)
 

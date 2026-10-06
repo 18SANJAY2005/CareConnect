@@ -52,6 +52,12 @@ class User(Base):
         default=True,
     )
 
+    # Personal Information fields
+    dob = Column(String(20), nullable=True)
+    gender = Column(String(20), nullable=True)
+    locality = Column(String(255), nullable=True)
+    avatarUrl = Column(String(500), nullable=True)
+
     # Relationships
     elders = relationship(
         "Elder",
@@ -64,3 +70,30 @@ class User(Base):
         "HomeAssessmentRequest",
         back_populates="requester",
     )
+
+    @property
+    def isProfileComplete(self) -> bool:
+        """
+        Determines whether the user's required basic profile info is complete.
+        For caregivers, requires:
+        - Non-empty, non-placeholder full name (min 2 chars)
+        - Verified phone number
+        - Date of birth (dob)
+        - Gender
+        For other roles, checks that fullName is set and not empty.
+        """
+        if not self.fullName or not self.fullName.strip():
+            return False
+        cleaned = self.fullName.strip().lower()
+        if self.role == "CAREGIVER":
+            if cleaned in ["", "caregiver", "new caregiver", "pending caregiver", "pending onboarding", "family sponsor"]:
+                return False
+            if len(self.fullName.strip()) < 2:
+                return False
+            if not self.dob or not str(self.dob).strip():
+                return False
+            if not self.gender or not str(self.gender).strip():
+                return False
+        if not self.phone or not self.phone.strip():
+            return False
+        return True

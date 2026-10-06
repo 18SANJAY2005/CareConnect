@@ -28,7 +28,8 @@ async def verify_otp(payload: VerifyOtpRequest, db: AsyncSession = Depends(get_d
         otp=payload.otp,
         fullName=payload.fullName,
         email=payload.email,
-        country_code=payload.countryCode
+        country_code=payload.countryCode,
+        role=payload.role,
     )
     return result
 

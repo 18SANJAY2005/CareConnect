@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { CaregiverAuthProvider, useCaregiverAuth } from './context/CaregiverAuthContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { CaregiverLogin } from './components/auth/CaregiverLogin';
+import { CaregiverBasicInfo } from './components/auth/CaregiverBasicInfo';
 import { CaregiverHeader } from './components/layout/CaregiverHeader';
 import { CaregiverBottomNav, CaregiverTab } from './components/layout/CaregiverBottomNav';
 import { TodayScreen } from './components/today/TodayScreen';
 import { TasksScreen } from './components/tasks/TasksScreen';
 import { VitalsAndLogsScreen } from './components/logs/VitalsAndLogsScreen';
 import { ElderProfileScreen } from './components/elder/ElderProfileScreen';
+import { CaregiverProfileScreen } from './components/profile/CaregiverProfileScreen';
 import { SupportScreen } from './components/support/SupportScreen';
 import { caregiverApi } from './services/api';
 import { offlineQueue } from './services/offlineQueue';
@@ -22,7 +24,7 @@ const AppContent: React.FC = () => {
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
 
   const fetchShift = async () => {
-    if (!user) return;
+    if (!user || !user.isProfileComplete) return;
     setLoadingShift(true);
     try {
       const data = await caregiverApi.getCurrentShift();
@@ -35,7 +37,7 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && user.isProfileComplete) {
       fetchShift();
     }
   }, [user]);
@@ -61,12 +63,16 @@ const AppContent: React.FC = () => {
     return <CaregiverLogin />;
   }
 
+  if (!user.isProfileComplete) {
+    return <CaregiverBasicInfo />;
+  }
+
   const isOnDuty =
     shiftDetails?.shift?.status === 'ACTIVE' || shiftDetails?.shift?.status === 'CHECKED_IN';
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-800">
-      <CaregiverHeader isOnDuty={isOnDuty} />
+      <CaregiverHeader isOnDuty={isOnDuty} onNavigateToProfile={() => setCurrentTab('profile')} />
 
       <main className="flex-1 w-full">
         {currentTab === 'today' && (
@@ -84,6 +90,8 @@ const AppContent: React.FC = () => {
         {currentTab === 'logs' && <VitalsAndLogsScreen shiftDetails={shiftDetails} />}
 
         {currentTab === 'elder' && <ElderProfileScreen shiftDetails={shiftDetails} />}
+
+        {currentTab === 'profile' && <CaregiverProfileScreen />}
 
         {currentTab === 'support' && <SupportScreen />}
       </main>

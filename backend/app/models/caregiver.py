@@ -49,6 +49,7 @@ class Caregiver(Base):
     # Phase D compatibility fields
     phone = Column(String(30), nullable=True, unique=True, index=True)
     gender = Column(String(20), nullable=False, default="FEMALE")
+    dob = Column(String(20), nullable=True)
     isBufferPool = Column(Boolean, nullable=False, default=False)
     status = Column(String(50), nullable=False, default="AVAILABLE")
     avatarUrl = Column(String(500), nullable=True)

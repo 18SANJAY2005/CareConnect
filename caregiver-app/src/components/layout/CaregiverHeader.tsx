@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { LogOut, ShieldCheck } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { CareConnectLogo } from '../common/CareConnectLogo';
 import { NetworkStatusIndicator } from '../common/NetworkStatusIndicator';
 import { CaregiverKycModal } from '../profile/CaregiverKycModal';
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import type { SupportedLanguage } from '../../types';
 
 interface CaregiverHeaderProps {
   isOnDuty: boolean;
+  onNavigateToProfile?: () => void;
 }
 
-export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({ isOnDuty }) => {
+export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({ isOnDuty, onNavigateToProfile }) => {
   const { user, logout } = useCaregiverAuth();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [isKycOpen, setIsKycOpen] = useState<boolean>(false);
+
+  const handleProfileClick = () => {
+    if (onNavigateToProfile) {
+      onNavigateToProfile();
+    } else {
+      setIsKycOpen(true);
+    }
+  };
 
   return (
     <>
@@ -43,42 +51,18 @@ export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({ isOnDuty }) =>
             </div>
           </div>
 
-          {/* Right Actions: Network status, Language selector, KYC & Logout */}
+          {/* Right Actions: Network status, Profile/KYC trigger & Logout */}
           <div className="flex items-center gap-2">
             {/* Live Network connectivity status indicator */}
             <NetworkStatusIndicator />
 
-            {/* Vernacular Language Switcher */}
-            <div 
-              role="group" 
-              aria-label="Language selection"
-              className="flex bg-slate-100 rounded-lg p-0.5 border border-slate-200 text-xs"
-            >
-              {(['ta', 'en', 'te'] as SupportedLanguage[]).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  aria-label={`Switch language to ${lang === 'ta' ? 'Tamil' : lang === 'te' ? 'Telugu' : 'English'}`}
-                  aria-pressed={language === lang}
-                  onClick={() => setLanguage(lang)}
-                  className={`px-2 py-1 min-h-[32px] rounded-md font-semibold text-[11px] touch-action-manipulation transition-all ${
-                    language === lang
-                      ? 'bg-white text-primary shadow-xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  {lang === 'ta' ? 'த' : lang === 'te' ? 'తె' : 'EN'}
-                </button>
-              ))}
-            </div>
-
-            {/* User profile / KYC trigger & Logout */}
+            {/* User profile trigger & Logout */}
             <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
               <button
                 type="button"
-                onClick={() => setIsKycOpen(true)}
-                title="View KYC & Identity Verification"
-                className="flex items-center gap-1 p-1 hover:bg-teal-50 rounded-lg transition-colors group touch-action-manipulation"
+                onClick={handleProfileClick}
+                title="View Profile & Personal Information"
+                className="flex items-center gap-1 p-1 hover:bg-teal-50 rounded-lg transition-colors group touch-action-manipulation cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-full bg-teal-100 text-primary flex items-center justify-center font-bold text-xs border border-teal-200 group-hover:border-primary">
                   {user?.fullName ? user.fullName[0].toUpperCase() : 'C'}

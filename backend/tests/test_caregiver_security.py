@@ -21,6 +21,9 @@ async def second_caregiver_user(test_db: AsyncSession) -> User:
         phone="+919876500002",
         email="kavitha.care@careconnect.in",
         role="CAREGIVER",
+        dob="1992-08-20",
+        gender="FEMALE",
+        locality="Mylapore",
         authProvider="PHONE_OTP",
     )
     test_db.add(user)

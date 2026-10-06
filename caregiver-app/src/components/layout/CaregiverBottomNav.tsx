@@ -1,8 +1,8 @@
 import React from 'react';
-import { Calendar, CheckSquare, HeartPulse, User, HelpCircle } from 'lucide-react';
+import { Calendar, CheckSquare, HeartPulse, User, HelpCircle, CircleUser } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-export type CaregiverTab = 'today' | 'tasks' | 'logs' | 'elder' | 'support';
+export type CaregiverTab = 'today' | 'tasks' | 'logs' | 'elder' | 'profile' | 'support';
 
 interface CaregiverBottomNavProps {
   currentTab: CaregiverTab;
@@ -42,6 +42,11 @@ export const CaregiverBottomNav: React.FC<CaregiverBottomNavProps> = ({
       icon: <User className="w-5 h-5" />,
     },
     {
+      id: 'profile',
+      label: t('tabProfile'),
+      icon: <CircleUser className="w-5 h-5" />,
+    },
+    {
       id: 'support',
       label: t('tabSupport'),
       icon: <HelpCircle className="w-5 h-5" />,
@@ -55,7 +60,7 @@ export const CaregiverBottomNav: React.FC<CaregiverBottomNavProps> = ({
       role="tablist"
       className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200/90 shadow-lg pb-safe"
     >
-      <div className="max-w-md mx-auto grid grid-cols-5 h-16">
+      <div className="max-w-md mx-auto grid grid-cols-6 h-16">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
           return (

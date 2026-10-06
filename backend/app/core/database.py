@@ -86,9 +86,79 @@ async def init_db() -> None:
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Safe idempotent column additions for existing PostgreSQL tables
-        try:
-            from sqlalchemy import text
-            await conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS "phoneNumber" VARCHAR(20);'))
-        except Exception:
-            pass
+
+        def sync_migrations(sync_conn):
+            from sqlalchemy import inspect, text
+            inspector = inspect(sync_conn)
+            table_names = inspector.get_table_names()
+
+            if "elders" in table_names:
+                elder_cols = {c["name"] for c in inspector.get_columns("elders")}
+                if "phoneNumber" not in elder_cols:
+                    try:
+                        sync_conn.execute(text('ALTER TABLE elders ADD COLUMN "phoneNumber" VARCHAR(20)'))
+                    except Exception:
+                        pass
+
+            if "users" in table_names:
+                user_cols = {c["name"] for c in inspector.get_columns("users")}
+                if "dob" not in user_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE users ADD COLUMN dob VARCHAR(20)"))
+                    except Exception:
+                        pass
+                if "gender" not in user_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE users ADD COLUMN gender VARCHAR(20)"))
+                    except Exception:
+                        pass
+                if "locality" not in user_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE users ADD COLUMN locality VARCHAR(255)"))
+                    except Exception:
+                        pass
+                if "avatarUrl" not in user_cols:
+                    try:
+                        sync_conn.execute(text('ALTER TABLE users ADD COLUMN "avatarUrl" VARCHAR(500)'))
+                    except Exception:
+                        pass
+
+            if "caregivers" in table_names:
+                cg_cols = {c["name"] for c in inspector.get_columns("caregivers")}
+                if "dob" not in cg_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN dob VARCHAR(20)"))
+                    except Exception:
+                        pass
+                if "gender" not in cg_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN gender VARCHAR(20) DEFAULT 'FEMALE'"))
+                    except Exception:
+                        pass
+                if "phone" not in cg_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN phone VARCHAR(30)"))
+                    except Exception:
+                        pass
+                if "avatarUrl" not in cg_cols:
+                    try:
+                        sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN "avatarUrl" VARCHAR(500)'))
+                    except Exception:
+                        pass
+                if "isBufferPool" not in cg_cols:
+                    try:
+                        sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN "isBufferPool" BOOLEAN DEFAULT 0'))
+                    except Exception:
+                        pass
+                if "status" not in cg_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN status VARCHAR(50) DEFAULT 'AVAILABLE'"))
+                    except Exception:
+                        pass
+                if "updated_at" not in cg_cols:
+                    try:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN updated_at TIMESTAMP"))
+                    except Exception:
+                        pass
+
+        await conn.run_sync(sync_migrations)

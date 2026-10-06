@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user, require_role
 from app.models.user import User
+from app.models.caregiver import Caregiver
 from app.models.elder import Elder
 from app.models.location import ElderLocation
 from app.models.shift import CareShift, AttendanceLog
@@ -26,6 +27,11 @@ async def get_current_caregiver_shift(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve the current active or upcoming shift for the logged-in caregiver."""
+    if current_user.role == "CAREGIVER" and not current_user.isProfileComplete:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Profile incomplete. Please complete your caregiver profile before accessing shifts."
+        )
     shift = await AttendanceService.get_caregiver_current_shift(db, current_user.id)
     if not shift:
         return {
@@ -204,20 +210,40 @@ async def seed_demo_scenario(db: AsyncSession = Depends(get_db)):
 
     # 1. Ensure caregiver user exists
     cg_res = await db.execute(select(User).where(User.phone == "+919876500001"))
-    caregiver = cg_res.scalars().first()
-    if not caregiver:
+    caregivers = cg_res.scalars().all()
+    if not caregivers:
         caregiver = User(
             role="CAREGIVER",
             fullName="Meenakshi Sundaram",
             phone="+919876500001",
             email="meenakshi.care@careconnect.in",
+            dob="1990-05-15",
+            gender="FEMALE",
+            locality="Adyar",
+            avatarUrl="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400",
             authProvider="PHONE_OTP"
         )
         db.add(caregiver)
         await db.flush()
-    elif caregiver.role != "CAREGIVER" or caregiver.fullName != "Meenakshi Sundaram":
-        caregiver.role = "CAREGIVER"
-        caregiver.fullName = "Meenakshi Sundaram"
+    else:
+        for cg in caregivers:
+            cg.role = "CAREGIVER"
+            cg.fullName = "Meenakshi Sundaram"
+            cg.dob = "1990-05-15"
+            cg.gender = "FEMALE"
+            cg.locality = "Adyar"
+            cg.avatarUrl = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400"
+        caregiver = caregivers[0]
+        await db.flush()
+
+    # Link Caregiver directory record if present
+    cg_dir_res = await db.execute(select(Caregiver).where(Caregiver.id == 2))
+    cg_dir = cg_dir_res.scalars().first()
+    if cg_dir:
+        cg_dir.phone = "+919876500001"
+        cg_dir.dob = "1990-05-15"
+        cg_dir.gender = "FEMALE"
+        cg_dir.locality = "Adyar"
         await db.flush()
 
     # 2. Ensure family sponsor exists

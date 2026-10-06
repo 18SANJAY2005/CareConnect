@@ -25,6 +25,16 @@ class VerifyOtpRequest(BaseModel):
     fullName: Optional[str] = "Family Sponsor"
     email: Optional[str] = None
     countryCode: Optional[str] = None
+    role: Optional[str] = None
+
+class UpdateProfileRequest(BaseModel):
+    fullName: str
+    email: Optional[str] = None
+    dob: Optional[str] = None
+    gender: Optional[str] = None
+    locality: Optional[str] = None
+    avatarUrl: Optional[str] = None
+    phone: Optional[str] = None
 
 class GoogleAuthRequest(BaseModel):
     idToken: str
@@ -39,9 +49,14 @@ class UserResponse(BaseModel):
     fullName: str
     phone: Optional[str] = None
     email: Optional[str] = None
+    dob: Optional[str] = None
+    gender: Optional[str] = None
+    locality: Optional[str] = None
+    avatarUrl: Optional[str] = None
     authProvider: str
     createdAt: datetime
     updatedAt: datetime
+    isProfileComplete: bool = True
 
 class TokenResponse(BaseModel):
     access_token: str

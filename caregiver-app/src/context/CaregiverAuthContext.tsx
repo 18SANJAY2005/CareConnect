@@ -2,11 +2,23 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User } from '../types';
 import { caregiverApi } from '../services/api';
 
+export interface UpdateProfileData {
+  fullName: string;
+  dob?: string;
+  gender?: string;
+  email?: string;
+  locality?: string;
+  avatarUrl?: string;
+}
+
 interface CaregiverAuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  verifiedPhone: string | null;
+  verifiedCountryCode: string | null;
   loginWithOtp: (phone: string, otp: string, countryCode?: string) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (data: UpdateProfileData | string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
 }
@@ -17,6 +29,12 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() => {
     return localStorage.getItem('careconnect_caregiver_token');
+  });
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(() => {
+    return localStorage.getItem('careconnect_cg_verified_phone');
+  });
+  const [verifiedCountryCode, setVerifiedCountryCode] = useState<string | null>(() => {
+    return localStorage.getItem('careconnect_cg_verified_cc') || '+91';
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -37,6 +55,10 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         setUser(me);
         setToken(storedToken);
+        if (me.phone) {
+          setVerifiedPhone(me.phone);
+          localStorage.setItem('careconnect_cg_verified_phone', me.phone);
+        }
       }
     } catch {
       caregiverApi.clearToken();
@@ -66,6 +88,11 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setToken(result.access_token);
       setUser(result.user);
+      const cc = countryCode || '+91';
+      setVerifiedPhone(phone);
+      setVerifiedCountryCode(cc);
+      localStorage.setItem('careconnect_cg_verified_phone', phone);
+      localStorage.setItem('careconnect_cg_verified_cc', cc);
       return { success: true };
     } catch (err: any) {
       return {
@@ -75,10 +102,29 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const updateProfile = async (
+    data: UpdateProfileData | string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const payload: UpdateProfileData = typeof data === 'string' ? { fullName: data } : data;
+      const updatedUser = await caregiverApi.updateProfile(payload);
+      setUser(updatedUser);
+      return { success: true };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || 'Failed to update profile. Please try again.',
+      };
+    }
+  };
+
   const logout = () => {
     caregiverApi.clearToken();
+    localStorage.removeItem('careconnect_cg_verified_phone');
+    localStorage.removeItem('careconnect_cg_verified_cc');
     setToken(null);
     setUser(null);
+    setVerifiedPhone(null);
   };
 
   const refreshProfile = async () => {
@@ -91,7 +137,10 @@ export const CaregiverAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         token,
         isLoading,
+        verifiedPhone,
+        verifiedCountryCode,
         loginWithOtp,
+        updateProfile,
         logout,
         refreshProfile,
       }}
