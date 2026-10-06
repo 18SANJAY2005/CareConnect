@@ -35,6 +35,8 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
   onBack,
   initialPostalCode = "",
 }) => {
+  // Removed activeTab state
+
   const [postalCode, setPostalCode] = useState(initialPostalCode);
   const [locality, setLocality] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
@@ -86,6 +88,39 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
     }
   };
 
+  // Verify directly with PIN
+  const verifyWithPin = async (pin: string) => {
+    if (pin.length !== 6) return;
+    setIsVerifying(true);
+    setErrorMessage(null);
+
+    try {
+      const isMunicipalZone = (val?: string) =>
+        Boolean(val && /^zone\s*\d+/i.test(val.trim()));
+      const res = await api.verifyLocation({
+        postalCode: pin,
+      });
+
+      setVerifyResult(res);
+      if (res.locality && !isMunicipalZone(res.locality))
+        setLocality(res.locality);
+      if (res.city && !isMunicipalZone(res.city)) setCity(res.city);
+      if (res.latitude) setLatitude(res.latitude);
+      if (res.longitude) setLongitude(res.longitude);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Unable to verify postal code.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleManualCheck = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (postalCode.length === 6) {
+      verifyWithPin(postalCode);
+    }
+  };
+
   const handleProceed = () => {
     if (!verifyResult || !verifyResult.serviceable) return;
     onSuccess({
@@ -120,26 +155,27 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
         <p className="text-xs text-slate-500 mt-1">
           Pinpoint your exact doorstep on the map to check coverage.
         </p>
+
       </div>
 
       {/* Main Content Area */}
       <div className="my-3 space-y-3">
-          /* Interactive Ola/Uber Precise Location Picker */
-          <div className="space-y-3">
-            <PreciseLocationPicker
-              initialLatitude={latitude}
-              initialLongitude={longitude}
-              initialAddress={addressLine1}
-              initialPostalCode={postalCode}
-              onLocationSelect={handlePreciseLocationSelected}
-              confirmButtonLabel={
-                isVerifying
-                  ? "Verifying Serviceability..."
-                  : "Verify This Doorstep Pin"
-              }
-              compact={true}
-            />
-          </div>
+        {/* Interactive Precise Location Picker */}
+        <div className="space-y-3">
+          <PreciseLocationPicker
+            initialLatitude={latitude}
+            initialLongitude={longitude}
+            initialAddress={addressLine1}
+            initialPostalCode={postalCode}
+            onLocationSelect={handlePreciseLocationSelected}
+            confirmButtonLabel={
+              isVerifying
+                ? "Verifying Serviceability..."
+                : "Verify This Doorstep Pin"
+            }
+            compact={true}
+          />
+        </div>
 
         {/* Global Error Banner */}
         {errorMessage && (

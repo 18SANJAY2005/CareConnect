@@ -6,6 +6,7 @@ interface MobileOnboardingWhoProps {
   onBack: () => void;
   initialValue?: "ME" | "SOMEONE_ELSE";
   onLogout?: () => void;
+  isMyselfActive?: boolean;
 }
 
 export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
@@ -13,6 +14,7 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
   onBack,
   initialValue,
   onLogout,
+  isMyselfActive,
 }) => {
   const [recipient, setRecipient] = useState<"ME" | "SOMEONE_ELSE" | null>(
     initialValue || null,
@@ -66,16 +68,20 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
           },
         ].map(({ id, title, subtitle, description, icon: Icon }) => {
           const isSelected = recipient === id;
+          const isDisabled = id === "ME" && isMyselfActive;
 
           return (
             <button
               key={id}
               type="button"
+              disabled={isDisabled}
               onClick={() => setRecipient(id as "ME" | "SOMEONE_ELSE")}
-              className={`w-full rounded-[28px] border-2 p-5 text-left transition-all duration-200 active:scale-[0.98] ${
-                isSelected
-                  ? "border-primary bg-teal-50/60 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+              className={`w-full rounded-[28px] border-2 p-5 text-left transition-all duration-200 ${
+                isDisabled 
+                  ? "opacity-60 cursor-not-allowed border-slate-200 bg-slate-50"
+                  : isSelected
+                    ? "border-primary bg-teal-50/60 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15 active:scale-[0.98]"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
               }`}
             >
               <div className="flex items-center gap-4">
@@ -83,6 +89,8 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
                   className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${
                     isSelected
                       ? "bg-primary text-white"
+                      : isDisabled
+                      ? "bg-slate-200 text-slate-400"
                       : "bg-slate-100 text-slate-600"
                   }`}
                 >
@@ -90,8 +98,13 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
                 </div>
 
                 <div className="flex-1">
-                  <div className="text-2xl font-extrabold tracking-[-0.03em] text-slate-900">
+                  <div className="text-2xl font-extrabold tracking-[-0.03em] text-slate-900 flex items-center gap-2">
                     {title}
+                    {isDisabled && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full">
+                        Added
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-teal-700">
                     {subtitle}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
 import {
   ShieldCheck,
@@ -7,6 +7,8 @@ import {
   ArrowRight,
   UserCheck,
   Sparkles,
+  MapPin,
+  CheckCircle,
 } from "lucide-react";
 
 interface MobileEntryScreenProps {
@@ -19,44 +21,84 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
   onGetStarted,
   onSignIn,
 }) => {
+  const [postalCode, setPostalCode] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+
+  const handleCheck = () => {
+    if (postalCode.trim().length >= 3) {
+      setIsVerified(true);
+    }
+  };
+
   return (
-    <div className="flex flex-1 flex-col justify-between px-5 py-7 animate-fadeIn text-slate-900">
-      <div className="flex items-center justify-between">
-        <CareConnectLogo size="md" showWordmark />
-        <button
-          onClick={onSignIn}
-          className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-[11px] font-bold text-primary transition hover:bg-teal-100"
-        >
-          Sign In
-        </button>
+    <div className="flex flex-1 flex-col justify-between px-5 py-4 animate-fadeIn text-slate-900 h-full max-h-screen">
+      <div>
+        <div className="flex items-center justify-between">
+          <CareConnectLogo size="md" showWordmark />
+          <button
+            onClick={onSignIn}
+            className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[11px] font-bold text-primary transition hover:bg-teal-100"
+          >
+            Sign In
+          </button>
+        </div>
+        
+        {/* Postal Code Verification Bar */}
+        <div className="mt-3.5 flex w-[210px] items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+          <MapPin className="ml-2 h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={postalCode}
+            onChange={(e) => {
+              setPostalCode(e.target.value);
+              setIsVerified(false);
+            }}
+            placeholder="Enter postal code..."
+            className="w-full min-w-0 flex-1 bg-transparent px-1 text-[11px] outline-none placeholder:text-slate-400"
+          />
+          <button 
+            onClick={handleCheck}
+            className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-bold text-white transition hover:bg-slate-800"
+          >
+            Check
+          </button>
+        </div>
+        
+        {/* Verification Sign */}
+        <div className={`mt-1.5 flex items-center gap-1 pl-2 transition-opacity duration-300 ${isVerified ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+          <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
+          <span className="text-[10px] font-medium text-emerald-600">Service available in your area</span>
+        </div>
       </div>
 
-      <div className="my-auto space-y-6 py-7">
-        <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-[11px] font-bold tracking-[0.12em] text-primary uppercase">
-          <ShieldCheck className="h-3.5 w-3.5" />
+      <div className="my-auto space-y-3 py-2">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-primary uppercase">
+          <ShieldCheck className="h-3 w-3" />
           Trusted elder care
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-teal-50/80 to-slate-50 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="rounded-2xl bg-primary p-3 text-white shadow-sm">
-              <Heart className="h-6 w-6 fill-current" />
+        <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-teal-50/80 to-slate-50 p-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="rounded-xl bg-primary p-2 text-white shadow-sm">
+              <Heart className="h-4 w-4 fill-current" />
             </div>
-            <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+            <div className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
               24/7 support
             </div>
           </div>
 
-          <h1 className="text-3xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
+          <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
             Compassionate care for the ones who matter most.
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">
             Verified attendants, daily health support, and a real care team
             designed for comfort and peace of mind.
           </p>
         </div>
 
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {[
             {
               icon: UserCheck,
@@ -76,14 +118,14 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
           ].map(({ icon: Icon, title, text }) => (
             <div
               key={title}
-              className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm"
+              className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
-                <Icon className="h-5 w-5" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-primary">
+                <Icon className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-sm font-bold text-slate-800">{title}</div>
-                <div className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                <div className="text-xs font-bold text-slate-800">{title}</div>
+                <div className="text-[10px] leading-snug text-slate-500">
                   {text}
                 </div>
               </div>
@@ -92,16 +134,16 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
         </div>
       </div>
 
-      <div className="space-y-3 pt-2">
+      <div className="space-y-2.5 pt-1">
         <button
           onClick={onGetStarted}
-          className="flex w-full min-h-[56px] items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-lg shadow-teal-900/20 transition hover:bg-primary-hover active:scale-[0.98]"
+          className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-teal-900/20 transition hover:bg-primary-hover active:scale-[0.98]"
         >
           <span>Find Suitable Care</span>
-          <ArrowRight className="h-5 w-5" />
+          <ArrowRight className="h-4 w-4" />
         </button>
 
-        <div className="text-center text-xs text-slate-500">
+        <div className="text-center text-[11px] text-slate-500">
           Already have an account?{" "}
           <button
             onClick={onSignIn}
@@ -111,7 +153,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
           </button>
         </div>
 
-        <div className="pt-1 text-center text-[10px] leading-relaxed text-slate-400">
+        <div className="pt-1 text-center text-[9px] leading-relaxed text-slate-400">
           Non-emergency elder care • DPDP Act 2023 • 24/7 care desk
         </div>
       </div>

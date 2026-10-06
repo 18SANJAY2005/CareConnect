@@ -397,6 +397,10 @@ const AppContent: React.FC = () => {
           {!isCreatingElder && onboardingStep === "WHO" && (
             <MobileOnboardingWho
               initialValue={draftRecipient || undefined}
+              isMyselfActive={
+                !!user?.phone &&
+                elders.some((elder) => elder.phoneNumber === user.phone)
+              }
               onSelect={(recipient) => {
                 setDraftRecipient(recipient);
                 setOnboardingStep("BASIC");

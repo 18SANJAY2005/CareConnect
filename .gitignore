@@ -62,3 +62,5 @@ scratch/
 
 # Temporary phase audit reports
 phase_*.md
+
+cloudflared.exe

@@ -1,7 +1,8 @@
 import React from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
-import { AlertCircle, ChevronDown } from "lucide-react";
+import { AlertCircle, ChevronDown, User } from "lucide-react";
 import type { Elder } from "../../types";
+import { useAuth } from "../../context/AuthContext";
 
 interface MobileTopBarProps {
   activePortal?: "FAMILY" | "CAREGIVER" | "OPERATIONS";
@@ -24,6 +25,18 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
   title,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const { user } = useAuth();
+
+  const sortedElders = React.useMemo(() => {
+    if (!user?.phone) return elders;
+    return [...elders].sort((a, b) => {
+      const aIsMe = a.phoneNumber === user.phone;
+      const bIsMe = b.phoneNumber === user.phone;
+      if (aIsMe && !bIsMe) return -1;
+      if (!aIsMe && bIsMe) return 1;
+      return 0;
+    });
+  }, [elders, user?.phone]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl safe-top shadow-sm">
@@ -48,7 +61,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
             </button>
           )}
-          {activePortal === "FAMILY" && elders.length > 0 && (
+          {activePortal === "FAMILY" && sortedElders.length > 0 && (
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -65,25 +78,35 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
                   <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
                     Select Elder
                   </div>
-                  {elders.map((e) => (
-                    <button
-                      key={e.id}
-                      onClick={() => {
-                        onSelectElder?.(e.id);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] transition ${
-                        activeElder?.id === e.id
-                          ? "bg-teal-50 font-bold text-primary"
-                          : "text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="truncate">{e.name}</span>
-                      {activeElder?.id === e.id && (
-                        <span className="h-2 w-2 rounded-full bg-primary" />
-                      )}
-                    </button>
-                  ))}
+                  {sortedElders.map((e) => {
+                    const isMe = user?.phone && e.phoneNumber === user.phone;
+                    return (
+                      <button
+                        key={e.id}
+                        onClick={() => {
+                          onSelectElder?.(e.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-left text-[11px] transition ${
+                          activeElder?.id === e.id
+                            ? "bg-teal-50 font-bold text-primary"
+                            : "text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="truncate flex items-center gap-1.5">
+                          {e.name}
+                          {isMe && (
+                            <span className="rounded bg-teal-100 px-1 text-[8px] uppercase tracking-wider text-teal-800">
+                              Me
+                            </span>
+                          )}
+                        </span>
+                        {activeElder?.id === e.id && (
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
