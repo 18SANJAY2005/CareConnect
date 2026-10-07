@@ -46,3 +46,69 @@ class CuratedMatchesResponse(BaseModel):
     required_care_tier: str
     total_candidates: int
     matches: List[CaregiverMatchItem]
+
+
+class CaregiverEligibilityResponse(BaseModel):
+    isProfileComplete: bool
+    kycStatus: str
+    rejectionReason: Optional[str] = None
+    isAvailable: bool
+    caregiverStatus: str
+    isEligibleForWork: bool
+    eligibilityState: str
+    message: str
+
+
+class CaregiverAvailabilityRequest(BaseModel):
+    isAvailable: bool
+
+
+class AvailableJobItem(BaseModel):
+    id: str
+    title: str
+    elderName: str
+    careType: str
+    shiftDuration: str
+    starts: str
+    locality: str
+    addressSnippet: Optional[str] = None
+    approximateDistanceKm: float
+    careNeeds: List[str] = []
+    specialRequirements: List[str] = []
+    compensation: str
+    dailyRate: float
+    status: str = "AVAILABLE"
+
+
+class AcceptJobResponse(BaseModel):
+    success: bool
+    message: str
+    assignmentId: int
+    shiftId: str
+    shift: dict
+    elder: dict
+
+
+class CompletedShiftItem(BaseModel):
+    shiftId: str
+    elderName: str
+    date: str
+    hours: str
+    status: str
+    earnings: float
+    locality: str
+
+
+class EarningsSummary(BaseModel):
+    totalEarned: float
+    shiftsCompleted: int
+    pendingPayout: float
+    dailyRate: float
+    currency: str = "INR"
+
+
+class WorkHistoryResponse(BaseModel):
+    activeShift: Optional[dict] = None
+    completedShifts: List[CompletedShiftItem] = []
+    earnings: EarningsSummary
+

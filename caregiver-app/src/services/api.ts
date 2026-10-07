@@ -4,6 +4,10 @@ import type {
   User,
   VitalReading,
   CaregiverKyc,
+  CaregiverEligibility,
+  AvailableCareJob,
+  AcceptJobResponse,
+  WorkHistoryResponse,
 } from '../types';
 import { offlineQueue } from './offlineQueue';
 
@@ -300,6 +304,36 @@ class CaregiverApiService {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
+  }
+
+  // --- Worker Eligibility & Available Jobs (Rapido Captain Style) ---
+  async getEligibility(): Promise<CaregiverEligibility> {
+    return this.request<CaregiverEligibility>('/caregivers/me/eligibility', { method: 'GET' });
+  }
+
+  async setAvailability(isAvailable: boolean): Promise<CaregiverEligibility> {
+    return this.request<CaregiverEligibility>('/caregivers/me/availability', {
+      method: 'PATCH',
+      body: JSON.stringify({ isAvailable }),
+    });
+  }
+
+  async getAvailableJobs(): Promise<AvailableCareJob[]> {
+    return this.request<AvailableCareJob[]>('/caregivers/available-jobs', { method: 'GET' });
+  }
+
+  async getJobDetails(elderId: string): Promise<AvailableCareJob> {
+    return this.request<AvailableCareJob>(`/caregivers/available-jobs/${elderId}`, { method: 'GET' });
+  }
+
+  async acceptJob(elderId: string): Promise<AcceptJobResponse> {
+    return this.request<AcceptJobResponse>(`/caregivers/available-jobs/${elderId}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async getWorkHistory(): Promise<WorkHistoryResponse> {
+    return this.request<WorkHistoryResponse>('/caregivers/me/work-history', { method: 'GET' });
   }
 
   // --- Demo Seeding Helper (dev only) ---

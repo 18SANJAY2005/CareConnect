@@ -82,6 +82,7 @@ const AppContent: React.FC = () => {
             onRefresh={fetchShift}
             onNavigateToTasks={() => setCurrentTab('tasks')}
             onNavigateToLogs={() => setCurrentTab('logs')}
+            onNavigateToProfile={() => setCurrentTab('profile')}
           />
         )}
 

@@ -14,11 +14,13 @@ import {
   ArrowLeft,
   X,
   Check,
+  Power,
+  Lock,
 } from 'lucide-react';
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
 import { caregiverApi } from '../../services/api';
 import { CaregiverKycModal } from './CaregiverKycModal';
-import type { CaregiverKyc } from '../../types';
+import type { CaregiverKyc, CaregiverEligibility } from '../../types';
 
 export const CaregiverProfileScreen: React.FC = () => {
   const { user, updateProfile, logout } = useCaregiverAuth();
@@ -27,6 +29,11 @@ export const CaregiverProfileScreen: React.FC = () => {
   const [kycData, setKycData] = useState<CaregiverKyc | null>(null);
   const [loadingKyc, setLoadingKyc] = useState<boolean>(true);
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
+
+  // Worker availability state
+  const [eligibility, setEligibility] = useState<CaregiverEligibility | null>(null);
+  const [loadingEligibility, setLoadingEligibility] = useState<boolean>(true);
+  const [togglingAvailability, setTogglingAvailability] = useState<boolean>(false);
 
   // Edit form state
   const [fullName, setFullName] = useState<string>(user?.fullName || '');
@@ -44,22 +51,56 @@ export const CaregiverProfileScreen: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Fetch KYC status on mount
-  const fetchKyc = async () => {
+  // Fetch KYC and worker eligibility on mount
+  const fetchEligibilityAndKyc = async () => {
     setLoadingKyc(true);
+    setLoadingEligibility(true);
     try {
-      const data = await caregiverApi.getMyKyc();
-      setKycData(data);
-    } catch {
-      setKycData(null);
+      const [kData, eData] = await Promise.all([
+        caregiverApi.getMyKyc().catch(() => null),
+        caregiverApi.getEligibility().catch(() => null),
+      ]);
+      setKycData(kData);
+      setEligibility(eData);
     } finally {
       setLoadingKyc(false);
+      setLoadingEligibility(false);
     }
   };
 
   useEffect(() => {
-    fetchKyc();
+    fetchEligibilityAndKyc();
   }, []);
+
+  const handleToggleAvailability = async () => {
+    if (!eligibility) return;
+    if (!eligibility.isEligibleForWork) {
+      setFeedbackMessage({
+        type: 'error',
+        text: 'Complete KYC verification to become available for care work.',
+      });
+      return;
+    }
+    const nextState = !eligibility.isAvailable;
+    setTogglingAvailability(true);
+    try {
+      const res = await caregiverApi.setAvailability(nextState);
+      setEligibility((prev) => (prev ? { ...prev, isAvailable: res.isAvailable } : null));
+      setFeedbackMessage({
+        type: 'success',
+        text: res.isAvailable
+          ? 'Work availability status set to Online (Ready for care jobs).'
+          : 'Work availability status paused (Offline).',
+      });
+    } catch (err: any) {
+      setFeedbackMessage({
+        type: 'error',
+        text: err.message || 'Failed to update availability.',
+      });
+    } finally {
+      setTogglingAvailability(false);
+    }
+  };
 
   // Sync edit form with user data when switching to edit or when user updates
   useEffect(() => {
@@ -269,13 +310,79 @@ export const CaregiverProfileScreen: React.FC = () => {
         </div>
       </div>
 
+      {/* Work Availability Status Card (Worker Experience) */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Power className="w-4 h-4 text-teal-700" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Work Availability
+            </h2>
+          </div>
+          {loadingEligibility ? (
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-slate-400" />
+          ) : !eligibility?.isEligibleForWork ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-300">
+              <Lock className="w-3 h-3 text-slate-500" />
+              Locked
+            </span>
+          ) : eligibility?.isAvailable ? (
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Online
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+              Offline
+            </span>
+          )}
+        </div>
+
+        <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+          {!eligibility?.isEligibleForWork
+            ? 'Complete KYC verification to unlock worker availability and accept care assignments.'
+            : eligibility?.isAvailable
+            ? 'You are currently Online and visible for elder care opportunities in Chennai.'
+            : 'You are currently Offline. Turn on availability to receive and accept open care shifts.'}
+        </p>
+
+        {eligibility?.isEligibleForWork ? (
+          <button
+            type="button"
+            onClick={handleToggleAvailability}
+            disabled={togglingAvailability}
+            className={`w-full min-h-[44px] py-2 px-3 border rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer touch-action-manipulation ${
+              eligibility?.isAvailable
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-xs'
+            }`}
+          >
+            {togglingAvailability ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Power className="w-4 h-4" />
+            )}
+            <span>{eligibility?.isAvailable ? 'Go Offline (Pause Work)' : 'Go Online (Available for Work)'}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsKycModalOpen(true)}
+            className="w-full min-h-[44px] py-2 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl text-xs font-bold text-amber-900 transition-colors flex items-center justify-center gap-2 cursor-pointer touch-action-manipulation"
+          >
+            <Lock className="w-4 h-4 text-amber-700" />
+            <span>Complete KYC to Unlock Availability</span>
+          </button>
+        )}
+      </div>
+
       {/* KYC / Identity Verification Summary Card */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm mb-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-              Identity Verification
+              Identity Verification (KYC)
             </h2>
           </div>
           {loadingKyc ? (
@@ -288,18 +395,40 @@ export const CaregiverProfileScreen: React.FC = () => {
             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
               ● Rejected
             </span>
-          ) : (
+          ) : kycData ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
               ● Pending
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              ⚠ Required
             </span>
           )}
         </div>
 
-        <p className="text-xs text-slate-600 mb-3 leading-relaxed">
-          {kycData?.verification_status === 'VERIFIED'
-            ? 'Your government identity document (KYC) is verified and active.'
-            : 'Government photo identification is required for elder care shift compliance.'}
-        </p>
+        <div className="text-xs text-slate-600 mb-3 space-y-1.5 leading-relaxed">
+          {kycData?.verification_status === 'VERIFIED' ? (
+            <p className="text-emerald-800 font-medium">
+              ✓ <strong>KYC Verified:</strong> You are fully eligible to view and accept elder care assignments.
+            </p>
+          ) : kycData?.verification_status === 'PENDING' ? (
+            <p className="text-amber-800">
+              ● <strong>Verification Pending:</strong> Your documents are under review. You cannot accept care assignments until verification is approved.
+            </p>
+          ) : kycData?.verification_status === 'REJECTED' ? (
+            <div className="p-2.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-800 text-[11px] space-y-1">
+              <p className="font-bold">✕ Verification Rejected:</p>
+              <p>Your identity document was not approved. Care assignment acceptance is blocked.</p>
+              {kycData?.rejection_reason && (
+                <p className="font-semibold text-rose-950">Reason: {kycData.rejection_reason}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-amber-800">
+              ⚠ <strong>Identity Verification Required:</strong> Submit your government photo document to unlock care assignments.
+            </p>
+          )}
+        </div>
 
         <button
           type="button"
@@ -307,7 +436,7 @@ export const CaregiverProfileScreen: React.FC = () => {
           className="w-full min-h-[44px] py-2 px-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer touch-action-manipulation"
         >
           <ShieldCheck className="w-4 h-4 text-primary" />
-          <span>{kycData ? 'View KYC Document Details' : 'Complete KYC Verification'}</span>
+          <span>{kycData ? 'KYC / Identity Verification Details' : 'Complete KYC Verification'}</span>
         </button>
       </div>
 
@@ -642,7 +771,7 @@ export const CaregiverProfileScreen: React.FC = () => {
         isOpen={isKycModalOpen}
         onClose={() => {
           setIsKycModalOpen(false);
-          fetchKyc();
+          fetchEligibilityAndKyc();
         }}
       />
     </div>

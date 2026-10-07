@@ -134,3 +134,84 @@ export interface CaregiverKyc {
   created_at: string;
   updated_at: string;
 }
+
+export type CaregiverEligibilityState =
+  | 'PROFILE_INCOMPLETE'
+  | 'KYC_REQUIRED'
+  | 'KYC_PENDING'
+  | 'KYC_REJECTED'
+  | 'KYC_VERIFIED'
+  | 'ELIGIBLE_FOR_WORK'
+  | 'INACTIVE';
+
+export interface CaregiverEligibility {
+  isProfileComplete: boolean;
+  kycStatus: 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  rejectionReason?: string | null;
+  isAvailable: boolean;
+  caregiverStatus: string;
+  isEligibleForWork: boolean;
+  canAcceptJobs?: boolean;
+  eligibilityState: CaregiverEligibilityState;
+  message: string;
+}
+
+export interface AvailableCareJob {
+  id: string;
+  elderId?: string;
+  title: string;
+  elderName: string;
+  careType: string;
+  shiftDuration: string;
+  starts: string;
+  locality: string;
+  addressSnippet?: string;
+  approximateDistanceKm: number;
+  careNeeds: string[];
+  specialRequirements?: string[];
+  compensation: string;
+  dailyRate: number;
+  status: string;
+}
+
+export interface AcceptJobResponse {
+  success: boolean;
+  message: string;
+  assignmentId: number;
+  shiftId: string;
+  shift: Shift;
+  elder: NonNullable<ShiftDetails['elder']>;
+}
+
+export interface CompletedShiftItem {
+  shiftId: string;
+  elderName: string;
+  date: string;
+  hours: string;
+  status: string;
+  earnings: number;
+  locality: string;
+}
+
+export interface EarningsSummary {
+  totalEarned: number;
+  shiftsCompleted: number;
+  pendingPayout: number;
+  dailyRate: number;
+  currency: string;
+}
+
+export interface WorkHistoryResponse {
+  activeShift?: {
+    shiftId: string;
+    status: string;
+    shiftType: string;
+    scheduledStart?: string | null;
+    scheduledEnd?: string | null;
+    elderName: string;
+    locality: string;
+  } | null;
+  completedShifts: CompletedShiftItem[];
+  earnings: EarningsSummary;
+}
+

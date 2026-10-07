@@ -317,6 +317,24 @@ export const CaregiverKycModal: React.FC<CaregiverKycModalProps> = ({ isOpen, on
                   </span>
                 </div>
 
+                {/* Work Eligibility Rule Notice */}
+                {kyc.verification_status === 'VERIFIED' ? (
+                  <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>✓ KYC Verified: You are eligible to view and accept elder care assignments.</span>
+                  </div>
+                ) : kyc.verification_status === 'PENDING' ? (
+                  <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>● Verification Pending: Review in progress. You cannot accept care assignments until approved.</span>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>✕ Verification Rejected: You cannot accept care assignments. Please submit a valid document below.</span>
+                  </div>
+                )}
+
                 <div className="bg-slate-50 p-2.5 rounded-lg text-xs grid grid-cols-2 gap-2 mt-2">
                   <div>
                     <span className="text-slate-500 block">Document Type:</span>

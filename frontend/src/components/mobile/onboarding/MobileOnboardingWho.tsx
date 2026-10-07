@@ -13,7 +13,6 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
   onSelect,
   onBack,
   initialValue,
-  onLogout,
   isMyselfActive,
 }) => {
   const [recipient, setRecipient] = useState<"ME" | "SOMEONE_ELSE" | null>(

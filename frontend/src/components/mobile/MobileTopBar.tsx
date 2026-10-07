@@ -1,6 +1,6 @@
 import React from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
-import { AlertCircle, ChevronDown, User } from "lucide-react";
+import { AlertCircle, ChevronDown } from "lucide-react";
 import type { Elder } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 
