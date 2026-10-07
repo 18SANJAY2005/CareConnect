@@ -26,6 +26,23 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const { user } = useAuth();
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const sortedElders = React.useMemo(() => {
     if (!user?.phone) return elders;
@@ -62,7 +79,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
             </button>
           )}
           {activePortal === "FAMILY" && sortedElders.length > 0 && (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
@@ -74,7 +91,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl z-50">
+                <div className="absolute right-0 top-full mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl z-50">
                   <div className="px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
                     Select Elder
                   </div>

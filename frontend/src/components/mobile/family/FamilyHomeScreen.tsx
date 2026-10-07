@@ -71,7 +71,12 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
 
   return (
     <div className="animate-fadeIn space-y-4 overflow-y-auto px-4 py-4 pb-safe-nav text-slate-900">
-      <div className="flex items-center justify-between gap-3 rounded-[30px] bg-gradient-to-r from-primary to-teal-700 p-5 text-white shadow-[0_18px_35px_rgba(0,67,64,0.2)]">
+      <div 
+        onClick={() => onOpenTab("MY_CARE")}
+        role="button"
+        tabIndex={0}
+        className="flex cursor-pointer items-center justify-between gap-3 rounded-[30px] bg-gradient-to-r from-primary to-teal-700 p-5 text-white shadow-[0_18px_35px_rgba(0,67,64,0.2)] transition-transform active:scale-[0.98]"
+      >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-teal-100">
             <Sparkles className="h-3.5 w-3.5" />
@@ -86,7 +91,10 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         </div>
 
         <button
-          onClick={onOpenSos}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenSos();
+          }}
           className="flex min-h-[48px] min-w-[80px] shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-rose-600 px-3 py-2 text-xs font-black text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700 active:scale-95"
           aria-label="Emergency SOS"
         >

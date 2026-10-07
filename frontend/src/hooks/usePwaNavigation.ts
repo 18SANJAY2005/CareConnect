@@ -597,7 +597,7 @@ export function usePwaNavigation(
       }
 
       // Direct fallback if provided
-      if (fallback) {
+      if (typeof fallback === 'function') {
         fallback();
         return;
       }

@@ -33,11 +33,7 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
           <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-teal-700">
             Step 1 of 4
           </span>
-          {onLogout && (
-            <button onClick={onLogout} className="text-xs font-bold text-rose-500 hover:text-rose-600">
-              Log out
-            </button>
-          )}
+          <div className="w-12" />{/* Spacer to keep Step centered */}
         </div>
 
         <h2 className="text-3xl font-extrabold tracking-[-0.04em] text-slate-900">
