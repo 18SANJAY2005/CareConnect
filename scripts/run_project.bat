@@ -12,6 +12,8 @@ set "SCRIPT_DIR=%~dp0"
 
 if exist "%SCRIPT_DIR%backend\run.py" (
     set "PROJECT_ROOT=%SCRIPT_DIR%"
+) else if exist "%SCRIPT_DIR%..\backend\run.py" (
+    for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI\"
 ) else if exist "%SCRIPT_DIR%CareConnect\CareConnect\backend\run.py" (
     set "PROJECT_ROOT=%SCRIPT_DIR%CareConnect\CareConnect\"
 ) else if exist "%SCRIPT_DIR%CareConnect\backend\run.py" (
@@ -20,6 +22,7 @@ if exist "%SCRIPT_DIR%backend\run.py" (
     echo [ERROR] Could not locate backend\run.py!
     echo Looked in:
     echo   - %SCRIPT_DIR%backend
+    echo   - %SCRIPT_DIR%..\backend
     echo   - %SCRIPT_DIR%CareConnect\CareConnect\backend
     echo   - %SCRIPT_DIR%CareConnect\backend
     echo.

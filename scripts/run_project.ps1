@@ -9,6 +9,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if (Test-Path "$ScriptDir\backend\run.py") {
     $ProjectRoot = $ScriptDir
+} elseif (Test-Path "$ScriptDir\..\backend\run.py") {
+    $ProjectRoot = (Resolve-Path "$ScriptDir\..").Path
 } elseif (Test-Path "$ScriptDir\CareConnect\CareConnect\backend\run.py") {
     $ProjectRoot = "$ScriptDir\CareConnect\CareConnect"
 } elseif (Test-Path "$ScriptDir\CareConnect\backend\run.py") {
