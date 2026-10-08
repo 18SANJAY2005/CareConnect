@@ -2,7 +2,17 @@ import React, { useState } from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
-import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, ChevronDown, Check, X } from "lucide-react";
+
+// Add Country Codes data
+const COUNTRY_CODES = [
+  { code: "+91", country: "India", flag: "🇮🇳" },
+  { code: "+1", country: "US/Canada", flag: "🇺🇸" },
+  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+61", country: "Australia", flag: "🇦🇺" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬" },
+  { code: "+971", country: "UAE", flag: "🇦🇪" },
+];
 
 interface MobileAuthScreenProps {
   onBack: () => void;
@@ -25,6 +35,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
 
   const [step, setStep] = useState<"PHONE" | "OTP">(authStep);
   const [phone, setPhone] = useState(savedPhone);
+  const [countryCode, setCountryCode] = useState("+91");
+  const [isCountryCodeDrawerOpen, setIsCountryCodeDrawerOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
@@ -150,9 +162,14 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                 Mobile Number
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-semibold text-sm">
-                  +91
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCountryCodeDrawerOpen(true)}
+                  className="absolute inset-y-0 left-0 pl-3 pr-2 flex items-center gap-1 text-slate-700 font-semibold text-sm hover:bg-slate-50 rounded-l-2xl border-r border-slate-200"
+                >
+                  {countryCode}
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
                 <input
                   type="tel"
                   inputMode="numeric"
@@ -165,7 +182,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                     onPhoneChange?.(val);
                   }}
                   placeholder="98765 43210"
-                  className="w-full h-14 pl-14 pr-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                  className="w-full h-14 pl-[72px] pr-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
                   required
                 />
               </div>
@@ -271,6 +288,57 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
         By signing in, you agree to CareConnect's Terms of Service and Privacy
         Policy under India DPDP Act 2023.
       </div>
+
+      {/* Country Code Drawer */}
+      {isCountryCodeDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setIsCountryCodeDrawerOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="relative bg-white w-full max-h-[70vh] rounded-t-3xl shadow-2xl flex flex-col animate-slideUp">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-900">Select Country Code</h3>
+              <button 
+                onClick={() => setIsCountryCodeDrawerOpen(false)}
+                className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="overflow-y-auto p-2">
+              {COUNTRY_CODES.map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  onClick={() => {
+                    setCountryCode(item.code);
+                    setIsCountryCodeDrawerOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors ${
+                    countryCode === item.code ? 'bg-teal-50 text-teal-900' : 'hover:bg-slate-50 text-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{item.flag}</span>
+                    <span className="font-bold text-sm">{item.country}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-slate-500">{item.code}</span>
+                    {countryCode === item.code && (
+                      <Check className="w-5 h-5 text-teal-600" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

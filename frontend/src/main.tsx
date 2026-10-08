@@ -12,17 +12,10 @@ createRoot(document.getElementById("root")!).render(
 
 // PWA Service Worker management
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((registration) => {
-        console.log(
-          "CareConnect PWA Service Worker active:",
-          registration.scope,
-        );
-      })
-      .catch((err) => {
-        console.warn("PWA ServiceWorker registration error:", err);
-      });
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (let registration of registrations) {
+      registration.unregister();
+      console.log("Unregistered service worker to prevent caching during dev");
+    }
   });
 }
