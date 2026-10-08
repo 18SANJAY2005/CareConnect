@@ -228,7 +228,7 @@ export const ElderSectionEditorModal: React.FC<
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-fadeIn">
-      <div className="w-full max-w-[430px] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden text-slate-900 animate-slideUp">
+      <div className="w-full max-w-[440px] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden text-slate-900 animate-slideUp">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
@@ -657,7 +657,7 @@ export const ElderSectionEditorModal: React.FC<
           )}
 
           {/* Modal Action Buttons */}
-          <div className="pt-3 flex items-center gap-2.5 border-t border-slate-100">
+          <div className="pt-3 pb-safe flex items-center gap-2.5 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}

@@ -244,12 +244,12 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   }
 
   return (
-    <div className="p-4 space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
+    <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-3.5 sm:space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
       {/* Toast Alert Banner */}
       {actionAlert && (
         <div
           role="alert"
-          className={`p-3.5 rounded-2xl border flex items-center justify-between gap-2.5 text-xs font-semibold shadow-xs transition-all ${
+          className={`p-3 sm:p-3.5 rounded-2xl border flex items-center justify-between gap-2.5 text-xs font-semibold shadow-xs transition-all ${
             actionAlert.type === 'success'
               ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
               : actionAlert.type === 'error'
@@ -257,7 +257,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               : 'bg-teal-50 border-teal-200 text-teal-800'
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {actionAlert.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : actionAlert.type === 'error' ? (
@@ -265,12 +265,12 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
             ) : (
               <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
             )}
-            <span>{actionAlert.text}</span>
+            <span className="truncate">{actionAlert.text}</span>
           </div>
           <button
             type="button"
             onClick={() => setActionAlert(null)}
-            className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer shrink-0"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -280,26 +280,26 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
       {/* ============================================================ */}
       {/* 1. RAPIDO CAPTAIN STYLE WORKER HEADER & AVAILABILITY CARD     */}
       {/* ============================================================ */}
-      <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3.5 sm:space-y-4">
         {/* Top: Worker Greeting & KYC Badge */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-teal-700">CareConnect Partner</p>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-teal-700">CareConnect Partner</p>
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5 truncate">
               {getGreeting()}, {caregiverFirstName}
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
               {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} • Chennai Operations
             </p>
           </div>
 
           {/* KYC Status Pill */}
-          <div>
+          <div className="shrink-0">
             {isKycVerified ? (
               <button
                 type="button"
                 onClick={() => setShowKycModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs hover:bg-emerald-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs hover:bg-emerald-100 transition-colors"
                 title="KYC Verified"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -309,7 +309,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setShowKycModal(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs hover:bg-amber-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs hover:bg-amber-100 transition-colors"
                 title="KYC Pending"
               >
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -319,7 +319,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setShowKycModal(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs hover:bg-rose-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-300 shadow-2xs hover:bg-rose-100 transition-colors"
                 title="KYC Rejected"
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
@@ -329,7 +329,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setShowKycModal(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs hover:bg-amber-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs hover:bg-amber-100 transition-colors"
                 title="KYC Required"
               >
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
@@ -340,11 +340,11 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
         </div>
 
         {/* Worker Availability Switch (Rapido Captain Style) */}
-        <div className="pt-3 border-t border-slate-100">
-          <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-            <div className="flex items-center gap-3">
+        <div className="pt-2.5 sm:pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-between bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-200 gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                   !isKycVerified
                     ? 'bg-slate-200 text-slate-500'
                     : eligibility?.isAvailable
@@ -353,20 +353,20 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                 }`}
               >
                 {!isKycVerified ? (
-                  <Lock className="w-5 h-5" />
+                  <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
                 ) : (
-                  <Power className="w-5 h-5" />
+                  <Power className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </div>
-              <div>
-                <p className="text-xs font-bold text-slate-900">Available for Care Work</p>
-                <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 truncate">Available for Care Work</p>
+                <p className="text-[10px] sm:text-[11px] font-medium text-slate-500 mt-0.5 truncate">
                   {!isKycVerified ? (
                     <span className="text-amber-800 font-semibold">Locked until KYC verified</span>
                   ) : eligibility?.isAvailable ? (
                     <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-                      ONLINE • Ready for care shifts
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                      ONLINE • Ready for shifts
                     </span>
                   ) : (
                     <span className="text-slate-500 font-semibold">OFFLINE • Paused</span>
@@ -669,14 +669,14 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                         </div>
 
                         {/* Job Actions */}
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2 pt-1">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedJob(job);
                               setShowJobModal(true);
                             }}
-                            className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-colors"
+                            className="py-2.5 px-3 min-h-[44px] bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-colors"
                           >
                             View Details
                           </button>
@@ -685,7 +685,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                             type="button"
                             onClick={() => handleAcceptJob(job)}
                             disabled={acceptingJobId === jobId}
-                            className="py-2.5 px-3 bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+                            className="py-2.5 px-3 min-h-[44px] bg-gradient-to-r from-teal-700 to-emerald-700 hover:from-teal-800 hover:to-emerald-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
                           >
                             {acceptingJobId === jobId ? (
                               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -845,7 +845,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowCheckOutModal(true)}
-                  className="py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+                  className="col-span-2 py-3 px-4 min-h-[48px] bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>{t('checkOut')}</span>
@@ -860,7 +860,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               <button
                 type="button"
                 onClick={onNavigateToTasks}
-                className={`py-3 px-4 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs rounded-xl border border-teal-200 transition-all flex items-center justify-center gap-2 ${
+                className={`py-2.5 sm:py-3 px-2 sm:px-4 min-h-[44px] bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-[11px] sm:text-xs rounded-xl border border-teal-200 transition-all flex items-center justify-center gap-1.5 truncate ${
                   !isOnDuty && !isCheckedOut ? 'hidden' : ''
                 }`}
               >
@@ -870,7 +870,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
               <button
                 type="button"
                 onClick={onNavigateToLogs}
-                className={`py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 ${
+                className={`py-2.5 sm:py-3 px-2 sm:px-4 min-h-[44px] bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-[11px] sm:text-xs rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-1.5 truncate ${
                   !isOnDuty && !isCheckedOut ? 'hidden' : ''
                 }`}
               >

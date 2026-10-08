@@ -68,16 +68,16 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom duration-200">
-        <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-slate-200 text-slate-700 rounded-xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
+      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in slide-in-from-bottom duration-200">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-2 bg-slate-200 text-slate-700 rounded-xl shrink-0">
               <LogOut className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-900">{t('checkOut')}</h3>
-              <p className="text-[11px] text-slate-500">
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm text-slate-900 truncate">{t('checkOut')}</h3>
+              <p className="text-[11px] text-slate-500 truncate">
                 End active duty for today's assignment
               </p>
             </div>
@@ -85,13 +85,13 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleCheckOut} className="p-5 space-y-4">
+        <form onSubmit={handleCheckOut} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 pb-safe">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
@@ -121,18 +121,18 @@ export const CheckOutModal: React.FC<CheckOutModalProps> = ({
             <span>Shift will transition to CHECKED_OUT and archive records.</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="grid grid-cols-2 gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+              className="min-h-[44px] py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
             >
               {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="min-h-[44px] py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
               <span>{t('checkOut')}</span>

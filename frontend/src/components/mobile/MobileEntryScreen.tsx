@@ -31,7 +31,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-1 flex-col justify-between px-5 py-4 animate-fadeIn text-slate-900 h-full max-h-screen">
+    <div className="flex flex-1 flex-col justify-between px-4 sm:px-5 py-4 animate-fadeIn text-slate-900 min-h-full overflow-y-auto">
       <div>
         <div className="flex items-center justify-between">
           <CareConnectLogo size="md" showWordmark />
@@ -44,7 +44,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
         </div>
         
         {/* Postal Code Verification Bar */}
-        <div className="mt-3.5 flex w-[210px] items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="mt-3.5 flex w-full max-w-[240px] items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
           <MapPin className="ml-2 h-3.5 w-3.5 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -60,7 +60,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
           />
           <button 
             onClick={handleCheck}
-            className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-bold text-white transition hover:bg-slate-800"
+            className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-bold text-white transition hover:bg-slate-800 shrink-0"
           >
             Check
           </button>
@@ -73,13 +73,13 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
         </div>
       </div>
 
-      <div className="my-auto space-y-3 py-2">
+      <div className="my-auto space-y-3 py-3">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] text-primary uppercase">
           <ShieldCheck className="h-3 w-3" />
           Trusted elder care
         </div>
 
-        <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-teal-50/80 to-slate-50 p-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-white via-teal-50/80 to-slate-50 p-3.5 sm:p-4 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
           <div className="mb-2 flex items-center justify-between">
             <div className="rounded-xl bg-primary p-2 text-white shadow-sm">
               <Heart className="h-4 w-4 fill-current" />
@@ -89,7 +89,7 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
             </div>
           </div>
 
-          <h1 className="text-2xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-extrabold leading-tight tracking-[-0.04em] text-slate-900">
             Compassionate care for the ones who matter most.
           </h1>
           <p className="mt-1.5 text-[11px] leading-relaxed text-slate-600">

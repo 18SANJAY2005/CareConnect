@@ -290,25 +290,31 @@ class ApiService {
     locality?: string;
     language?: string;
     skill?: string;
-  }): Promise<Caregiver[]> {
-    const params = new URLSearchParams();
+  }): Promise<any[]> {
+    try {
+      return await this.request<any[]>("/caregivers/admin/all");
+    } catch (err) {
+      console.warn("Falling back to standard caregivers directory:", err);
+      const params = new URLSearchParams();
 
-    if (filters?.locality) {
-      params.append("locality", filters.locality);
+      if (filters?.locality) {
+        params.append("locality", filters.locality);
+      }
+
+      if (filters?.language) {
+        params.append("language", filters.language);
+      }
+
+      if (filters?.skill) {
+        params.append("skill", filters.skill);
+      }
+
+      const query = params.toString();
+
+      return this.request<Caregiver[]>(`/caregivers/${query ? `?${query}` : ""}`);
     }
-
-    if (filters?.language) {
-      params.append("language", filters.language);
-    }
-
-    if (filters?.skill) {
-      params.append("skill", filters.skill);
-    }
-
-    const query = params.toString();
-
-    return this.request<Caregiver[]>(`/caregivers/${query ? `?${query}` : ""}`);
   }
+
 
   /* =========================================================
      PHASE B ÔÇö CARE ASSIGNMENTS
@@ -978,6 +984,47 @@ class ApiService {
       });
     });
   }
+
+  /* =========================================================
+     ADMIN AUTH & CAREGIVER KYC VERIFICATION
+     ========================================================= */
+
+  async adminLogin(
+    email: string,
+    password: string
+  ): Promise<{ access_token: string; user: any }> {
+    const res = await this.request<{
+      access_token: string;
+      token_type: string;
+      user: any;
+    }>("/auth/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    if (res?.access_token) {
+      this.setToken(res.access_token);
+    }
+    return res;
+  }
+
+  async getCaregiverKyc(caregiverId: string): Promise<any> {
+    return this.request<any>(`/caregivers/kyc/${caregiverId}`);
+  }
+
+
+  async updateCaregiverKycStatus(
+    caregiverId: string,
+    payload: {
+      verification_status: "VERIFIED" | "REJECTED";
+      rejection_reason?: string;
+    }
+  ): Promise<any> {
+    return this.request<any>(`/caregivers/kyc/${caregiverId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
 }
+
 
 export const api = new ApiService();

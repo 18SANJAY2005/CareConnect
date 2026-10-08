@@ -26,25 +26,25 @@ export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({ isOnDuty, onNa
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-slate-200/80 shadow-xs px-4 py-2.5 pt-safe">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-slate-200/80 shadow-xs px-3 sm:px-4 py-2.5 pt-safe">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-1.5">
           {/* Brand & Duty Status */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <CareConnectLogo size="sm" showWordmark={false} />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm tracking-tight text-slate-900">CareConnect</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider">
+                <span className="font-bold text-xs sm:text-sm tracking-tight text-slate-900 truncate">CareConnect</span>
+                <span className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider shrink-0">
                   Field
                 </span>
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span
-                  className={`inline-block w-2 h-2 rounded-full ${
+                  className={`inline-block w-2 h-2 rounded-full shrink-0 ${
                     isOnDuty ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
                   }`}
                 />
-                <span className="text-[11px] font-medium text-slate-600">
+                <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 truncate">
                   {isOnDuty ? t('onDuty') : t('offDuty')}
                 </span>
               </div>

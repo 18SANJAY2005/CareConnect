@@ -175,6 +175,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         const liveCgs = results[1].value;
         const mappedCgs: AdminCaregiverItem[] = liveCgs.map((cg: any) => ({
           id: String(cg.id),
+          userId: cg.userId ? String(cg.userId) : String(cg.id),
           fullName: cg.fullName || cg.full_name || 'Caregiver',
           phone: cg.phone || '+91 98402 11223',
           gender: cg.gender || 'Female',
@@ -188,15 +189,29 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           isBufferPool: Boolean(cg.isBufferPool),
           isPoliceVerified: Boolean(cg.is_police_verified ?? true),
           isClinicalCertified: Boolean(cg.is_clinical_certified ?? true),
-          isIdentityVerified: Boolean(cg.is_identity_verified ?? true),
+          isIdentityVerified: Boolean(cg.isIdentityVerified ?? cg.is_identity_verified ?? (cg.kycStatus === 'VERIFIED')),
           status: cg.status || 'AVAILABLE',
           hourlyRate: cg.hourly_rate || 150,
           dailyRate: cg.daily_rate || 1400,
+          isProfileComplete: Boolean(cg.isProfileComplete ?? true),
+          kycStatus: (cg.kycStatus || (cg.isIdentityVerified ? 'VERIFIED' : 'PENDING')) as any,
+          documentType: cg.documentType || 'AADHAAR',
+          maskedDocumentNumber: cg.maskedDocumentNumber,
+          documentStorageReference: cg.documentStorageReference,
+          rejectionReason: cg.rejectionReason,
+          kycCreatedAt: cg.kycCreatedAt,
+          kycUpdatedAt: cg.kycUpdatedAt,
         }));
         if (mappedCgs.length > 0) {
-          setCaregivers(mappedCgs);
+          setCaregivers((prev) => {
+            const liveIds = new Set(mappedCgs.map((c) => c.id));
+            const livePhones = new Set(mappedCgs.map((c) => c.phone));
+            const rest = prev.filter((p) => !liveIds.has(p.id) && !livePhones.has(p.phone));
+            return [...mappedCgs, ...rest];
+          });
         }
       }
+
 
       // 3. Incidents / SOS
       if (results[2].status === 'fulfilled' && Array.isArray(results[2].value) && results[2].value.length > 0) {
@@ -282,7 +297,63 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
+  // Handle KYC verification / rejection from Admin
+  const handleKycStatusChange = useCallback(
+    async (
+      caregiverId: string,
+      newStatus: 'VERIFIED' | 'REJECTED',
+      rejectionReason?: string
+    ) => {
+      const targetCg = caregivers.find(
+        (c) => c.id === caregiverId || c.userId === caregiverId
+      );
+      const targetId = targetCg?.userId || caregiverId;
+
+      const res = await api.updateCaregiverKycStatus(targetId, {
+        verification_status: newStatus,
+        rejection_reason: rejectionReason,
+      });
+
+      setCaregivers((prev) =>
+        prev.map((c) => {
+          if (c.id === caregiverId || c.userId === caregiverId) {
+            return {
+              ...c,
+              kycStatus: newStatus,
+              isIdentityVerified: newStatus === 'VERIFIED',
+              rejectionReason: newStatus === 'REJECTED' ? rejectionReason : undefined,
+              kycUpdatedAt: new Date().toISOString(),
+            };
+          }
+          return c;
+        })
+      );
+
+      if (
+        selectedCaregiverForDrawer &&
+        (selectedCaregiverForDrawer.id === caregiverId ||
+          selectedCaregiverForDrawer.userId === caregiverId)
+      ) {
+        setSelectedCaregiverForDrawer((prev) =>
+          prev
+            ? {
+                ...prev,
+                kycStatus: newStatus,
+                isIdentityVerified: newStatus === 'VERIFIED',
+                rejectionReason: newStatus === 'REJECTED' ? rejectionReason : undefined,
+                kycUpdatedAt: new Date().toISOString(),
+              }
+            : null
+        );
+      }
+
+      return res;
+    },
+    [caregivers, selectedCaregiverForDrawer]
+  );
+
   // Reassign caregiver corridor
+
   const handleReassignCaregiverCorridor = (
     caregiverId: string,
     newCorridor: string
@@ -440,6 +511,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               caregivers={caregivers}
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
               onStatusChange={handleCaregiverStatusChange}
+              onKycStatusChange={handleKycStatusChange}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
@@ -487,10 +559,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         caregiver={selectedCaregiverForDrawer}
         onClose={() => setSelectedCaregiverForDrawer(null)}
         onStatusChange={handleCaregiverStatusChange}
+        onKycStatusChange={handleKycStatusChange}
         onReassignCorridor={handleReassignCaregiverCorridor}
         onViewElder={handleViewElderFromCaregiver}
         onDispatchToSos={handleDispatchCaregiverToSos}
       />
+
     </div>
   );
 };

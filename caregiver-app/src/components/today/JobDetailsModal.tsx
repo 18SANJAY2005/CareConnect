@@ -32,18 +32,18 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
       <div
-        className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-slideUp sm:animate-zoomIn"
+        className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90dvh] animate-slideUp sm:animate-zoomIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-700 to-emerald-700 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-teal-700 to-emerald-700 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0">
               <Briefcase className="w-4 h-4 text-white" />
             </div>
-            <div>
-              <h3 className="font-bold text-base">{job.title}</h3>
-              <p className="text-[11px] text-teal-100 flex items-center gap-1">
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm sm:text-base truncate">{job.title}</h3>
+              <p className="text-[11px] text-teal-100 flex items-center gap-1 truncate">
                 <span>Care Opportunity</span>
                 <span>•</span>
                 <span>{job.locality}</span>
@@ -54,24 +54,24 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={accepting}
-            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content body */}
-        <div className="p-6 space-y-4 overflow-y-auto flex-1 text-slate-800">
+        <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1 text-slate-800">
           {/* Elder & Rate Summary Banner */}
-          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Elder</p>
-              <h4 className="text-lg font-extrabold text-slate-900">{job.elderName}</h4>
-              <p className="text-xs text-teal-700 font-semibold mt-0.5">{job.careType}</p>
+          <div className="bg-slate-50 rounded-2xl p-3.5 sm:p-4 border border-slate-200 flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider">Elder</p>
+              <h4 className="text-base sm:text-lg font-extrabold text-slate-900 truncate">{job.elderName}</h4>
+              <p className="text-xs text-teal-700 font-semibold mt-0.5 truncate">{job.careType}</p>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Pay / Shift</p>
-              <p className="text-lg font-black text-emerald-700">{job.compensation}</p>
+            <div className="text-right shrink-0">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider">Pay / Shift</p>
+              <p className="text-base sm:text-lg font-black text-emerald-700">{job.compensation}</p>
               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 mt-0.5">
                 Direct Payout
               </span>
@@ -79,10 +79,10 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
           </div>
 
           {/* Key Opportunity Details Grid */}
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3 text-xs">
             <div className="bg-white p-3 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 mb-1">
-                <Clock className="w-3.5 h-3.5 text-teal-600" />
+                <Clock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                 <span className="font-semibold">Shift Timing</span>
               </div>
               <p className="font-bold text-slate-900 text-sm">{job.shiftDuration}</p>
@@ -91,7 +91,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
 
             <div className="bg-white p-3 rounded-xl border border-slate-200">
               <div className="flex items-center gap-1.5 text-slate-500 mb-1">
-                <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                 <span className="font-semibold">Location & Distance</span>
               </div>
               <p className="font-bold text-slate-900 text-sm truncate">{job.locality}</p>
@@ -138,12 +138,12 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
         </div>
 
         {/* Action Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center gap-3">
+        <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 pb-safe flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={accepting}
-            className="flex-1 py-3 px-4 rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-100 transition-colors"
+            className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-100 transition-colors order-2 sm:order-1"
           >
             Cancel
           </button>
@@ -151,7 +151,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             type="button"
             onClick={() => onAccept(job)}
             disabled={accepting}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full sm:flex-1 py-3 px-4 min-h-[48px] rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 order-1 sm:order-2"
           >
             {accepting ? (
               <>

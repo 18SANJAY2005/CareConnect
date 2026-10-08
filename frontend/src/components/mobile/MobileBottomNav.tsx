@@ -68,7 +68,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 safe-bottom shadow-[0_-8px_30px_rgba(15,23,42,0.08)]">
-      <div className="max-w-[440px] mx-auto h-[74px] flex items-center justify-around px-2">
+      <div className="max-w-[440px] mx-auto h-[68px] sm:h-[74px] flex items-center justify-around px-1 sm:px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -77,7 +77,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`group relative flex h-[58px] flex-1 flex-col items-center justify-center rounded-2xl transition-all duration-200 active:scale-95 ${
+              className={`group relative flex h-[52px] sm:h-[58px] flex-1 flex-col items-center justify-center rounded-xl sm:rounded-2xl min-w-0 transition-all duration-200 active:scale-95 ${
                 isActive
                   ? "bg-teal-50 text-primary shadow-sm"
                   : "text-slate-400 hover:bg-slate-50 hover:text-teal-700"
@@ -85,7 +85,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             >
               <div className="relative flex items-center justify-center">
                 <Icon
-                  className={`h-5 w-5 transition-all duration-200 ${
+                  className={`h-4.5 w-4.5 sm:h-5 sm:w-5 transition-all duration-200 ${
                     isActive
                       ? "scale-110 stroke-[2.3] text-primary"
                       : "stroke-[1.8]"
@@ -98,14 +98,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 )}
               </div>
               <span
-                className={`mt-1 text-[10px] font-bold tracking-tight ${
+                className={`mt-0.5 sm:mt-1 text-[9px] sm:text-[10px] font-bold tracking-tight truncate max-w-full px-0.5 ${
                   isActive ? "text-primary" : "text-slate-500"
                 }`}
               >
                 {tab.label}
               </span>
               {isActive && (
-                <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                <span className="absolute bottom-1 h-1 sm:bottom-1.5 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-primary" />
               )}
             </button>
           );

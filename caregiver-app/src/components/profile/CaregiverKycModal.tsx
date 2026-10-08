@@ -215,30 +215,30 @@ export const CaregiverKycModal: React.FC<CaregiverKycModalProps> = ({ isOpen, on
   const isOpsOrAdmin = user?.role === 'OPS_MANAGER' || user?.role === 'ADMIN';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+      <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]">
         {/* Header */}
-        <div className="px-5 py-4 bg-primary text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-teal-800/60 rounded-lg">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-primary text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1.5 bg-teal-800/60 rounded-lg shrink-0">
               <ShieldCheck className="w-5 h-5 text-teal-200" />
             </div>
-            <div>
-              <h2 className="font-bold text-base tracking-tight">Identity Verification & KYC</h2>
-              <p className="text-teal-100 text-xs">Caregiver credentials & government verification</p>
+            <div className="min-w-0">
+              <h2 className="font-bold text-sm sm:text-base tracking-tight truncate">Identity Verification & KYC</h2>
+              <p className="text-teal-100 text-[11px] sm:text-xs truncate">Caregiver credentials & government verification</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-teal-100 hover:text-white hover:bg-teal-700/60 rounded-lg transition-colors"
+            className="p-1.5 text-teal-100 hover:text-white hover:bg-teal-700/60 rounded-lg transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-5 overflow-y-auto space-y-4 text-slate-800 text-sm">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-slate-800 text-sm flex-1">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
@@ -495,11 +495,11 @@ export const CaregiverKycModal: React.FC<CaregiverKycModalProps> = ({ isOpen, on
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end pb-safe shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+            className="min-h-[44px] px-5 py-2.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
           >
             Close
           </button>

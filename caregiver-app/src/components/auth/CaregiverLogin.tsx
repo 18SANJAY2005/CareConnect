@@ -155,20 +155,20 @@ export const CaregiverLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center px-4 py-8">
+    <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex flex-col justify-center items-center px-3 sm:px-4 py-4 sm:py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
         {/* Header Banner */}
-        <div className="bg-primary px-6 py-8 text-white text-center">
+        <div className="bg-primary px-4 sm:px-6 py-6 sm:py-8 text-white text-center">
           <CareConnectLogo size="lg" showWordmark variant="inverted" className="justify-center mb-3" />
-          <p className="text-teal-100 text-sm mt-1">{t('appTitle')}</p>
-          <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-600/40 text-[11px] text-teal-200">
+          <p className="text-teal-100 text-xs sm:text-sm mt-1">{t('appTitle')}</p>
+          <div className="inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full bg-teal-800/60 border border-teal-600/40 text-[10px] sm:text-[11px] text-teal-200">
             <ShieldCheck className="w-3.5 h-3.5 text-teal-300" />
             <span>Authorized Caregiver Access Only</span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {error && (
             <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
               <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
@@ -188,12 +188,12 @@ export const CaregiverLogin: React.FC = () => {
               <div className="space-y-1.5">
                 <div className="grid grid-cols-12 gap-2">
                   {/* Country Code Field */}
-                  <div className="col-span-4">
+                  <div className="col-span-5 xs:col-span-4">
                     <label 
                       htmlFor="caregiver-country-code"
-                      className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide truncate"
+                      className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide truncate"
                     >
-                      Country Code
+                      Country
                     </label>
                     <div className="relative">
                       <select

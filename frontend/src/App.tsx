@@ -322,8 +322,8 @@ const AppContent: React.FC = () => {
   // Loading Screen
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center gap-3 sm:shadow-lg sm:border-x sm:border-slate-200">
           <CareConnectLogo size="lg" className="animate-pulse" />
           <span className="text-xs font-bold text-teal-800 tracking-wide">
             Loading CareConnect...
@@ -336,8 +336,8 @@ const AppContent: React.FC = () => {
   // 1. Auth Screen Modal (renders when isAuthOpen is true and user is not yet logged in)
   if (isAuthOpen && !user) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           <MobileAuthScreen
             authStep={authStep}
             onStepChange={(step) => setAuthStep(step)}
@@ -364,8 +364,8 @@ const AppContent: React.FC = () => {
   // 2. Unauthenticated Entry Screen (when not signed in and not onboarding)
   if (!user && onboardingStep === null) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => {
@@ -386,8 +386,8 @@ const AppContent: React.FC = () => {
   // 3. Mobile Onboarding Flow (Accessible to Guests & Authenticated Users)
   if (onboardingStep !== null) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           {actionError && (
             <div className="m-3 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-center justify-between">
               <span>{actionError}</span>
@@ -528,8 +528,8 @@ const AppContent: React.FC = () => {
   // 4. Authenticated Caregiver Portal
   if (activePortal === "CAREGIVER") {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <CaregiverMobileApp onSwitchPortal={setActivePortal} />
           {renderBackNotice()}
@@ -541,8 +541,8 @@ const AppContent: React.FC = () => {
   // 5. Authenticated Operations Portal
   if (activePortal === "OPERATIONS") {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <MobileOperationsApp onSwitchPortal={setActivePortal} />
           {renderBackNotice()}
@@ -553,8 +553,8 @@ const AppContent: React.FC = () => {
 
   // 6. Authenticated Family / Client Portal
   return (
-    <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-      <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+      <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
         <PwaInstallBanner />
         {/* Top App Bar */}
         <MobileTopBar

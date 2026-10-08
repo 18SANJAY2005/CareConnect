@@ -3,8 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.auth import (
     SendOtpRequest, SendOtpResponse, VerifyOtpRequest,
-    GoogleAuthRequest, TokenResponse
+    GoogleAuthRequest, TokenResponse, AdminLoginRequest
 )
+
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -43,4 +44,16 @@ async def login_google(payload: GoogleAuthRequest, db: AsyncSession = Depends(ge
         email=payload.email
     )
     return result
+
+
+@router.post("/admin/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
+async def login_admin(payload: AdminLoginRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate platform administrator and return access token."""
+    result = await AuthService.login_admin(
+        db=db,
+        email=payload.email,
+        password=payload.password,
+    )
+    return result
+
 

@@ -13,13 +13,14 @@ import {
 import type { AdminCaregiverItem } from '../types';
 import { CaregiverDetailDrawer } from '../components/CaregiverDetailDrawer';
 
-export type CaregiverStatusFilter = 'ALL' | 'AVAILABLE' | 'ON_DUTY' | 'STANDBY';
+export type CaregiverStatusFilter = 'ALL' | 'KYC_PENDING' | 'AVAILABLE' | 'ON_DUTY' | 'STANDBY';
 
 interface AdminCaregiversViewProps {
   caregivers: AdminCaregiverItem[];
   onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
   onBackToDashboard?: () => void;
   onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE') => void;
+  onKycStatusChange?: (caregiverId: string, newStatus: 'VERIFIED' | 'REJECTED', rejectionReason?: string) => Promise<any>;
 }
 
 export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
@@ -27,6 +28,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
   onSelectCaregiver,
   onBackToDashboard,
   onStatusChange,
+  onKycStatusChange,
 }) => {
   const [localSelectedCaregiver, setLocalSelectedCaregiver] = useState<AdminCaregiverItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +43,9 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         c.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
       let matchesStatus = true;
-      if (statusFilter === 'AVAILABLE') {
+      if (statusFilter === 'KYC_PENDING') {
+        matchesStatus = c.kycStatus === 'PENDING' || (!c.isIdentityVerified && c.kycStatus !== 'VERIFIED');
+      } else if (statusFilter === 'AVAILABLE') {
         matchesStatus = c.status === 'AVAILABLE';
       } else if (statusFilter === 'ON_DUTY') {
         matchesStatus = c.status === 'ON_DUTY';
@@ -55,6 +59,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
 
   const onDutyCount = caregivers.filter((c) => c.status === 'ON_DUTY').length;
   const bufferCount = caregivers.filter((c) => c.isBufferPool && c.status === 'AVAILABLE').length;
+  const kycPendingCount = caregivers.filter((c) => c.kycStatus === 'PENDING' || (!c.isIdentityVerified && c.kycStatus !== 'VERIFIED')).length;
 
   return (
     <div className="space-y-5 animate-fadeIn pb-12">
@@ -79,7 +84,17 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         </div>
 
         {/* Quick Summary Badges */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center flex-wrap gap-2">
+          {kycPendingCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter('KYC_PENDING')}
+              className="px-3 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+              <span>{kycPendingCount} KYC Review Pending</span>
+            </button>
+          )}
           <div className="px-3 py-1.5 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-teal-500" />
             <span>{onDutyCount} On Duty Now</span>
@@ -119,6 +134,24 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setStatusFilter('KYC_PENDING')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+              statusFilter === 'KYC_PENDING'
+                ? 'bg-amber-500 text-white shadow-2xs'
+                : 'text-amber-800 hover:text-amber-950'
+            }`}
+          >
+            <span>KYC Pending</span>
+            {kycPendingCount > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                statusFilter === 'KYC_PENDING' ? 'bg-white text-amber-600' : 'bg-amber-200 text-amber-900'
+              }`}>
+                {kycPendingCount}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setStatusFilter('AVAILABLE')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
               statusFilter === 'AVAILABLE'
@@ -148,7 +181,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Standby
+            Buffer Standby
           </button>
         </div>
 
@@ -166,6 +199,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
           </button>
         )}
       </div>
+
 
       {/* Grid of Caregiver Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -232,12 +266,25 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
                 )}
               </div>
 
-              {/* Verification Badges */}
+              {/* KYC & Identity Badges */}
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {cg.isIdentityVerified && (
+                {cg.kycStatus === 'PENDING' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-950 border border-amber-300 text-[10px] font-black">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    KYC Review Required
+                  </span>
+                ) : cg.kycStatus === 'REJECTED' ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold">
+                    ✕ KYC Rejected
+                  </span>
+                ) : (cg.isIdentityVerified || cg.kycStatus === 'VERIFIED') ? (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-semibold">
                     <ShieldCheck className="w-3 h-3 text-teal-600" />
                     Identity Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px]">
+                    KYC Not Submitted
                   </span>
                 )}
                 {cg.isClinicalCertified && (
@@ -297,9 +344,13 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
                       setLocalSelectedCaregiver(cg);
                     }
                   }}
-                  className="px-2.5 py-1 rounded-xl bg-slate-900 group-hover:bg-teal-700 text-white font-bold text-[10px] transition flex items-center gap-1 shadow-2xs"
+                  className={`px-2.5 py-1 rounded-xl font-bold text-[10px] transition flex items-center gap-1 shadow-2xs ${
+                    cg.kycStatus === 'PENDING'
+                      ? 'bg-amber-600 hover:bg-amber-700 text-white animate-pulse'
+                      : 'bg-slate-900 group-hover:bg-teal-700 text-white'
+                  }`}
                 >
-                  <span>Dossier</span>
+                  <span>{cg.kycStatus === 'PENDING' ? 'Review KYC' : 'Dossier'}</span>
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -314,8 +365,10 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
           caregiver={localSelectedCaregiver}
           onClose={() => setLocalSelectedCaregiver(null)}
           onStatusChange={onStatusChange}
+          onKycStatusChange={onKycStatusChange}
         />
       )}
+
     </div>
   );
 };

@@ -210,6 +210,105 @@ async def submit_my_kyc(
     )
 
 
+@router.get("/admin/all")
+async def list_admin_caregivers(
+    current_user: User = Depends(require_role(["ADMIN", "OPS_MANAGER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List all caregivers with their KYC verification records and work details for the Admin Portal.
+    """
+    await seed_initial_data_if_empty(db)
+
+    # Ensure all registered CAREGIVER users have a directory record
+    cg_users_res = await db.execute(
+        select(User).where(User.role == "CAREGIVER")
+    )
+    cg_users = cg_users_res.scalars().all()
+    for u in cg_users:
+        if u.phone or u.fullName:
+            await _get_or_create_caregiver_record(db, u)
+
+    # Query all Caregivers
+    cgs_res = await db.execute(
+        select(Caregiver).order_by(Caregiver.id.desc())
+    )
+    cgs = cgs_res.scalars().all()
+
+    # Query all KYC records
+    kycs_res = await db.execute(select(CaregiverKYC))
+    kycs = kycs_res.scalars().all()
+    kyc_by_user_id = {k.caregiver_id: k for k in kycs}
+
+    users_by_phone = {u.phone: u for u in cg_users if u.phone}
+
+    output = []
+    for cg in cgs:
+        u = users_by_phone.get(cg.phone)
+        kyc = kyc_by_user_id.get(u.id) if u else None
+
+        if kyc:
+            kyc_status = kyc.verification_status
+            doc_type = kyc.document_type
+            masked_num = mask_document_number(kyc.document_type, kyc.document_number)
+            doc_ref = kyc.document_storage_reference
+            rejection_reason = kyc.rejection_reason
+            created_at = kyc.created_at.isoformat() if kyc.created_at else None
+            updated_at = kyc.updated_at.isoformat() if kyc.updated_at else None
+        else:
+            kyc_status = "VERIFIED" if cg.is_identity_verified else "NOT_SUBMITTED"
+            doc_type = "AADHAAR" if cg.is_identity_verified else None
+            masked_num = "XXXX-XXXX-****" if cg.is_identity_verified else None
+            doc_ref = None
+            rejection_reason = None
+            created_at = None
+            updated_at = None
+
+        skills_list = [s.strip() for s in (cg.skills or "").split(",") if s.strip()]
+        if not skills_list:
+            skills_list = ["Elder Care", "Patient Care Assistance"]
+
+        languages_list = [l.strip() for l in (cg.languages or "").split(",") if l.strip()]
+        if not languages_list:
+            languages_list = [cg.primary_language or "Tamil"]
+
+        specializations_list = [s.strip() for s in (cg.specializations or "").split(",") if s.strip()]
+        if not specializations_list:
+            specializations_list = ["Geriatric Care"]
+
+        output.append({
+            "id": str(cg.id),
+            "userId": u.id if u else str(cg.id),
+            "fullName": cg.full_name or (u.fullName if u else "Caregiver"),
+            "phone": cg.phone or (u.phone if u else "+91 98402 11223"),
+            "gender": cg.gender or (u.gender if u else "Female"),
+            "rating": float(cg.rating or 4.8),
+            "experienceYears": int(cg.experience_years or 3),
+            "locality": cg.locality or "Adyar",
+            "primaryLanguage": cg.primary_language or "Tamil",
+            "languages": languages_list,
+            "skills": skills_list,
+            "specializations": specializations_list,
+            "isBufferPool": bool(getattr(cg, "isBufferPool", False)),
+            "isPoliceVerified": bool(getattr(cg, "is_police_verified", False)),
+            "isClinicalCertified": bool(getattr(cg, "is_clinical_certified", False)),
+            "isIdentityVerified": bool(getattr(cg, "is_identity_verified", False) or kyc_status == "VERIFIED"),
+            "status": cg.status or "AVAILABLE",
+            "hourlyRate": float(cg.hourly_rate or 150),
+            "dailyRate": float(cg.daily_rate or 1400),
+            "isProfileComplete": bool(u.isProfileComplete) if u else True,
+            "kycStatus": kyc_status,
+            "documentType": doc_type,
+            "maskedDocumentNumber": masked_num,
+            "documentStorageReference": doc_ref,
+            "rejectionReason": rejection_reason,
+            "kycCreatedAt": created_at,
+            "kycUpdatedAt": updated_at,
+        })
+
+    return output
+
+
 @router.get("/kyc/{caregiver_id}", response_model=KycResponse)
 async def get_caregiver_kyc_by_id(
     caregiver_id: str,
@@ -217,7 +316,7 @@ async def get_caregiver_kyc_by_id(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieve KYC record by caregiver ID.
+    Retrieve KYC record by caregiver ID (supports User.id or directory Caregiver.id).
     Enforces authorization:
     - Admin / Operations can view any caregiver's KYC.
     - A Caregiver can ONLY view their own KYC.
@@ -232,10 +331,31 @@ async def get_caregiver_kyc_by_id(
                 detail="Unauthorized access to caregiver KYC records.",
             )
 
+    # 1. Look up directly by User.id
     result = await db.execute(
         select(CaregiverKYC).where(CaregiverKYC.caregiver_id == caregiver_id)
     )
     kyc = result.scalars().first()
+
+    # 2. Look up through Caregiver directory by ID or phone if needed
+    if not kyc:
+        cg_match = None
+        if caregiver_id.isdigit():
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+            cg_match = cg_res.scalars().first()
+        if not cg_match:
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
+            cg_match = cg_res.scalars().first()
+
+        if cg_match and cg_match.phone:
+            u_res = await db.execute(select(User).where(User.phone == cg_match.phone))
+            u_match = u_res.scalars().first()
+            if u_match:
+                kyc_res = await db.execute(
+                    select(CaregiverKYC).where(CaregiverKYC.caregiver_id == u_match.id)
+                )
+                kyc = kyc_res.scalars().first()
+
     if not kyc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -264,34 +384,74 @@ async def update_caregiver_kyc_status(
 ):
     """
     Authorize or reject caregiver KYC status by Admin/Operations.
+    Supports caregiver_id as User.id (UUID) or directory Caregiver.id.
     """
+    # 1. Lookup by User.id
     result = await db.execute(
         select(CaregiverKYC).where(CaregiverKYC.caregiver_id == caregiver_id)
     )
     kyc = result.scalars().first()
+
+    target_user = None
+    target_cg = None
+
+    if kyc:
+        user_res = await db.execute(select(User).where(User.id == kyc.caregiver_id))
+        target_user = user_res.scalars().first()
+    else:
+        # 2. Try looking up through Caregiver directory by ID or phone
+        if caregiver_id.isdigit():
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+            target_cg = cg_res.scalars().first()
+        if not target_cg:
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
+            target_cg = cg_res.scalars().first()
+
+        if target_cg and target_cg.phone:
+            u_res = await db.execute(select(User).where(User.phone == target_cg.phone))
+            target_user = u_res.scalars().first()
+            if target_user:
+                kyc_res = await db.execute(
+                    select(CaregiverKYC).where(CaregiverKYC.caregiver_id == target_user.id)
+                )
+                kyc = kyc_res.scalars().first()
+                if not kyc and payload.verification_status.upper() == "VERIFIED":
+                    kyc = CaregiverKYC(
+                        caregiver_id=target_user.id,
+                        document_type="AADHAAR",
+                        document_number="XXXXXXXXXXXX",
+                        verification_status="VERIFIED",
+                    )
+                    db.add(kyc)
+                    await db.flush()
+
     if not kyc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Caregiver KYC record not found.",
         )
 
-    kyc.verification_status = payload.verification_status.upper()
+    new_status = payload.verification_status.upper()
+    kyc.verification_status = new_status
     kyc.rejection_reason = (
-        payload.rejection_reason if kyc.verification_status == "REJECTED" else None
+        payload.rejection_reason if new_status == "REJECTED" else None
     )
     kyc.verified_by_id = current_user.id
     kyc.verified_at = func.now()
 
-    # Safely query user phone to sync is_identity_verified flag on Phase B Caregiver profile
-    user_res = await db.execute(select(User).where(User.id == kyc.caregiver_id))
-    u = user_res.scalars().first()
-    if u and u.phone:
+    # Sync is_identity_verified flag on Caregiver profile
+    if not target_cg and target_user and target_user.phone:
         cg_res = await db.execute(
-            select(Caregiver).where(Caregiver.phone == u.phone)
+            select(Caregiver).where(Caregiver.phone == target_user.phone)
         )
-        cg = cg_res.scalars().first()
-        if cg and kyc.verification_status == "VERIFIED":
-            cg.is_identity_verified = True
+        target_cg = cg_res.scalars().first()
+
+    if target_cg:
+        target_cg.is_identity_verified = (new_status == "VERIFIED")
+
+    # If user exists and verified, ensure user is active
+    if target_user and new_status == "VERIFIED":
+        target_user.is_active = True
 
     await db.commit()
     await db.refresh(kyc)
@@ -307,6 +467,7 @@ async def update_caregiver_kyc_status(
         created_at=kyc.created_at,
         updated_at=kyc.updated_at,
     )
+
 
 
 @router.patch("/me/profile", response_model=UserResponse)

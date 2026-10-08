@@ -75,17 +75,17 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         onClick={() => onOpenTab("MY_CARE")}
         role="button"
         tabIndex={0}
-        className="flex cursor-pointer items-center justify-between gap-3 rounded-[30px] bg-gradient-to-r from-primary to-teal-700 p-5 text-white shadow-[0_18px_35px_rgba(0,67,64,0.2)] transition-transform active:scale-[0.98]"
+        className="flex cursor-pointer items-center justify-between gap-2.5 sm:gap-3 rounded-[28px] sm:rounded-[30px] bg-gradient-to-r from-primary to-teal-700 p-4 sm:p-5 text-white shadow-[0_18px_35px_rgba(0,67,64,0.2)] transition-transform active:scale-[0.98]"
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-teal-100">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Good morning</span>
           </div>
-          <h2 className="mt-1 truncate text-2xl font-extrabold tracking-[-0.04em]">
+          <h2 className="mt-1 truncate text-xl sm:text-2xl font-extrabold tracking-[-0.04em]">
             {elder.name}
           </h2>
-          <div className="mt-1 text-sm text-teal-100">
+          <div className="mt-0.5 text-xs sm:text-sm text-teal-100 truncate">
             {elder.location?.locality || "Care Corridor"} • Age {elder.age}
           </div>
         </div>
@@ -95,7 +95,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
             e.stopPropagation();
             onOpenSos();
           }}
-          className="flex min-h-[48px] min-w-[80px] shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-rose-600 px-3 py-2 text-xs font-black text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700 active:scale-95"
+          className="flex min-h-[44px] min-w-[70px] sm:min-w-[80px] shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-rose-600 px-2.5 sm:px-3 py-2 text-xs font-black text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700 active:scale-95"
           aria-label="Emergency SOS"
         >
           <AlertCircle className="h-4 w-4" />
@@ -103,7 +103,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         </button>
       </div>
 
-      <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <div className="rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
             Care team
@@ -122,8 +122,8 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           </span>
         </div>
 
-        <div className="mt-4 flex items-center gap-3.5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-teal-200 bg-teal-50 text-xl font-extrabold text-primary">
+        <div className="mt-3.5 flex items-center gap-3">
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border-2 border-teal-200 bg-teal-50 text-lg sm:text-xl font-extrabold text-primary">
             {(
               caregiver?.full_name ||
               caregiver?.fullName ||
@@ -131,40 +131,40 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
             ).charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-bold text-slate-900">
+            <div className="truncate text-sm sm:text-base font-bold text-slate-900">
               {caregiver?.full_name ||
                 caregiver?.fullName ||
                 "Verified attendant assigned"}
             </div>
-            <div className="mt-0.5 text-xs text-slate-500">
+            <div className="mt-0.5 text-[11px] sm:text-xs text-slate-500 truncate">
               {caregiver?.experience_years
-                ? `${caregiver.experience_years} yrs experience • `
+                ? `${caregiver.experience_years} yrs exp • `
                 : ""}
               {caregiver?.languages || "Tamil, English"}
             </div>
           </div>
           <a
             href="tel:+914448552200"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 text-primary shadow-sm transition hover:bg-teal-100 active:scale-95"
+            className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 text-primary shadow-sm transition hover:bg-teal-100 active:scale-95"
             title="Call Care Desk"
             aria-label="Call Care Desk"
           >
-            <PhoneCall className="h-5 w-5" />
+            <PhoneCall className="h-4 w-4 sm:h-5 sm:w-5" />
           </a>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         <button
           onClick={() => onOpenTab("UPDATES")}
-          className="flex min-h-[72px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
+          className="flex min-h-[64px] sm:min-h-[72px] items-center gap-2.5 sm:gap-3 rounded-[22px] sm:rounded-[24px] border border-slate-200 bg-white p-3 sm:p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
         >
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
-            <Activity className="h-5 w-5" />
+          <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
+            <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900">Updates</div>
-            <div className="text-[11px] text-slate-500">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">Updates</div>
+            <div className="text-[10px] sm:text-[11px] text-slate-500 truncate">
               Vitals & activities
             </div>
           </div>
@@ -172,14 +172,14 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
 
         <button
           onClick={() => onOpenTab("MESSAGES")}
-          className="flex min-h-[72px] items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
+          className="flex min-h-[64px] sm:min-h-[72px] items-center gap-2.5 sm:gap-3 rounded-[22px] sm:rounded-[24px] border border-slate-200 bg-white p-3 sm:p-3.5 text-left shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-slate-300 active:scale-[0.98]"
         >
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
-            <MessageSquare className="h-5 w-5" />
+          <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900">Messages</div>
-            <div className="text-[11px] text-slate-500">Care desk chat</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">Messages</div>
+            <div className="text-[10px] sm:text-[11px] text-slate-500 truncate">Care desk chat</div>
           </div>
         </button>
       </div>
@@ -226,13 +226,13 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         )}
       </div>
 
-      <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <div className="rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
         <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
           <HeartPulse className="h-4 w-4 text-primary" />
           <span>Latest health vitals</span>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2.5">
+        <div className="mt-3.5 grid grid-cols-3 gap-1.5 sm:gap-2.5">
           {[
             { label: "Blood Pressure", value: "120/80", status: "Normal" },
             { label: "Pulse Rate", value: "72 bpm", status: "Steady" },
@@ -240,15 +240,15 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           ].map(({ label, value, status }) => (
             <div
               key={label}
-              className="rounded-2xl border border-teal-100 bg-teal-50/60 p-3 text-center"
+              className="rounded-xl sm:rounded-2xl border border-teal-100 bg-teal-50/60 p-2 sm:p-3 text-center min-w-0"
             >
-              <div className="text-[10px] font-bold text-slate-600">
+              <div className="text-[9px] sm:text-[10px] font-bold text-slate-600 truncate">
                 {label}
               </div>
-              <div className="mt-1 text-base font-extrabold text-slate-900">
+              <div className="mt-0.5 sm:mt-1 text-xs sm:text-base font-extrabold text-slate-900 truncate">
                 {value}
               </div>
-              <div className="mt-0.5 text-[10px] font-bold text-emerald-700">
+              <div className="mt-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 truncate">
                 {status}
               </div>
             </div>

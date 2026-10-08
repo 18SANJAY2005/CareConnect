@@ -13,6 +13,11 @@ class SendOtpRequest(BaseModel):
     channel: str = "WHATSAPP"
     countryCode: Optional[str] = None
 
+class AdminLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 class SendOtpResponse(BaseModel):
     success: bool
     message: str

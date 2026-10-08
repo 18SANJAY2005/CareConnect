@@ -157,17 +157,17 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
+      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in slide-in-from-bottom duration-200">
         {/* Header */}
-        <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-xl">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-2 bg-primary/10 text-primary rounded-xl shrink-0">
               <MapPin className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-900">{t('checkIn')}</h3>
-              <p className="text-[11px] text-slate-500">
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm text-slate-900 truncate">{t('checkIn')}</h3>
+              <p className="text-[11px] text-slate-500 truncate">
                 {shiftDetails.elder.name} • {shiftDetails.elder.locality}
               </p>
             </div>
@@ -175,14 +175,14 @@ export const CheckInModal: React.FC<CheckInModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5">
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1 pb-safe">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />

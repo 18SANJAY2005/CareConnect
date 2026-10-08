@@ -147,21 +147,21 @@ export const CaregiverBasicInfo: React.FC = () => {
   const maxDate = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center px-4 py-8">
+    <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex flex-col justify-center items-center px-3 sm:px-4 py-4 sm:py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
         {/* Header Banner */}
-        <div className="bg-primary px-6 py-6 text-white text-center">
+        <div className="bg-primary px-4 sm:px-6 py-5 sm:py-6 text-white text-center">
           <div className="flex justify-center mb-2.5">
             <div className="p-2.5 bg-white/10 rounded-2xl backdrop-blur-xs">
               <CareConnectLogo size="md" showWordmark={false} />
             </div>
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Complete Your Profile</h1>
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Complete Your Profile</h1>
           <p className="text-teal-100 text-xs mt-1">Please provide your basic information to continue.</p>
         </div>
 
         {/* Form Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {serverError && (
             <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
