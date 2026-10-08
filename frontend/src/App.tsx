@@ -60,6 +60,9 @@ const AppContent: React.FC = () => {
     "FAMILY" | "CAREGIVER" | "OPERATIONS"
   >("FAMILY");
 
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
   const isKnownAuthenticated =
     Boolean(user) ||
@@ -150,6 +153,16 @@ const AppContent: React.FC = () => {
       setActivePortal("OPERATIONS");
     }
   }, [user?.role]);
+
+  // Handle immediate redirection for users with zero elders right after login
+  useEffect(() => {
+    if (user && justLoggedIn) {
+      setJustLoggedIn(false);
+      if (elders.length === 0) {
+        setOnboardingStep("WHO");
+      }
+    }
+  }, [user, elders, justLoggedIn, setOnboardingStep]);
 
   // Persist elder draft into backend
   const finalizeElderOnboarding = async (
@@ -332,6 +345,7 @@ const AppContent: React.FC = () => {
             onPhoneChange={(p) => setDraftPhone(p)}
             onBack={goBack}
             onSuccess={() => {
+              setJustLoggedIn(true);
               if (onboardingStep === "WHO") {
                 // Do nothing, the modal will close and the WHO screen will render
               } else if (onboardingStep) {
