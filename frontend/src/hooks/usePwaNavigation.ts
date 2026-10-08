@@ -307,13 +307,23 @@ export function usePwaNavigation(
   useEffect(() => {
     hasUserRef.current = hasUser;
     if (hasUser) {
-      // If user became authenticated while at an auth screen/hash, clear auth and reset to Home
+      // If user became authenticated while at an auth screen/hash, clear auth
       if (
         stateRef.current.auth ||
         (typeof window !== "undefined" &&
           window.location.hash.startsWith("#auth"))
       ) {
-        resetToHome();
+        if (stateRef.current.step) {
+          // Preserve the onboarding intent
+          const next = { ...stateRef.current, auth: false, authStep: "PHONE" as const };
+          stateRef.current = next;
+          setNavState(next);
+          try {
+            window.history.replaceState(next, "", stateToHash(next));
+          } catch {}
+        } else {
+          resetToHome();
+        }
       } else if (
         stateRef.current.tab === "HOME" &&
         stateRef.current.step === null

@@ -332,7 +332,9 @@ const AppContent: React.FC = () => {
             onPhoneChange={(p) => setDraftPhone(p)}
             onBack={goBack}
             onSuccess={() => {
-              if (onboardingStep) {
+              if (onboardingStep === "WHO") {
+                // Do nothing, the modal will close and the WHO screen will render
+              } else if (onboardingStep) {
                 // Immediately route directly to REQUIREMENTS, replacing #auth in history
                 replaceOnboardingStep("REQUIREMENTS");
               } else {
@@ -352,7 +354,10 @@ const AppContent: React.FC = () => {
         <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
           <PwaInstallBanner />
           <MobileEntryScreen
-            onGetStarted={() => setOnboardingStep("WHO")}
+            onGetStarted={() => {
+              setOnboardingStep("WHO");
+              setIsAuthOpen(true, "PHONE");
+            }}
             onSignIn={() => setIsAuthOpen(true, "PHONE")}
             onSelectRole={(role) => {
               setActivePortal(role);
