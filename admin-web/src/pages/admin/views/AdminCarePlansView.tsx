@@ -48,9 +48,6 @@ export const AdminCarePlansView: React.FC<AdminCarePlansViewProps> = ({ onBackTo
             <h2 className="text-xl font-heading font-extrabold text-slate-900">
               Care Plans & Daily Routines
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Operational care directives, time-slotted daily routines, medication reminders, and mobility protocols.
-            </p>
           </div>
         </div>
 

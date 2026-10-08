@@ -15,6 +15,7 @@ import {
 import { AdminSidebar } from './components/AdminSidebar';
 import { AdminHeader } from './components/AdminHeader';
 import { ElderDetailDrawer } from './components/ElderDetailDrawer';
+import { CaregiverDetailDrawer } from './components/CaregiverDetailDrawer';
 import { AdminOverviewView } from './views/AdminOverviewView';
 import { AdminEldersView } from './views/AdminEldersView';
 import { AdminCaregiversView } from './views/AdminCaregiversView';
@@ -94,6 +95,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
   // Active Drawers / Map Focus
   const [selectedElderForDrawer, setSelectedElderForDrawer] = useState<AdminElderItem | null>(null);
+  const [selectedCaregiverForDrawer, setSelectedCaregiverForDrawer] = useState<AdminCaregiverItem | null>(null);
   const [focusedCoordinates, setFocusedCoordinates] = useState<[number, number] | null>(null);
 
   // Change tab and sync hash
@@ -267,6 +269,47 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     }
   };
 
+  // Status changer for a caregiver
+  const handleCaregiverStatusChange = (
+    caregiverId: string,
+    newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE'
+  ) => {
+    setCaregivers((prev) =>
+      prev.map((c) => (c.id === caregiverId ? { ...c, status: newStatus } : c))
+    );
+    if (selectedCaregiverForDrawer && selectedCaregiverForDrawer.id === caregiverId) {
+      setSelectedCaregiverForDrawer((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
+
+  // Reassign caregiver corridor
+  const handleReassignCaregiverCorridor = (
+    caregiverId: string,
+    newCorridor: string
+  ) => {
+    setCaregivers((prev) =>
+      prev.map((c) => (c.id === caregiverId ? { ...c, locality: newCorridor } : c))
+    );
+    if (selectedCaregiverForDrawer && selectedCaregiverForDrawer.id === caregiverId) {
+      setSelectedCaregiverForDrawer((prev) => (prev ? { ...prev, locality: newCorridor } : null));
+    }
+  };
+
+  // View elder profile from caregiver drawer
+  const handleViewElderFromCaregiver = (elderName: string, elderId?: string) => {
+    setSelectedCaregiverForDrawer(null);
+    const targetElder = elders.find((e) => (elderId && e.id === elderId) || e.name === elderName);
+    if (targetElder) {
+      setSelectedElderForDrawer(targetElder);
+    }
+  };
+
+  // Dispatch caregiver to SOS
+  const handleDispatchCaregiverToSos = (_caregiver: AdminCaregiverItem) => {
+    setSelectedCaregiverForDrawer(null);
+    handleSelectTab('SOS');
+  };
+
   // SOS Resolution
   const handleResolveAlert = async (alertId: string, resolutionNotes: string) => {
     setAlerts((prev) => {
@@ -395,6 +438,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {activeTab === 'CAREGIVERS' && (
             <AdminCaregiversView
               caregivers={caregivers}
+              onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
+              onStatusChange={handleCaregiverStatusChange}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
@@ -412,6 +457,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               alerts={alerts}
               focusedCoordinates={focusedCoordinates}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
+              onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
@@ -428,12 +474,22 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         </main>
       </div>
 
-      {/* Slide-over Profile Drawer */}
+      {/* Slide-over Profile Drawer (Elder) */}
       <ElderDetailDrawer
         elder={selectedElderForDrawer}
         onClose={() => setSelectedElderForDrawer(null)}
         onStatusChange={handleStatusChange}
         onViewOnMap={handleViewElderOnMap}
+      />
+
+      {/* Slide-over Profile Drawer (Caregiver) */}
+      <CaregiverDetailDrawer
+        caregiver={selectedCaregiverForDrawer}
+        onClose={() => setSelectedCaregiverForDrawer(null)}
+        onStatusChange={handleCaregiverStatusChange}
+        onReassignCorridor={handleReassignCaregiverCorridor}
+        onViewElder={handleViewElderFromCaregiver}
+        onDispatchToSos={handleDispatchCaregiverToSos}
       />
     </div>
   );

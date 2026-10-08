@@ -31,7 +31,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       case 'OVERVIEW':
         return 'Operations Dashboard';
       case 'ELDERS':
-        return 'Elders & Family Directory';
+        return 'Careseekers Directory';
       case 'CAREGIVERS':
         return 'Caregiver Network & Buffer Pool';
       case 'CARE_PLANS':
@@ -72,7 +72,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <span className="shrink-0">CareConnect HQ</span>
             )}
             <span>/</span>
-            <span className="text-teal-700 font-extrabold truncate">{getTabTitle()}</span>
+            <span className="text-teal-700 font-extrabold truncate">
+              {activeTab === 'ELDERS' ? 'CARESEEKERS' : getTabTitle()}
+            </span>
           </div>
           <h1 className="text-base md:text-lg font-heading font-extrabold text-slate-900 leading-tight truncate">
             {getTabTitle()}

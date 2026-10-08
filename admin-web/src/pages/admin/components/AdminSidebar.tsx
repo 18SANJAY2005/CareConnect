@@ -40,7 +40,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
     {
       id: 'ELDERS',
-      label: 'Elders & Families',
+      label: 'Careseekers',
       icon: Users,
     },
     {

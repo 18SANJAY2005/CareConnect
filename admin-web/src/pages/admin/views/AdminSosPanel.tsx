@@ -70,9 +70,6 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
                 Emergency SOS & Escalations Desk
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              24/7 centralized safety triage. Immediately dispatch corridor supervisors or coordinate emergency medical services.
-            </p>
           </div>
         </div>
 
@@ -103,7 +100,7 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
               : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
           }`}
         >
-          All Tickets ({alerts.length})
+          All Status ({alerts.length})
         </button>
         <button
           onClick={() => setFilterStatus('OPEN')}

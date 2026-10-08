@@ -42,6 +42,46 @@ export interface AdminElderItem {
   };
 }
 
+export interface CaregiverCertification {
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+  verified: boolean;
+  credentialId?: string;
+}
+
+export interface CaregiverPersonalInfo {
+  dateOfBirth?: string;
+  age?: number;
+  bloodGroup?: string;
+  languagesSpoken: string[];
+  secondaryPhone?: string;
+  residentialArea: string;
+}
+
+export interface CaregiverShiftSchedule {
+  shiftType: string;
+  workingDays: string;
+  lastCheckIn?: string;
+  hoursLoggedThisMonth: number;
+  nextShiftTime?: string;
+}
+
+export interface CaregiverPerformanceMetrics {
+  onTimeArrivalRate: number;
+  sosDrillResponseAvgMins: number;
+  totalCompletedVisits: number;
+  clientNpsRating: number;
+  reviewCount?: number;
+}
+
+export interface CaregiverEmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+}
+
 export interface AdminCaregiverItem {
   id: string;
   fullName: string;
@@ -60,8 +100,16 @@ export interface AdminCaregiverItem {
   isIdentityVerified: boolean;
   status: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE';
   activeElderName?: string;
+  activeElderId?: string;
   hourlyRate?: number;
   dailyRate?: number;
+  personalInfo?: CaregiverPersonalInfo;
+  certifications?: CaregiverCertification[];
+  clinicalCompetencies?: string[];
+  shiftSchedule?: CaregiverShiftSchedule;
+  performanceMetrics?: CaregiverPerformanceMetrics;
+  emergencyContact?: CaregiverEmergencyContact;
+  bio?: string;
 }
 
 export interface AdminSosAlert {

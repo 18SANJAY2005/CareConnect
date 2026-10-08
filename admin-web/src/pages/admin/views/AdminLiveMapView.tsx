@@ -129,6 +129,7 @@ interface AdminLiveMapViewProps {
   alerts: AdminSosAlert[];
   focusedCoordinates?: [number, number] | null;
   onSelectElder: (elder: AdminElderItem) => void;
+  onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
   onBackToDashboard?: () => void;
 }
 
@@ -138,6 +139,7 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
   alerts,
   focusedCoordinates,
   onSelectElder,
+  onSelectCaregiver,
   onBackToDashboard,
 }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'ELDERS' | 'CAREGIVERS' | 'SOS'>('ALL');
@@ -178,9 +180,6 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                 Live Geographic Serviceability Map
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Plotting real-time GPS locations, active elder home visits, attendant coverage, and emergency alerts across Chennai.
-            </p>
           </div>
         </div>
 
@@ -204,7 +203,7 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                 : 'bg-teal-50 text-teal-800 hover:bg-teal-100'
             }`}
           >
-            <span>🧓 Elders ({elders.length})</span>
+            <span>🧓 Careseekers ({elders.length})</span>
           </button>
           <button
             onClick={() => setFilterType('CAREGIVERS')}
@@ -345,6 +344,16 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                         <div className="mt-1 text-[10px] text-slate-500">
                           Assigned to: {cg.activeElderName}
                         </div>
+                      )}
+                      {onSelectCaregiver && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectCaregiver(cg)}
+                          className="mt-2.5 w-full py-1 px-2 bg-sky-900 hover:bg-sky-800 text-white rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-2xs"
+                        >
+                          <span>Inspect Dossier</span>
+                          <span aria-hidden="true">&rarr;</span>
+                        </button>
                       )}
                     </div>
                   </Popup>

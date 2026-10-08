@@ -70,11 +70,8 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
           )}
           <div>
             <h2 className="text-xl font-heading font-extrabold text-slate-900">
-              Elders & Family Directory
+              Careseekers Directory
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Manage registered care beneficiaries, verify service locations, and assign certified caregivers.
-            </p>
           </div>
         </div>
 
@@ -84,7 +81,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
             className="px-4 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-2xl font-bold text-xs shadow-md flex items-center justify-center gap-2 transition active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Add Elder Profile</span>
+            <span>Add Careseeker Profile</span>
           </button>
         )}
       </div>
@@ -96,7 +93,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by elder name, locality, caregiver, or sponsor..."
+            placeholder="Search by careseeker name, locality, caregiver, or sponsor..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
@@ -120,19 +117,52 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
           </select>
         </div>
 
-        {/* Status Filter */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-600">
-          <span className="font-bold">Status:</span>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:bg-white"
+        {/* Standardized Status Filter Pills */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() => setSelectedStatus('ALL')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              selectedStatus === 'ALL'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Care</option>
-            <option value="PENDING">Pending Verification</option>
-            <option value="INACTIVE">Inactive / Paused</option>
-          </select>
+            All Status
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatus('ACTIVE')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              selectedStatus === 'ACTIVE'
+                ? 'bg-white text-emerald-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Active
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatus('PENDING')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              selectedStatus === 'PENDING'
+                ? 'bg-white text-amber-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedStatus('INACTIVE')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              selectedStatus === 'INACTIVE'
+                ? 'bg-white text-slate-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Inactive
+          </button>
         </div>
 
         {/* Reset filter button if any applied */}
@@ -157,7 +187,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
             {/* Table Header */}
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <th className="py-4 px-6">Elder Name & Demographics</th>
+                <th className="py-4 px-6">Careseeker Name & Demographics</th>
                 <th className="py-4 px-6">Primary Family Contact</th>
                 <th className="py-4 px-6">Service Address & PIN</th>
                 <th className="py-4 px-6">Assigned Caregiver</th>
@@ -171,7 +201,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
               {filteredElders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                    No elder profiles match the selected search or filter criteria.
+                    No careseeker profiles match the selected search or filter criteria.
                   </td>
                 </tr>
               ) : (
@@ -280,7 +310,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
           <span>
             Showing <strong className="text-slate-700">{filteredElders.length}</strong> of{' '}
-            <strong className="text-slate-700">{elders.length}</strong> registered elders
+            <strong className="text-slate-700">{elders.length}</strong> registered careseekers
           </span>
           <span className="font-medium text-slate-400">
             Geofence corridor verification active

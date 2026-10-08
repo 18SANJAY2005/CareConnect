@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Search,
-  Filter,
   ShieldCheck,
   Star,
   Phone,
@@ -9,21 +8,29 @@ import {
   Layers,
   MapPin,
   ArrowLeft,
+  ArrowRight,
 } from 'lucide-react';
 import type { AdminCaregiverItem } from '../types';
+import { CaregiverDetailDrawer } from '../components/CaregiverDetailDrawer';
+
+export type CaregiverStatusFilter = 'ALL' | 'AVAILABLE' | 'ON_DUTY' | 'STANDBY';
 
 interface AdminCaregiversViewProps {
   caregivers: AdminCaregiverItem[];
+  onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
   onBackToDashboard?: () => void;
+  onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE') => void;
 }
 
 export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
   caregivers,
+  onSelectCaregiver,
   onBackToDashboard,
+  onStatusChange,
 }) => {
+  const [localSelectedCaregiver, setLocalSelectedCaregiver] = useState<AdminCaregiverItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [selectedFilter, setSelectedFilter] = useState<'ALL' | 'BUFFER' | 'ON_DUTY'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<CaregiverStatusFilter>('ALL');
 
   const filteredCaregivers = useMemo(() => {
     return caregivers.filter((c) => {
@@ -33,15 +40,18 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         c.locality.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesStatus = selectedStatus === 'ALL' || c.status === selectedStatus;
-      const matchesBuffer =
-        selectedFilter === 'ALL' ||
-        (selectedFilter === 'BUFFER' && c.isBufferPool) ||
-        (selectedFilter === 'ON_DUTY' && c.status === 'ON_DUTY');
+      let matchesStatus = true;
+      if (statusFilter === 'AVAILABLE') {
+        matchesStatus = c.status === 'AVAILABLE';
+      } else if (statusFilter === 'ON_DUTY') {
+        matchesStatus = c.status === 'ON_DUTY';
+      } else if (statusFilter === 'STANDBY') {
+        matchesStatus = c.isBufferPool && c.status === 'AVAILABLE';
+      }
 
-      return matchesSearch && matchesStatus && matchesBuffer;
+      return matchesSearch && matchesStatus;
     });
-  }, [caregivers, searchQuery, selectedStatus, selectedFilter]);
+  }, [caregivers, searchQuery, statusFilter]);
 
   const onDutyCount = caregivers.filter((c) => c.status === 'ON_DUTY').length;
   const bufferCount = caregivers.filter((c) => c.isBufferPool && c.status === 'AVAILABLE').length;
@@ -65,9 +75,6 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
             <h2 className="text-xl font-heading font-extrabold text-slate-900">
               Caregiver Network & Buffer Pool
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Monitor clinical certifications, identity verifications, live shift assignments, and SLA emergency buffer attendants.
-            </p>
           </div>
         </div>
 
@@ -97,47 +104,67 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-slate-600">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="font-bold">Status:</span>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:bg-white"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="ON_DUTY">On Duty</option>
-            <option value="AVAILABLE">Available / Standby</option>
-            <option value="ON_LEAVE">On Leave</option>
-          </select>
-        </div>
-
+        {/* Standardized Status Filter Pills */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
           <button
-            onClick={() => setSelectedFilter('ALL')}
+            type="button"
+            onClick={() => setStatusFilter('ALL')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-              selectedFilter === 'ALL' ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'
+              statusFilter === 'ALL'
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            All
+            All Status
           </button>
           <button
-            onClick={() => setSelectedFilter('ON_DUTY')}
+            type="button"
+            onClick={() => setStatusFilter('AVAILABLE')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-              selectedFilter === 'ON_DUTY' ? 'bg-white text-teal-800 shadow-2xs' : 'text-slate-500'
+              statusFilter === 'AVAILABLE'
+                ? 'bg-white text-teal-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Available
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter('ON_DUTY')}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+              statusFilter === 'ON_DUTY'
+                ? 'bg-white text-teal-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             On Duty
           </button>
           <button
-            onClick={() => setSelectedFilter('BUFFER')}
+            type="button"
+            onClick={() => setStatusFilter('STANDBY')}
             className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-              selectedFilter === 'BUFFER' ? 'bg-white text-emerald-800 shadow-2xs' : 'text-slate-500'
+              statusFilter === 'STANDBY'
+                ? 'bg-white text-teal-800 shadow-2xs'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Buffer Pool
+            Standby
           </button>
         </div>
+
+        {/* Clear Filters */}
+        {(searchQuery || statusFilter !== 'ALL') && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('ALL');
+            }}
+            className="text-xs font-bold text-teal-700 hover:text-teal-900 px-2 py-1"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {/* Grid of Caregiver Cards */}
@@ -145,17 +172,24 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         {filteredCaregivers.map((cg) => (
           <div
             key={cg.id}
-            className="p-5 bg-white rounded-3xl border border-slate-200 shadow-xs hover:border-teal-300 hover:shadow-md transition-all flex flex-col justify-between"
+            onClick={() => {
+              if (onSelectCaregiver) {
+                onSelectCaregiver(cg);
+              } else {
+                setLocalSelectedCaregiver(cg);
+              }
+            }}
+            className="p-5 bg-white rounded-3xl border border-slate-200 shadow-xs hover:border-teal-400 hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer group"
           >
             <div>
               {/* Header with Avatar & Status */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white font-heading font-extrabold text-base flex items-center justify-center shadow-xs">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-700 group-hover:bg-teal-600 text-white font-heading font-extrabold text-base flex items-center justify-center shadow-xs transition">
                     {cg.fullName.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h3 className="font-heading font-extrabold text-sm text-slate-900">
+                    <h3 className="font-heading font-extrabold text-sm text-slate-900 group-hover:text-teal-900 transition">
                       {cg.fullName}
                     </h3>
                     <p className="text-[11px] text-slate-500">
@@ -238,22 +272,50 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
               </div>
             </div>
 
-            {/* Footer with Phone & Rates */}
+            {/* Footer with Phone, Rate & Inspect Action */}
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <a
                 href={`tel:${cg.phone}`}
+                onClick={(e) => e.stopPropagation()}
                 className="font-bold text-teal-800 hover:underline flex items-center gap-1 text-[11px]"
               >
                 <Phone className="w-3 h-3 text-teal-600" />
                 <span>{cg.phone}</span>
               </a>
-              <span className="font-semibold text-slate-600 text-[11px]">
-                ₹{cg.dailyRate || 1400} / day
-              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-600 text-[11px] hidden sm:inline">
+                  ₹{cg.dailyRate || 1400}/d
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onSelectCaregiver) {
+                      onSelectCaregiver(cg);
+                    } else {
+                      setLocalSelectedCaregiver(cg);
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-slate-900 group-hover:bg-teal-700 text-white font-bold text-[10px] transition flex items-center gap-1 shadow-2xs"
+                >
+                  <span>Dossier</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Fallback Drawer if not rendered by parent */}
+      {!onSelectCaregiver && (
+        <CaregiverDetailDrawer
+          caregiver={localSelectedCaregiver}
+          onClose={() => setLocalSelectedCaregiver(null)}
+          onStatusChange={onStatusChange}
+        />
+      )}
     </div>
   );
 };

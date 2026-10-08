@@ -86,7 +86,7 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Total Elders
+              Total Careseekers
             </span>
             <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 group-hover:bg-teal-600 group-hover:text-white transition-colors flex items-center justify-center">
               <Users className="w-5 h-5" />
@@ -208,7 +208,7 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-heading font-extrabold text-base text-slate-900">
-                  Active Elder Care Profiles
+                  Active Careseeker Profiles
                 </h3>
                 <p className="text-xs text-slate-500">
                   Currently monitored in home care corridors
