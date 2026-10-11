@@ -33,8 +33,8 @@ import { MobileMatchmakingScreen } from "./components/mobile/matchmaking/MobileM
 import { FamilyHomeScreen } from "./components/mobile/family/FamilyHomeScreen";
 import { FamilyMyCareScreen } from "./components/mobile/family/FamilyMyCareScreen";
 import { FamilyUpdatesScreen } from "./components/mobile/family/FamilyUpdatesScreen";
-import { FamilyMessagesScreen } from "./components/mobile/family/FamilyMessagesScreen";
-import { FamilyMoreScreen } from "./components/mobile/family/FamilyMoreScreen";
+import { FamilyPaymentScreen } from "./components/mobile/family/FamilyPaymentScreen";
+import { FamilyProfileScreen } from "./components/mobile/family/FamilyProfileScreen";
 
 // Caregiver & Operations Portals
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
@@ -61,6 +61,7 @@ const AppContent: React.FC = () => {
   >("FAMILY");
 
   const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [authMode, setAuthMode] = useState<"SIGN_IN" | "SIGN_UP">("SIGN_IN");
 
 
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
@@ -78,7 +79,6 @@ const AppContent: React.FC = () => {
     isSosOpen,
     editingSection,
     isDeleteModalOpen,
-    activeMoreModal,
     setOnboardingStep,
     replaceOnboardingStep,
     resetToHome,
@@ -89,7 +89,6 @@ const AppContent: React.FC = () => {
     setIsSosOpen,
     setEditingSection,
     setIsDeleteModalOpen,
-    setActiveMoreModal,
     goBack,
   } = usePwaNavigation(isKnownAuthenticated, refreshElders);
   const [draftRecipient, setDraftRecipient] = useState<
@@ -183,15 +182,17 @@ const AppContent: React.FC = () => {
       const effectiveIntake = intakeOverride || draftIntake;
 
       // 1. Create Elder record
+      const isMyself = draftRecipient === "ME";
       const created = await api.createElder({
-        name: draftBasic.name || "Elder",
+        name: draftBasic.name || (isMyself ? user?.fullName || "Myself" : "Elder"),
         age: draftBasic.age || 70,
         gender: draftBasic.gender || "FEMALE",
         dateOfBirth: draftBasic.dob || null,
         phoneNumber:
-          draftRecipient === "ME"
+          isMyself
             ? user?.phone || undefined
             : draftBasic.phone || undefined,
+        isMyself: isMyself,
       });
 
       // 2. Persist Location if available
@@ -339,17 +340,21 @@ const AppContent: React.FC = () => {
       <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
         <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           <MobileAuthScreen
+            initialMode={authMode}
             authStep={authStep}
             onStepChange={(step) => setAuthStep(step)}
             savedPhone={draftPhone}
             onPhoneChange={(p) => setDraftPhone(p)}
             onBack={goBack}
-            onSuccess={() => {
+            onSuccess={(isNewUser) => {
               setJustLoggedIn(true);
-              if (onboardingStep === "WHO") {
-                // Do nothing, the modal will close and the WHO screen will render
+              if (authMode === "SIGN_IN") {
+                // Sign In must be phone number → OTP → dashboard, without onboarding questions or a name field
+                resetToHome();
+              } else if (isNewUser) {
+                // Sign Up verifies phone OTP before checking service availability
+                setOnboardingStep("LOCATION");
               } else if (onboardingStep) {
-                // Immediately route directly to REQUIREMENTS, replacing #auth in history
                 replaceOnboardingStep("REQUIREMENTS");
               } else {
                 resetToHome();
@@ -369,12 +374,16 @@ const AppContent: React.FC = () => {
           <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => {
-              setOnboardingStep("WHO");
+              setAuthMode("SIGN_UP");
               setIsAuthOpen(true, "PHONE");
             }}
-            onSignIn={() => setIsAuthOpen(true, "PHONE")}
+            onSignIn={() => {
+              setAuthMode("SIGN_IN");
+              setIsAuthOpen(true, "PHONE");
+            }}
             onSelectRole={(role) => {
               setActivePortal(role);
+              setAuthMode("SIGN_IN");
               setIsAuthOpen(true, "PHONE");
             }}
           />
@@ -418,7 +427,7 @@ const AppContent: React.FC = () => {
               initialValue={draftRecipient || undefined}
               isMyselfActive={
                 !!user?.phone &&
-                elders.some((elder) => elder.phoneNumber === user.phone)
+                elders.some((elder) => elder.isMyself || elder.phoneNumber === user.phone)
               }
               onSelect={(recipient) => {
                 setDraftRecipient(recipient);
@@ -672,18 +681,18 @@ const AppContent: React.FC = () => {
                 <FamilyUpdatesScreen elder={activeElder || elders[0]} />
               )}
 
-              {activeFamilyTab === "MESSAGES" && (
-                <FamilyMessagesScreen
-                  elder={activeElder || elders[0]}
-                  currentUser={user}
-                />
+              {activeFamilyTab === "PAYMENT" && (
+                <FamilyPaymentScreen elder={activeElder || elders[0]} />
               )}
 
-              {activeFamilyTab === "MORE" && (
-                <FamilyMoreScreen
+              {activeFamilyTab === "PROFILE" && (
+                <FamilyProfileScreen
                   elder={activeElder || elders[0]}
-                  activeModal={activeMoreModal}
-                  onActiveModalChange={setActiveMoreModal}
+                  onAddElder={() => {
+                    setDraftRecipient(null);
+                    setDraftBasic({ name: "", age: 0, gender: "FEMALE" });
+                    setOnboardingStep("WHO");
+                  }}
                 />
               )}
             </>

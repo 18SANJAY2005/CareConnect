@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, JSON, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -31,6 +31,13 @@ class CareTask(Base):
     
     createdAt = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updatedAt = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Supervisor correction workflow fields
+    isSupervisorCorrection = Column(Boolean, default=False, nullable=False)
+    correctionReason = Column(Text, nullable=True)
+    correctedByUserId = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    correctedAt = Column(DateTime(timezone=True), nullable=True)
+    originalStatus = Column(String(50), nullable=True)
 
     # Relationships
     shift = relationship("CareShift", back_populates="tasks")

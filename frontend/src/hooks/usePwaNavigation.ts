@@ -117,14 +117,15 @@ function hashToState(
   if (clean.startsWith("more/")) {
     const morePart = clean.replace("more/", "").toUpperCase();
     if (["REPLACEMENT", "FEEDBACK", "BILLING"].includes(morePart)) {
-      return { tab: "MORE", more: morePart as MoreModalType };
+      return { tab: "PROFILE", more: morePart as MoreModalType };
     }
   }
 
   if (clean === "my-care") return { tab: "MY_CARE", step: null };
   if (clean === "updates") return { tab: "UPDATES", step: null };
-  if (clean === "messages") return { tab: "MESSAGES", step: null };
-  if (clean === "more") return { tab: "MORE", step: null };
+  if (clean === "payment") return { tab: "PAYMENT", step: null };
+  if (clean === "profile") return { tab: "PROFILE", step: null };
+  if (clean === "messages" || clean === "more") return { tab: "PROFILE", step: null };
 
   return { tab: "HOME", step: null, auth: false };
 }

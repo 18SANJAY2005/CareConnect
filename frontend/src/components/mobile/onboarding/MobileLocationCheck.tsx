@@ -45,6 +45,42 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
     useState<LocationVerifyResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Service Interest submission state for unserviceable areas
+  const [interestName, setInterestName] = useState("");
+  const [interestPhone, setInterestPhone] = useState("");
+  const [interestEmail, setInterestEmail] = useState("");
+  const [interestNotes, setInterestNotes] = useState("");
+  const [isSubmittingInterest, setIsSubmittingInterest] = useState(false);
+  const [interestSubmitted, setInterestSubmitted] = useState(false);
+  const [interestMessage, setInterestMessage] = useState<string | null>(null);
+
+  const handleSubmitInterest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!interestName.trim() || !interestPhone.trim()) {
+      setInterestMessage("Please enter your name and phone number.");
+      return;
+    }
+    setIsSubmittingInterest(true);
+    setInterestMessage(null);
+    try {
+      await api.submitServiceInterest({
+        fullName: interestName.trim(),
+        phone: interestPhone.trim(),
+        email: interestEmail.trim() || undefined,
+        postalCode: postalCode || undefined,
+        locality: locality || undefined,
+        serviceType: "ELDER_HOME_CARE",
+        notes: interestNotes.trim() || undefined,
+      });
+      setInterestSubmitted(true);
+      setInterestMessage("Thank you! Your interest has been registered. Our care team will notify you when services launch in your area.");
+    } catch (err: any) {
+      setInterestMessage(err.message || "Failed to submit interest. Please try again.");
+    } finally {
+      setIsSubmittingInterest(false);
+    }
+  };
+
   // Handle location chosen from the precise interactive map picker
   const handlePreciseLocationSelected = async (data: PreciseLocationData) => {
     setLatitude(data.latitude);
@@ -181,7 +217,7 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
                           : ""
                       }. Verified healthcare attendants and supervisors are on standby for this address.`
                     : verifyResult.message ||
-                      `We are currently not active in PIN ${postalCode}. You can join our priority expansion waitlist.`}
+                      `We are currently not active in PIN ${postalCode}. Join our priority waitlist to be notified when care expands to your locality.`}
                 </div>
                 {verifyResult.serviceable && (
                   <div className="pt-1.5 text-[11px] font-mono text-emerald-800 flex items-center gap-2">
@@ -190,6 +226,63 @@ export const MobileLocationCheck: React.FC<MobileLocationCheckProps> = ({
                       GPS: {verifyResult.latitude ?? latitude?.toFixed(4)},{" "}
                       {verifyResult.longitude ?? longitude?.toFixed(4)}
                     </span>
+                  </div>
+                )}
+                {!verifyResult.serviceable && (
+                  <div className="mt-3 pt-3 border-t border-amber-200/80">
+                    {interestSubmitted ? (
+                      <div className="p-3 bg-emerald-100/80 border border-emerald-300 rounded-xl text-emerald-900 text-xs font-medium">
+                        ✓ {interestMessage}
+                      </div>
+                    ) : (
+                      <form onSubmit={handleSubmitInterest} className="space-y-2.5">
+                        <div className="text-xs font-bold text-amber-950">
+                          Register Interest for Future Coverage
+                        </div>
+                        {interestMessage && (
+                          <div className="p-2 bg-rose-50 border border-rose-200 text-rose-800 text-[11px] rounded-lg">
+                            {interestMessage}
+                          </div>
+                        )}
+                        <input
+                          type="text"
+                          value={interestName}
+                          onChange={(e) => setInterestName(e.target.value)}
+                          placeholder="Your full name *"
+                          className="w-full h-10 px-3 bg-white rounded-xl border border-amber-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-teal-600"
+                          required
+                        />
+                        <input
+                          type="tel"
+                          value={interestPhone}
+                          onChange={(e) => setInterestPhone(e.target.value)}
+                          placeholder="Contact phone number *"
+                          className="w-full h-10 px-3 bg-white rounded-xl border border-amber-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-teal-600"
+                          required
+                        />
+                        <input
+                          type="email"
+                          value={interestEmail}
+                          onChange={(e) => setInterestEmail(e.target.value)}
+                          placeholder="Email address (optional)"
+                          className="w-full h-10 px-3 bg-white rounded-xl border border-amber-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-teal-600"
+                        />
+                        <textarea
+                          value={interestNotes}
+                          onChange={(e) => setInterestNotes(e.target.value)}
+                          placeholder="Any specific care needs or timing? (optional)"
+                          rows={2}
+                          className="w-full p-2.5 bg-white rounded-xl border border-amber-300 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-teal-600"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isSubmittingInterest}
+                          className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-sm transition"
+                        >
+                          {isSubmittingInterest ? "Submitting..." : "Submit Interest for Waitlist"}
+                        </button>
+                      </form>
+                    )}
                   </div>
                 )}
               </div>

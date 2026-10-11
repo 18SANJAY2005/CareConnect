@@ -4,7 +4,6 @@ import {
   Heart,
   Activity,
   MessageSquare,
-  Menu,
   Clock,
   CheckSquare,
   User,
@@ -13,12 +12,20 @@ import {
   FileText,
   Users,
   AlertTriangle,
+  CreditCard,
 } from "lucide-react";
 
-export type FamilyTab = "HOME" | "MY_CARE" | "UPDATES" | "MESSAGES" | "MORE";
+export type FamilyTab = "HOME" | "MY_CARE" | "UPDATES" | "PAYMENT" | "PROFILE";
 export type CaregiverTab = "TODAY" | "TASKS" | "ELDER" | "LOGS" | "MESSAGES";
 export type OperationsTab =
   "DASHBOARD" | "CASES" | "MATCHING" | "ACTIVE_CARE" | "ALERTS";
+
+interface NavTabItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: number;
+}
 
 interface MobileBottomNavProps {
   portal: "FAMILY" | "CAREGIVER" | "OPERATIONS";
@@ -35,12 +42,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   unreadCount = 0,
   alertCount = 0,
 }) => {
-  const familyTabs = [
+  const familyTabs: NavTabItem[] = [
     { id: "HOME", label: "Home", icon: Home },
     { id: "MY_CARE", label: "My Care", icon: Heart },
     { id: "UPDATES", label: "Updates", icon: Activity },
-    { id: "MESSAGES", label: "Chat", icon: MessageSquare, badge: unreadCount },
-    { id: "MORE", label: "More", icon: Menu },
+    { id: "PAYMENT", label: "Payment", icon: CreditCard },
+    { id: "PROFILE", label: "Profile", icon: User },
   ];
 
   const caregiverTabs = [

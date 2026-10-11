@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
 import {
   ShieldCheck,
@@ -8,7 +8,6 @@ import {
   UserCheck,
   Sparkles,
   MapPin,
-  CheckCircle,
 } from "lucide-react";
 
 interface MobileEntryScreenProps {
@@ -21,15 +20,6 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
   onGetStarted,
   onSignIn,
 }) => {
-  const [postalCode, setPostalCode] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
-
-  const handleCheck = () => {
-    if (postalCode.trim().length >= 3) {
-      setIsVerified(true);
-    }
-  };
-
   return (
     <div className="flex flex-1 flex-col justify-between px-4 sm:px-5 py-4 animate-fadeIn text-slate-900 min-h-full overflow-y-auto">
       <div>
@@ -43,33 +33,20 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
           </button>
         </div>
         
-        {/* Postal Code Verification Bar */}
-        <div className="mt-3.5 flex w-full max-w-[240px] items-center gap-1.5 rounded-full border border-slate-200 bg-white p-1 shadow-sm">
-          <MapPin className="ml-2 h-3.5 w-3.5 text-slate-400 shrink-0" />
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={postalCode}
-            onChange={(e) => {
-              setPostalCode(e.target.value);
-              setIsVerified(false);
-            }}
-            placeholder="Enter postal code..."
-            className="w-full min-w-0 flex-1 bg-transparent px-1 text-[11px] outline-none placeholder:text-slate-400"
-          />
+        {/* Coverage Notice */}
+        <div className="mt-3 flex items-center justify-between p-2 rounded-2xl bg-teal-50/70 border border-teal-200/60 text-xs">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-[11px] font-semibold text-teal-900">
+              Chennai Active Care Corridors
+            </span>
+          </div>
           <button 
-            onClick={handleCheck}
+            onClick={onGetStarted}
             className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-bold text-white transition hover:bg-slate-800 shrink-0"
           >
-            Check
+            Check Coverage
           </button>
-        </div>
-        
-        {/* Verification Sign */}
-        <div className={`mt-1.5 flex items-center gap-1 pl-2 transition-opacity duration-300 ${isVerified ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
-          <CheckCircle className="h-3 w-3 text-emerald-500 shrink-0" />
-          <span className="text-[10px] font-medium text-emerald-600">Service available in your area</span>
         </div>
       </div>
 

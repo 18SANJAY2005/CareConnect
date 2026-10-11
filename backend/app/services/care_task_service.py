@@ -104,6 +104,16 @@ class CareTaskService:
                 detail="You are not authorized to update this care task."
             )
 
+        # Forgotten task policy: Disallow caregiver retrospective completion after shift is closed
+        shift_res = await db.execute(select(CareShift).where(CareShift.id == task.shiftId))
+        shift = shift_res.scalar_one_or_none()
+        if shift and shift.status in ["CHECKED_OUT", "COMPLETED"]:
+            if user_role == "CAREGIVER":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot retrospectively modify a task after the shift is closed. A supervisor correction workflow is required.",
+                )
+
         task.status = status_val
         if details:
             current_details = dict(task.details)
@@ -115,6 +125,63 @@ class CareTaskService:
         task.recordedAt = datetime.now(timezone.utc)
         if idempotency_key:
             task.idempotencyKey = idempotency_key
+
+        await db.commit()
+        await db.refresh(task)
+        return task
+
+    @staticmethod
+    async def supervisor_correct_task(
+        db: AsyncSession,
+        task_id: str,
+        supervisor_user_id: str,
+        status_val: str,
+        correction_reason: str,
+        details: Optional[Dict[str, Any]] = None,
+        notes: Optional[str] = None,
+    ) -> CareTask:
+        """
+        Restricted supervisor correction workflow for forgotten tasks.
+        Records reason, actor, timestamp, and audit history without silently rewriting historical records.
+        """
+        from app.models.audit import AuditLog
+
+        res = await db.execute(select(CareTask).where(CareTask.id == task_id))
+        task = res.scalar_one_or_none()
+        if not task:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Care task not found")
+
+        old_status = task.status
+        task.originalStatus = old_status
+        task.status = status_val
+        task.isSupervisorCorrection = True
+        task.correctionReason = correction_reason
+        task.correctedByUserId = supervisor_user_id
+        task.correctedAt = datetime.now(timezone.utc)
+
+        if details:
+            current_details = dict(task.details)
+            current_details.update(details)
+            task.details = current_details
+        if notes is not None:
+            task.notes = notes
+
+        # Persist audit trail
+        audit = AuditLog(
+            actorUserId=supervisor_user_id,
+            entityType="CARE_TASK",
+            entityId=task.id,
+            action="SUPERVISOR_CORRECTION",
+            oldValue=old_status,
+            newValue=status_val,
+            auditMetadata={
+                "taskName": task.taskName,
+                "shiftId": task.shiftId,
+                "elderId": task.elderId,
+                "reason": correction_reason,
+            },
+        )
+        db.add(audit)
 
         await db.commit()
         await db.refresh(task)

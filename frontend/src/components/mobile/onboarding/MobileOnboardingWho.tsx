@@ -44,13 +44,21 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
       </div>
 
       <div className="my-auto space-y-3.5 py-6">
+        {isMyselfActive && (
+          <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-xs flex items-start gap-2">
+            <span className="font-bold">Notice:</span>
+            <span>You already have an active "Myself" care plan. Only one active "Myself" service is permitted per person. Please choose "Someone else" to add a family member.</span>
+          </div>
+        )}
+
         {[
           {
             id: "ME",
             title: "Myself",
             subtitle: "Care for me",
-            description:
-              "I am looking for home support or companionship for myself.",
+            description: isMyselfActive
+              ? "You already have an active personal service. Limit 1 per person."
+              : "I am looking for home support or companionship for myself.",
             icon: User,
           },
           {
@@ -70,9 +78,11 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
               key={id}
               type="button"
               disabled={isDisabled}
-              onClick={() => setRecipient(id as "ME" | "SOMEONE_ELSE")}
+              onClick={() => {
+                if (!isDisabled) setRecipient(id as "ME" | "SOMEONE_ELSE");
+              }}
               className={`w-full rounded-[28px] border-2 p-5 text-left transition-all duration-200 ${
-                isDisabled 
+                isDisabled
                   ? "opacity-60 cursor-not-allowed border-slate-200 bg-slate-50"
                   : isSelected
                     ? "border-primary bg-teal-50/60 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15 active:scale-[0.98]"
@@ -96,8 +106,8 @@ export const MobileOnboardingWho: React.FC<MobileOnboardingWhoProps> = ({
                   <div className="text-2xl font-extrabold tracking-[-0.03em] text-slate-900 flex items-center gap-2">
                     {title}
                     {isDisabled && (
-                      <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full">
-                        Added
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                        Already Active
                       </span>
                     )}
                   </div>

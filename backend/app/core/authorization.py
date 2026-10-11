@@ -34,7 +34,7 @@ async def verify_elder_access(db: AsyncSession, user: User, elder_id: str) -> El
 
     # Family sponsor authorization check
     if user.role == "FAMILY_SPONSOR":
-        if elder.familyId == user.id:
+        if elder.familyId == user.id or elder.sponsor_id == user.id:
             return elder
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

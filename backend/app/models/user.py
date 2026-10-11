@@ -97,3 +97,8 @@ class User(Base):
         if not self.phone or not self.phone.strip():
             return False
         return True
+
+    @isProfileComplete.setter
+    def isProfileComplete(self, value: bool) -> None:
+        """Allow setting isProfileComplete as a no-op / compatibility setter."""
+        pass

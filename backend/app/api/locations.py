@@ -1,5 +1,6 @@
 from typing import Optional
 from datetime import datetime, timezone
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -108,4 +109,53 @@ async def persist_elder_location(
     await db.commit()
 
     return location
+
+
+class ServiceInterestRequest(BaseModel):
+    phone: str
+    fullName: Optional[str] = None
+    email: Optional[str] = None
+    postalCode: str
+    locality: Optional[str] = None
+    addressLine1: Optional[str] = None
+    careTypeNeeded: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.post("/locations/service-interest", status_code=status.HTTP_201_CREATED)
+@router.post("/elder-locations/service-interest", status_code=status.HTTP_201_CREATED)
+async def submit_service_interest(
+    payload: ServiceInterestRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Capture contact and care-interest details when service is currently unavailable in user's area.
+    Stored for future corridor expansion notification and marketing follow-up.
+    """
+    from app.models.location import ServiceInterest
+    from app.core.phone_validator import validate_and_normalize_phone
+
+    normalized_phone = validate_and_normalize_phone(payload.phone)
+
+    lead = ServiceInterest(
+        phone=normalized_phone,
+        fullName=payload.fullName,
+        email=payload.email,
+        postalCode=payload.postalCode.strip(),
+        locality=payload.locality,
+        addressLine1=payload.addressLine1,
+        careTypeNeeded=payload.careTypeNeeded,
+        notes=payload.notes
+    )
+    db.add(lead)
+    await db.commit()
+    await db.refresh(lead)
+
+    return {
+        "success": True,
+        "message": f"Thank you! Your interest for PIN {payload.postalCode} has been recorded. We will notify you when CareConnect launches in your area.",
+        "id": lead.id,
+        "phone": normalized_phone,
+        "postalCode": lead.postalCode
+    }
 

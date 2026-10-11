@@ -59,6 +59,7 @@ from app.api import (
     billing,
     renewals,
     audit,
+    payouts,
 )
 
 
@@ -324,4 +325,14 @@ app.include_router(
 app.include_router(
     audit.router,
     prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    payouts.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    payouts.router,
+    prefix="/api/v1",
 )

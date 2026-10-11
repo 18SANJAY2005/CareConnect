@@ -38,6 +38,7 @@ class Invoice(Base):
     assignment = relationship("CareAssignment", back_populates="invoices")
     lineItems = relationship("InvoiceLineItem", back_populates="invoice", cascade="all, delete-orphan")
     transactions = relationship("PaymentTransaction", back_populates="invoice", cascade="all, delete-orphan")
+    adjustments = relationship("BillingAdjustment", back_populates="invoice", cascade="all, delete-orphan")
 
 
 class InvoiceLineItem(Base):
@@ -78,4 +79,26 @@ class PaymentTransaction(Base):
 
     # Relationship
     invoice = relationship("Invoice", back_populates="transactions")
+
+
+class BillingAdjustment(Base):
+    __tablename__ = "billing_adjustments"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    invoiceId = Column(String(36), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True)
+    elderId = Column(String(36), ForeignKey("elders.id", ondelete="CASCADE"), nullable=False, index=True)
+    familyUserId = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    effectiveDate = Column(DateTime(timezone=True), nullable=False)
+    serviceChange = Column(String(255), nullable=False)  # e.g., "Added Physiotherapy Add-on", "Removed Night Coverage"
+    changeType = Column(String(50), nullable=False)      # "ADDITION" | "REMOVAL"
+    adjustmentAmount = Column(Float, nullable=False)     # e.g. +3500.0 or -2000.0
+    previousBalance = Column(Float, nullable=False)
+    resultingBalance = Column(Float, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    createdAt = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationship
+    invoice = relationship("Invoice", back_populates="adjustments")
 

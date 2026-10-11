@@ -22,6 +22,18 @@ class CaregiverBase(BaseModel):
     is_clinical_certified: bool = True
     is_identity_verified: bool = True
     bio: Optional[str] = None
+    gender: Optional[str] = "FEMALE"
+    phone: Optional[str] = None
+    status: Optional[str] = "AVAILABLE"
+    qualifications: Optional[str] = None
+    educational_qualifications: Optional[str] = None
+    certifications: Optional[str] = None
+    previous_experience: Optional[str] = None
+    preferred_care_types: Optional[str] = None
+    work_preferences: Optional[str] = None
+    preferred_hours: Optional[str] = None
+    performance_metrics: Optional[str] = None
+
 
 
 class CaregiverResponse(CaregiverBase):
@@ -111,4 +123,31 @@ class WorkHistoryResponse(BaseModel):
     activeShift: Optional[dict] = None
     completedShifts: List[CompletedShiftItem] = []
     earnings: EarningsSummary
+
+
+class AssignmentOfferItem(BaseModel):
+    id: int
+    elderId: str
+    elderName: str
+    careRequirements: List[str]
+    locality: str
+    address: Optional[str] = None
+    shiftType: str
+    startDate: str
+    dailyRate: float
+    responseDeadline: Optional[str] = None
+    status: str
+    isExpired: bool = False
+
+
+class DeclineOfferRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+class SupervisorTaskCorrectionRequest(BaseModel):
+    status: str
+    reason: str
+    details: Optional[dict] = None
+    notes: Optional[str] = None
+
 

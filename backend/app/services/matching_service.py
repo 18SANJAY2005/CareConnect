@@ -1,12 +1,14 @@
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.caregiver import Caregiver
+from app.models.caregiver_kyc import CaregiverKYC
 from app.models.elder import Elder
 from app.models.matching import CaregiverMatchResult
+from app.models.user import User
 from app.schemas.caregiver import (
     CaregiverMatchItem,
     CaregiverResponse,
@@ -15,15 +17,14 @@ from app.schemas.caregiver import (
 
 
 async def seed_initial_data_if_empty(db: AsyncSession):
-    """Seed demo caregiver/SLA data when the database is empty."""
+    """Seed demo caregiver/SLA data when the database is empty or missing admin demo caregivers."""
 
     from app.models.sla import SLAVersion
-    from app.models.user import User
 
     # ---------------------------------------------------------
     # Demo sponsor
     # ---------------------------------------------------------
-    result = await db.execute(select(User).limit(1))
+    result = await db.execute(select(User).where(User.role == "FAMILY_SPONSOR").limit(1))
     sponsor = result.scalars().first()
 
     if not sponsor:
@@ -77,104 +78,244 @@ async def seed_initial_data_if_empty(db: AsyncSession):
         db.add(elder)
 
     # ---------------------------------------------------------
-    # Caregivers
+    # Demo Caregivers & Verified KYC / User Records
     # ---------------------------------------------------------
-    result = await db.execute(select(func.count(Caregiver.id)))
-    caregiver_count = result.scalar_one()
+    demo_caregivers_data = [
+        {
+            "full_name": "Priya Sundaram",
+            "phone": "+919840211223",
+            "gender": "FEMALE",
+            "headline": "Senior Geriatric Attendant & BSc Nurse (AHA BLS Certified)",
+            "photo_url": "https://images.unsplash.com/photo-1594824813629-65313364f9f7?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 6,
+            "locality": "Adyar",
+            "service_radius_km": 15.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil, English, Telugu",
+            "skills": "Dementia Care, Medication Management, Mobility Assistance, Vital Signs Monitoring, Palliative Support",
+            "specializations": "Geriatric Nursing Support, Alzheimer Support, BSc Nursing",
+            "qualifications": "BSc Nursing, AHA BLS/CPR Certified, GCA-NSDC-TN-4102",
+            "shift_types": "Day 10-Hour, Night 12-Hour",
+            "hourly_rate": 150.0,
+            "daily_rate": 1400.0,
+            "rating": 4.9,
+            "review_count": 54,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "Senior geriatric attendant with BSc Nursing, certified by AHA with 6+ years of dedicated elder companion experience specializing in Alzheimer routines.",
+        },
+        {
+            "full_name": "Anitha Ramesh",
+            "phone": "+919840322334",
+            "gender": "FEMALE",
+            "headline": "Post-Stroke Rehabilitation Aide & Diabetic Specialist",
+            "photo_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 5,
+            "locality": "Besant Nagar",
+            "service_radius_km": 15.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil, Telugu, English",
+            "skills": "Bedridden Patient Care, Catheter Hygiene, Vitals Triage, Diabetic Protocol, Passive Range-of-Motion",
+            "specializations": "Post-Stroke Care, Diabetic Management",
+            "qualifications": "Post-Stroke Rehabilitation Aide, Diabetic Foot & Insulin Care, ANM Nursing",
+            "shift_types": "Day 10-Hour, 24/7 Live-in",
+            "hourly_rate": 160.0,
+            "daily_rate": 1500.0,
+            "rating": 4.8,
+            "review_count": 42,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "Experienced attendant with clinical background in post-stroke recovery, specialized bed-mobility protocols, and diabetic management under doctor supervision.",
+        },
+        {
+            "full_name": "Karthik Rajan",
+            "phone": "+919840433445",
+            "gender": "MALE",
+            "headline": "Advanced Physiotherapy Assistant & Mobility Specialist",
+            "photo_url": "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 8,
+            "locality": "T. Nagar",
+            "service_radius_km": 20.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil, Hindi, English",
+            "skills": "Physiotherapy Assistant, Safe Patient Transfers, Night Monitoring, Ortho Rehab, Bedridden Transfer",
+            "specializations": "Ortho Rehab, Physical Therapy Aid",
+            "qualifications": "Advanced Physiotherapy Assistant (PTA), Emergency First Aid & BLS",
+            "shift_types": "Night 12-Hour, 24/7 Live-in",
+            "hourly_rate": 175.0,
+            "daily_rate": 1600.0,
+            "rating": 4.95,
+            "review_count": 68,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "8 years of high-dependency geriatric care experience with specialized training in orthopedic rehabilitation, wheelchair transfers, and 24/7 safety.",
+        },
+        {
+            "full_name": "Deepa Natarajan",
+            "phone": "+919840544556",
+            "gender": "FEMALE",
+            "headline": "Cardiac Care Aide & Elder Companion Specialist",
+            "photo_url": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 4,
+            "locality": "Anna Nagar",
+            "service_radius_km": 15.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil, English",
+            "skills": "Nutritional Meal Prep, BP & Sugar Logging, Cardiac Telemetry, Cognitive Stimulation, Companion Walking",
+            "specializations": "Cardiac Care, Cognitive Stimulation",
+            "qualifications": "Cardiac Care Aide Certification, Geriatric Nutrition & Meal Hygiene",
+            "shift_types": "Day 10-Hour",
+            "hourly_rate": 140.0,
+            "daily_rate": 1350.0,
+            "rating": 4.85,
+            "review_count": 38,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "Trained cardiac and cognitive care companion skilled in meticulous medication logging, heart-healthy dietary preparation, and elder companionship.",
+        },
+        {
+            "full_name": "Suresh Babu",
+            "phone": "+919840655667",
+            "gender": "MALE",
+            "headline": "Certified Home Health Aide & Clinical Escort",
+            "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 3,
+            "locality": "Mylapore",
+            "service_radius_km": 15.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil",
+            "skills": "General Attendant Care, Clinical Escort for Appointments, Medication Logistics, Wheelchair Assistance",
+            "specializations": "Basic Elderly Care, Emergency Backup",
+            "qualifications": "Certified Home Health Aide, Basic Clinical Escort & Transport",
+            "shift_types": "Day 10-Hour, On-Demand Standby",
+            "hourly_rate": 130.0,
+            "daily_rate": 1200.0,
+            "rating": 4.7,
+            "review_count": 26,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "Dedicated attendant stationed at Mylapore, ready for rapid replacement shifts and hospital visits escort assistance.",
+        },
+        {
+            "full_name": "Divya Krishnan",
+            "phone": "+919840766778",
+            "gender": "FEMALE",
+            "headline": "BSc Nurse & Critical Palliative Care Specialist",
+            "photo_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
+            "experience_years": 7,
+            "locality": "Adyar",
+            "service_radius_km": 20.0,
+            "primary_language": "Tamil",
+            "languages": "Tamil, Malayalam, English",
+            "skills": "Palliative Care, Tracheostomy Care, IV Infusion Watch, Critical Geriatric Care, Vital Signs Monitoring",
+            "specializations": "Critical Geriatric Care, Palliative Support, BSc Nursing",
+            "qualifications": "BSc Nursing, Palliative Care Specialist (IAPC), BLS / ACLS (AHA)",
+            "shift_types": "Day 10-Hour, Night 12-Hour",
+            "hourly_rate": 190.0,
+            "daily_rate": 1800.0,
+            "rating": 4.9,
+            "review_count": 60,
+            "is_police_verified": True,
+            "is_clinical_certified": True,
+            "is_identity_verified": True,
+            "is_active": True,
+            "status": "AVAILABLE",
+            "bio": "BSc Nursing graduate and certified palliative care specialist with 7 years of intensive home-care nursing experience.",
+        },
+    ]
 
-    if caregiver_count == 0:
-        caregivers = [
-            Caregiver(
-                full_name="Ananya Ramanathan",
-                headline="Certified Geriatric Caregiver & Dementia Specialist",
-                photo_url="https://images.unsplash.com/photo-1594824813629-65313364f9f7?w=300&auto=format&fit=crop&q=80",
-                experience_years=6,
-                locality="Adyar",
-                service_radius_km=12.0,
-                primary_language="Tamil",
-                languages="Tamil, English",
-                skills="Dementia Care, Fall Prevention, Vitals Monitoring, Assisted Walking, Medication Reminders",
-                specializations="Geriatric Nursing & Memory Support",
-                shift_types="Day 10-Hour, Night 12-Hour",
-                hourly_rate=260.0,
-                daily_rate=2100.0,
-                rating=4.95,
-                review_count=32,
-                is_police_verified=True,
-                is_clinical_certified=True,
-                is_identity_verified=True,
-                is_active=True,
-                bio="Trained at Kauvery Geriatric Institute with 6 years dedicated to elder care in Chennai. Fluent in Tamil & English. Gentle, calm approach with dementia and post-operative mobility patients.",
-            ),
-            Caregiver(
-                full_name="S. Meenakshi Sundaram",
-                headline="Registered Auxiliary Nurse & Post-Stroke Rehab Specialist",
-                photo_url="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80",
-                experience_years=5,
-                locality="Mylapore",
-                service_radius_km=15.0,
-                primary_language="Tamil",
-                languages="Tamil, English, Telugu",
-                skills="Post-Stroke Rehab, Assisted Mobility, BP & Sugar Tracking, Dietary Prep, Emotional Support",
-                specializations="Stroke Recovery & Physical Therapy Aid",
-                shift_types="Day 10-Hour, 24/7 Live-in",
-                hourly_rate=250.0,
-                daily_rate=2000.0,
-                rating=4.88,
-                review_count=24,
-                is_police_verified=True,
-                is_clinical_certified=True,
-                is_identity_verified=True,
-                is_active=True,
-                bio="Over 5 years aiding elderly recovery in Central & South Chennai. Experienced with physiotherapy routines, blood pressure logging, and respectful companionship.",
-            ),
-            Caregiver(
-                full_name="Deepa Padmanabhan",
-                headline="Senior Compassionate Care Assistant & Companion",
-                photo_url="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&auto=format&fit=crop&q=80",
-                experience_years=4,
-                locality="Besant Nagar",
-                service_radius_km=10.0,
-                primary_language="Tamil",
-                languages="Tamil, English",
-                skills="Assisted Walking, Nutritional Support, Vitals Logging, Cognitive Games, Personal Hygiene",
-                specializations="Active Elder Companionship & Assisted Daily Living",
-                shift_types="Day 10-Hour",
-                hourly_rate=230.0,
-                daily_rate=1850.0,
-                rating=4.92,
-                review_count=19,
-                is_police_verified=True,
-                is_clinical_certified=True,
-                is_identity_verified=True,
-                is_active=True,
-                bio="Passionate caregiver focusing on active engagement, dignity in personal care, and healthy South Indian dietary preparation for seniors living independently.",
-            ),
-            Caregiver(
-                full_name="R. Karthikeyan",
-                headline="Certified Male Care Attendant & Mobility Assistant",
-                photo_url="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
-                experience_years=7,
-                locality="Anna Nagar",
-                service_radius_km=20.0,
-                primary_language="Tamil",
-                languages="Tamil, English",
-                skills="Bedridden Transfer, Wheelchair Navigation, Physical Assistance, Catheter Hygiene Support",
-                specializations="Intensive Physical Support & High Mobility Aid",
-                shift_types="Night 12-Hour, 24/7 Live-in",
-                hourly_rate=280.0,
-                daily_rate=2300.0,
-                rating=4.90,
-                review_count=28,
-                is_police_verified=True,
-                is_clinical_certified=True,
-                is_identity_verified=True,
-                is_active=True,
-                bio="Experienced male caregiver specializing in high physical support, wheelchair transfers, and night-shift surveillance for senior men in Chennai.",
-            ),
-        ]
+    for item in demo_caregivers_data:
+        # 1. Ensure User record exists
+        u_res = await db.execute(select(User).where(User.phone == item["phone"]))
+        u = u_res.scalars().first()
+        if not u:
+            u = User(
+                fullName=item["full_name"],
+                name=item["full_name"],
+                phone=item["phone"],
+                email=f"{item['full_name'].lower().replace(' ', '.')}@careconnect.in",
+                dob="1994-08-14",
+                gender=item["gender"],
+                locality=item["locality"],
+                role="CAREGIVER",
+                authProvider="PHONE_OTP",
+            )
+            db.add(u)
+            await db.flush()
 
-        db.add_all(caregivers)
+        # 2. Ensure CaregiverKYC record exists
+        kyc_res = await db.execute(select(CaregiverKYC).where(CaregiverKYC.caregiver_id == u.id))
+        kyc = kyc_res.scalars().first()
+        if not kyc:
+            kyc = CaregiverKYC(
+                caregiver_id=u.id,
+                document_type="AADHAAR",
+                document_number="984012348899",
+                verification_status="VERIFIED",
+            )
+            db.add(kyc)
+            await db.flush()
+
+        # 3. Ensure Caregiver directory record exists
+        cg_res = await db.execute(
+            select(Caregiver).where(
+                (Caregiver.phone == item["phone"]) | (Caregiver.full_name == item["full_name"])
+            )
+        )
+        cg = cg_res.scalars().first()
+        if not cg:
+            cg = Caregiver(
+                full_name=item["full_name"],
+                phone=item["phone"],
+                gender=item["gender"],
+                headline=item["headline"],
+                photo_url=item["photo_url"],
+                experience_years=item["experience_years"],
+                locality=item["locality"],
+                service_radius_km=item["service_radius_km"],
+                primary_language=item["primary_language"],
+                languages=item["languages"],
+                skills=item["skills"],
+                specializations=item["specializations"],
+                qualifications=item.get("qualifications"),
+                shift_types=item["shift_types"],
+                hourly_rate=item["hourly_rate"],
+                daily_rate=item["daily_rate"],
+                rating=item["rating"],
+                review_count=item["review_count"],
+                is_police_verified=item["is_police_verified"],
+                is_clinical_certified=item["is_clinical_certified"],
+                is_identity_verified=item["is_identity_verified"],
+                is_active=item["is_active"],
+                status=item["status"],
+                bio=item["bio"],
+            )
+            db.add(cg)
+        else:
+            # Update phone, qualifications, gender, and status to ensure consistency
+            if not cg.phone:
+                cg.phone = item["phone"]
+            if not cg.qualifications:
+                cg.qualifications = item.get("qualifications")
+            cg.gender = item["gender"]
+            cg.status = item["status"]
+            cg.is_identity_verified = True
+            cg.is_active = True
 
     # ---------------------------------------------------------
     # SLA v1.0
@@ -386,6 +527,11 @@ def calculate_match_score(
 async def get_curated_caregivers_for_elder(
     db: AsyncSession,
     elder_id: str,
+    gender: Optional[str] = None,
+    qualification: Optional[str] = None,
+    availability: Optional[str] = None,
+    max_daily_rate: Optional[float] = None,
+    search: Optional[str] = None,
 ) -> CuratedMatchesResponse:
 
     await seed_initial_data_if_empty(db)
@@ -402,14 +548,86 @@ async def get_curated_caregivers_for_elder(
     if not elder:
         raise ValueError("Elder not found")
 
-    result = await db.execute(
-        select(Caregiver).where(Caregiver.is_active.is_(True))
-    )
-    caregivers = result.scalars().all()
+    query = select(Caregiver).where(Caregiver.is_active.is_(True))
+
+    if gender and gender.strip() and gender.strip().upper() != "ALL":
+        query = query.where(func.upper(Caregiver.gender) == gender.strip().upper())
+
+    if max_daily_rate is not None and max_daily_rate > 0:
+        query = query.where(Caregiver.daily_rate <= max_daily_rate)
+
+    result = await db.execute(query)
+    all_caregivers = result.scalars().all()
+
+    filtered_caregivers = []
+    for cg in all_caregivers:
+        # KYC verification gate: Caregiver must not have pending or rejected KYC
+        if cg.phone:
+            user_res = await db.execute(select(User).where(User.phone == cg.phone))
+            cg_user = user_res.scalars().first()
+            if cg_user:
+                kyc_res = await db.execute(select(CaregiverKYC).where(CaregiverKYC.caregiver_id == cg_user.id))
+                kyc = kyc_res.scalars().first()
+                if kyc and kyc.verification_status != "VERIFIED":
+                    continue
+        if not cg.is_identity_verified:
+            continue
+
+        # 1. Qualification filter
+        if qualification and qualification.strip() and qualification.strip().upper() != "ALL":
+            q_needle = qualification.strip().lower()
+            cg_quals = (cg.qualifications or "").lower()
+            cg_specs = (cg.specializations or "").lower()
+            cg_skills = (cg.skills or "").lower()
+            cg_headline = (cg.headline or "").lower()
+
+            # Handle BSc Nursing specifically as requested
+            if "bsc" in q_needle:
+                matched = (
+                    "bsc" in cg_quals
+                    or "bsc" in cg_specs
+                    or "bsc" in cg_headline
+                )
+            elif "nurs" in q_needle:
+                matched = (
+                    "nurs" in cg_quals
+                    or "nurs" in cg_specs
+                    or "nurs" in cg_headline
+                )
+            else:
+                matched = (
+                    q_needle in cg_quals
+                    or q_needle in cg_specs
+                    or q_needle in cg_skills
+                    or q_needle in cg_headline
+                )
+            if not matched:
+                continue
+
+        # 2. Availability filter
+        if availability and availability.strip() and availability.strip().upper() != "ALL":
+            av_needle = availability.strip().lower()
+            cg_status = (cg.status or "").lower()
+            cg_shifts = (cg.shift_types or "").lower()
+            if (
+                av_needle not in cg_status
+                and av_needle not in cg_shifts
+                and "available" not in cg_status
+            ):
+                continue
+
+        # 3. Search query filter
+        if search and search.strip():
+            s_needle = search.strip().lower()
+            blob = f"{cg.full_name} {cg.locality} {cg.skills} {cg.specializations} {cg.qualifications or ''} {cg.headline or ''}".lower()
+            if s_needle not in blob:
+                continue
+
+        filtered_caregivers.append(cg)
 
     match_items: List[CaregiverMatchItem] = []
 
-    for cg in caregivers:
+    for cg in filtered_caregivers:
         score, rationale, skills, langs, loc_match = calculate_match_score(
             elder,
             cg,
@@ -432,9 +650,10 @@ async def get_curated_caregivers_for_elder(
         reverse=True,
     )
 
-    curated = match_items[:3]
+    # Return all verified and filtered candidates (not hardcoded to 3)
+    curated = match_items
 
-    for item in curated:
+    for item in curated[:10]:
         result = await db.execute(
             select(CaregiverMatchResult).where(
                 CaregiverMatchResult.elder_id == elder.id,

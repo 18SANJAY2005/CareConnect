@@ -37,7 +37,11 @@ def mask_document_number(doc_type: str, number: Optional[str]) -> str:
 class KycSubmitRequest(BaseModel):
     document_type: str
     document_number: str
+    mobile_number: Optional[str] = None
     document_storage_reference: Optional[str] = None
+    service_consent_granted: Optional[bool] = True
+    promotional_consent_granted: Optional[bool] = False
+    terms_accepted: Optional[bool] = True
 
     @field_validator("document_type")
     @classmethod
@@ -80,8 +84,11 @@ class KycResponse(BaseModel):
     caregiver_id: str
     document_type: str
     masked_document_number: str
+    mobile_number: Optional[str] = None
     document_storage_reference: Optional[str] = None
     verification_status: str
     rejection_reason: Optional[str] = None
+    provider_status: Optional[str] = "OFFLINE_PENDING_ADMIN_VERIFICATION"
     created_at: datetime
     updated_at: datetime
+
