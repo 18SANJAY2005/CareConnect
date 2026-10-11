@@ -23,8 +23,10 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
   const [mediaList, setMediaList] = useState<CareMedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadUpdates = async () => {
-    setIsLoading(true);
+  const loadUpdates = async (isInitial = false) => {
+    if (isInitial) {
+      setIsLoading(true);
+    }
     try {
       const [tline, vitalsData, media] = await Promise.all([
         api.getElderCareTimeline(elder.id).catch(() => []),
@@ -40,8 +42,8 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
   };
 
   useEffect(() => {
-    loadUpdates();
-    const interval = setInterval(loadUpdates, 15000);
+    loadUpdates(true);
+    const interval = setInterval(() => loadUpdates(false), 15000);
     return () => clearInterval(interval);
   }, [elder.id]);
 

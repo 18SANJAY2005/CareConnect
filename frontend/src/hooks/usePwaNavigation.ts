@@ -268,13 +268,13 @@ export function usePwaNavigation(
       return;
     }
 
-    // 1 time press: REFRESH THE PAGE
+    // 1 time press: Show exit reminder and refresh data in-memory without page reload
     lastBackPressTimeRef.current = now;
 
     setBackNotice({
       visible: true,
       message: "Press back again to exit",
-      isRefreshing: true,
+      isRefreshing: false,
     });
 
     // Trigger in-app immediate data refresh if provided
@@ -284,17 +284,10 @@ export function usePwaNavigation(
       } catch {}
     }
 
-    // After 1500ms, if not double-pressed, reload the page
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
-    }
-    refreshTimerRef.current = setTimeout(() => {
       refreshTimerRef.current = null;
-      lastBackPressTimeRef.current = 0;
-      if (typeof window !== "undefined") {
-        window.location.reload();
-      }
-    }, 1500);
+    }
 
     if (noticeTimerRef.current) {
       clearTimeout(noticeTimerRef.current);

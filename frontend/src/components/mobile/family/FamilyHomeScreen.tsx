@@ -30,8 +30,10 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
   const [timeline, setTimeline] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (isInitial = false) => {
+    if (isInitial) {
+      setIsLoading(true);
+    }
     try {
       const [asg, shift, tline] = await Promise.all([
         api.getActiveAssignment(elder.id),
@@ -49,8 +51,8 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
   };
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 15000);
+    loadData(true);
+    const interval = setInterval(() => loadData(false), 15000);
     return () => clearInterval(interval);
   }, [elder.id]);
 

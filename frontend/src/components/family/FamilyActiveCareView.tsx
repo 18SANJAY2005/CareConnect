@@ -41,9 +41,11 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
 
   const targetElderId = elderId;
 
-  const loadData = async () => {
+  const loadData = async (isInitial = false) => {
     if (!targetElderId) return;
-    setIsLoading(true);
+    if (isInitial) {
+      setIsLoading(true);
+    }
     try {
       // 1. Shift & Attendance
       const shiftStatus = await api.getElderShiftStatus(targetElderId);
@@ -79,8 +81,8 @@ export const FamilyActiveCareView: React.FC<FamilyActiveCareViewProps> = ({
   };
 
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 15000); // Poll every 15s for real-time monitoring
+    loadData(true);
+    const interval = setInterval(() => loadData(false), 15000); // Poll every 15s for real-time monitoring
     return () => clearInterval(interval);
   }, [targetElderId]);
 
