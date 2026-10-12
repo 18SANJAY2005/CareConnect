@@ -10,6 +10,7 @@ interface AuthContextType {
     otp: string,
     fullName?: string,
     email?: string,
+    countryCode?: string,
   ) => Promise<User>;
   loginWithGoogle: (
     idToken: string,
@@ -54,8 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     otp: string,
     fullName?: string,
     email?: string,
+    countryCode?: string,
   ): Promise<User> => {
-    const res = await api.verifyOtp(phone, otp, fullName, email);
+    const res = await api.verifyOtp(phone, otp, fullName, email, countryCode);
     setUser(res.user);
     return res.user;
   };

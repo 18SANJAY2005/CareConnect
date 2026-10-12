@@ -6,12 +6,15 @@ import { ArrowLeft, AlertCircle, Loader2, ChevronDown, Check, X, UserCheck } fro
 
 // Add Country Codes data
 const COUNTRY_CODES = [
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  { code: "+1", country: "US/Canada", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+61", country: "Australia", flag: "🇦🇺" },
-  { code: "+65", country: "Singapore", flag: "🇸🇬" },
-  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+91", country: "India", flag: "🇮🇳", min: 10, max: 10, placeholder: "98765 43210" },
+  { code: "+1", country: "US/Canada", flag: "🇺🇸", min: 10, max: 10, placeholder: "20255 50143" },
+  { code: "+44", country: "UK", flag: "🇬🇧", min: 10, max: 11, placeholder: "7911 123456" },
+  { code: "+61", country: "Australia", flag: "🇦🇺", min: 9, max: 10, placeholder: "412 345 678" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬", min: 8, max: 8, placeholder: "8123 4567" },
+  { code: "+971", country: "UAE", flag: "🇦🇪", min: 9, max: 9, placeholder: "50 123 4567" },
+  { code: "+60", country: "Malaysia", flag: "🇲🇾", min: 9, max: 10, placeholder: "12 345 6789" },
+  { code: "+94", country: "Sri Lanka", flag: "🇱🇰", min: 9, max: 9, placeholder: "71 234 5678" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦", min: 9, max: 9, placeholder: "50 123 4567" },
 ];
 
 interface MobileAuthScreenProps {
@@ -63,8 +66,16 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const cleanPhone = phone.replace(/\D/g, "");
-    if (!cleanPhone || cleanPhone.length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number.");
+    const selected = COUNTRY_CODES.find((c) => c.code === countryCode);
+    const minDigits = selected ? selected.min : 6;
+    const maxDigits = selected ? selected.max : 15;
+
+    if (!cleanPhone || cleanPhone.length < minDigits || cleanPhone.length > maxDigits) {
+      setErrorMessage(
+        selected
+          ? `Please enter a valid ${selected.min === selected.max ? `${selected.min}-digit` : `${selected.min}-${selected.max} digit`} mobile number.`
+          : "Please enter a valid mobile number (6-15 digits)."
+      );
       return;
     }
 
@@ -83,13 +94,13 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
 
       if (mode === "SIGN_UP" && checkRes?.exists) {
         setExistingUserPrompt(
-          `An account already exists for +91 ${cleanPhone}. Please sign in to access your dashboard.`,
+          `An account already exists for ${countryCode} ${cleanPhone}. Please sign in to access your dashboard.`,
         );
         setIsLoading(false);
         return;
       }
 
-      const res = await api.sendOtp(cleanPhone);
+      const res = await api.sendOtp(cleanPhone, "WHATSAPP", countryCode);
       if (res.dev_otp) {
         setDevOtp(res.dev_otp);
         setOtp(res.dev_otp); // Auto-fill for convenience in test/demo mode
@@ -121,6 +132,8 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
         cleanPhone,
         otp,
         mode === "SIGN_UP" ? fullName.trim() : undefined,
+        undefined,
+        countryCode,
       );
       onSuccess(mode === "SIGN_UP");
     } catch (err: any) {
@@ -214,7 +227,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
               ? mode === "SIGN_IN"
                 ? "Sign in directly with your phone number and OTP."
                 : "Verify your phone and enter your details to begin."
-              : `Code sent to +91 ${phone}`}
+              : `Code sent to ${countryCode} ${phone}`}
           </p>
         </div>
 
@@ -264,7 +277,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  maxLength={10}
+                  maxLength={16}
                   value={phone}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
@@ -272,7 +285,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                     onPhoneChange?.(val);
                     setExistingUserPrompt(null);
                   }}
-                  placeholder="98765 43210"
+                  placeholder={COUNTRY_CODES.find((c) => c.code === countryCode)?.placeholder || "Enter mobile number"}
                   className="w-full h-14 pl-[72px] pr-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
                   required
                 />
@@ -298,7 +311,11 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
 
             <button
               type="submit"
-              disabled={isLoading || phone.length < 10 || (mode === "SIGN_UP" && !fullName.trim())}
+              disabled={
+                isLoading ||
+                phone.replace(/\D/g, "").length < (COUNTRY_CODES.find((c) => c.code === countryCode)?.min || 6) ||
+                (mode === "SIGN_UP" && !fullName.trim())
+              }
               className="w-full min-h-[54px] bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
             >
               {isLoading ? (

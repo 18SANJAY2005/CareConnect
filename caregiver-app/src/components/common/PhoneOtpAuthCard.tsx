@@ -4,17 +4,23 @@ import { Phone, KeyRound, ShieldCheck, AlertCircle, Sparkles, RefreshCw, CheckCi
 export interface CountryCodeOption {
   code: string;
   label: string;
-  digits: number;
+  digits?: number;
+  minDigits: number;
+  maxDigits: number;
   placeholder: string;
   flag?: string;
 }
 
 export const SUPPORTED_COUNTRY_CODES: CountryCodeOption[] = [
-  { code: '+91', label: '+91 (India)', digits: 10, placeholder: '9876543210', flag: '🇮🇳' },
-  { code: '+1', label: '+1 (US/Canada)', digits: 10, placeholder: '2025550143', flag: '🇺🇸' },
-  { code: '+44', label: '+44 (UK)', digits: 10, placeholder: '7911123456', flag: '🇬🇧' },
-  { code: '+65', label: '+65 (Singapore)', digits: 8, placeholder: '81234567', flag: '🇸🇬' },
-  { code: '+971', label: '+971 (UAE)', digits: 9, placeholder: '501234567', flag: '🇦🇪' },
+  { code: '+91', label: '+91 (India)', digits: 10, minDigits: 10, maxDigits: 10, placeholder: '9876543210', flag: '🇮🇳' },
+  { code: '+1', label: '+1 (US/Canada)', digits: 10, minDigits: 10, maxDigits: 10, placeholder: '2025550143', flag: '🇺🇸' },
+  { code: '+44', label: '+44 (UK)', digits: 11, minDigits: 10, maxDigits: 11, placeholder: '7911123456', flag: '🇬🇧' },
+  { code: '+61', label: '+61 (Australia)', digits: 10, minDigits: 9, maxDigits: 10, placeholder: '412345678', flag: '🇦🇺' },
+  { code: '+65', label: '+65 (Singapore)', digits: 8, minDigits: 8, maxDigits: 8, placeholder: '81234567', flag: '🇸🇬' },
+  { code: '+971', label: '+971 (UAE)', digits: 9, minDigits: 9, maxDigits: 9, placeholder: '501234567', flag: '🇦🇪' },
+  { code: '+60', label: '+60 (Malaysia)', digits: 10, minDigits: 9, maxDigits: 10, placeholder: '123456789', flag: '🇲🇾' },
+  { code: '+94', label: '+94 (Sri Lanka)', digits: 9, minDigits: 9, maxDigits: 9, placeholder: '712345678', flag: '🇱🇰' },
+  { code: '+966', label: '+966 (Saudi Arabia)', digits: 9, minDigits: 9, maxDigits: 9, placeholder: '501234567', flag: '🇸🇦' },
 ];
 
 export interface PhoneOtpAuthCardProps {
@@ -77,12 +83,14 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
     if (!trimmed) {
       return 'Mobile number is required.';
     }
-    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === code) || { digits: 10 };
-    if (trimmed.length !== selected.digits) {
+    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === code) || { minDigits: 6, maxDigits: 15, digits: 10 };
+    const minRequired = selected.minDigits || selected.digits || 6;
+    const maxAllowed = selected.maxDigits || selected.digits || 15;
+    if (trimmed.length < minRequired || trimmed.length > maxAllowed) {
       if (code === '+91') {
         return 'Please enter a valid 10-digit Indian mobile number.';
       }
-      return `Please enter a valid ${selected.digits}-digit mobile number.`;
+      return `Please enter a valid ${minRequired === maxAllowed ? minRequired : `${minRequired}-${maxAllowed}`}-digit mobile number.`;
     }
     return null;
   };
@@ -90,11 +98,13 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
   const handleCountryCodeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCode = e.target.value;
     setCountryCode(newCode);
-    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === newCode) || { digits: 10 };
-    const truncated = phoneNumber.slice(0, selected.digits);
+    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === newCode) || { minDigits: 6, maxDigits: 15, digits: 10 };
+    const maxAllowed = selected.maxDigits || selected.digits || 15;
+    const truncated = phoneNumber.slice(0, maxAllowed);
     setPhoneNumber(truncated);
-    if (truncated.length > 0 && truncated.length !== selected.digits) {
-      setPhoneError(newCode === '+91' ? 'Please enter a valid 10-digit Indian mobile number.' : `Please enter a valid ${selected.digits}-digit mobile number.`);
+    const minRequired = selected.minDigits || selected.digits || 6;
+    if (truncated.length > 0 && truncated.length < minRequired) {
+      setPhoneError(newCode === '+91' ? 'Please enter a valid 10-digit Indian mobile number.' : `Please enter a valid ${minRequired === maxAllowed ? minRequired : `${minRequired}-${maxAllowed}`}-digit mobile number.`);
     } else {
       setPhoneError(null);
     }
@@ -103,12 +113,14 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const digitsOnly = rawVal.replace(/\D/g, '');
-    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === countryCode) || { digits: 10 };
-    const truncated = digitsOnly.slice(0, selected.digits);
+    const selected = SUPPORTED_COUNTRY_CODES.find((c) => c.code === countryCode) || { minDigits: 6, maxDigits: 15, digits: 10 };
+    const maxAllowed = selected.maxDigits || selected.digits || 15;
+    const truncated = digitsOnly.slice(0, maxAllowed);
     setPhoneNumber(truncated);
 
-    if (truncated.length > 0 && truncated.length < selected.digits) {
-      setPhoneError(countryCode === '+91' ? 'Please enter a valid 10-digit Indian mobile number.' : `Please enter a valid ${selected.digits}-digit mobile number.`);
+    const minRequired = selected.minDigits || selected.digits || 6;
+    if (truncated.length > 0 && truncated.length < minRequired) {
+      setPhoneError(countryCode === '+91' ? 'Please enter a valid 10-digit Indian mobile number.' : `Please enter a valid ${minRequired === maxAllowed ? minRequired : `${minRequired}-${maxAllowed}`}-digit mobile number.`);
     } else {
       setPhoneError(null);
     }
@@ -292,7 +304,7 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
                     value={phoneNumber}
                     onChange={handlePhoneNumberChange}
                     placeholder={selectedCountry.placeholder}
-                    maxLength={selectedCountry.digits}
+                    maxLength={selectedCountry.maxDigits || selectedCountry.digits || 16}
                     required
                     className={`w-full pl-3.5 pr-10 py-3 bg-slate-50 border rounded-xl text-sm font-bold text-slate-900 tracking-wide focus:outline-hidden focus:ring-2 focus:ring-primary focus:bg-white transition-all ${
                       phoneError ? 'border-red-400 bg-red-50/40 text-red-900' : 'border-slate-300'

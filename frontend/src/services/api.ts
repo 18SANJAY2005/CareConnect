@@ -131,6 +131,7 @@ class ApiService {
   async sendOtp(
     phone: string,
     channel: string = "WHATSAPP",
+    countryCode: string = "+91",
   ): Promise<{
     success: boolean;
     message: string;
@@ -142,6 +143,7 @@ class ApiService {
       body: JSON.stringify({
         phone,
         channel,
+        countryCode,
       }),
     });
   }
@@ -151,6 +153,7 @@ class ApiService {
     otp: string,
     fullName?: string,
     email?: string,
+    countryCode: string = "+91",
   ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>("/auth/otp/verify", {
       method: "POST",
@@ -159,6 +162,7 @@ class ApiService {
         otp,
         fullName,
         email,
+        countryCode,
       }),
     });
 

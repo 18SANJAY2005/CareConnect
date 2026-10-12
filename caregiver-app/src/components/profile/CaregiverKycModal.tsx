@@ -169,7 +169,7 @@ export const CaregiverKycModal: React.FC<CaregiverKycModalProps> = ({ isOpen, on
       return 'Document number must be at least 4 characters.';
     }
 
-    if (!mobileNumber || mobileNumber.trim().length < 10) {
+    if (!mobileNumber || mobileNumber.trim().length < 8) {
       return 'Please enter a valid mobile number.';
     }
 
