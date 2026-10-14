@@ -6,6 +6,10 @@ import {
   HeartPulse,
   Pill,
   Eye,
+  Search,
+  Sparkles,
+  Bath,
+  Brain,
 } from "lucide-react";
 
 interface MobileCareRequirementsProps {
@@ -32,20 +36,38 @@ const CARE_OPTIONS: CareOption[] = [
   {
     id: "MEDICAL_SUPPORT",
     label: "Medical Support",
-    desc: "Assistance with vitals, dressing, and monitoring",
+    desc: "Assistance with vitals, dressing, and clinical monitoring",
     icon: HeartPulse,
   },
   {
     id: "MEDICATION",
     label: "Medication Reminders",
-    desc: "Timely medicine support according to instructions",
+    desc: "Timely medicine support according to prescriptions",
     icon: Pill,
   },
   {
     id: "MONITORING",
-    label: "Continuous Monitoring",
+    label: "Continuous Safety Monitoring",
     desc: "Observation for safety, falls, and urgent escalation",
     icon: Eye,
+  },
+  {
+    id: "HYGIENE",
+    label: "Personal Hygiene & Bathing",
+    desc: "Assisted sponge bath, oral care, and grooming",
+    icon: Bath,
+  },
+  {
+    id: "DEMENTIA",
+    label: "Memory & Cognitive Support",
+    desc: "Calm, structured routine for Alzheimer's & dementia",
+    icon: Brain,
+  },
+  {
+    id: "COMPANIONSHIP",
+    label: "Companionship & Engagement",
+    desc: "Conversation, light strolls, reading, and mental wellness",
+    icon: Sparkles,
   },
 ];
 
@@ -58,6 +80,13 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
   const [selectedReqs, setSelectedReqs] =
     useState<string[]>(initialRequirements);
   const [mobility, setMobility] = useState<string>(initialMobility);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredOptions = CARE_OPTIONS.filter(
+    (opt) =>
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      opt.desc.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const toggleReq = (id: string) => {
     setSelectedReqs((prev) =>
@@ -88,22 +117,48 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
         </p>
       </div>
 
-      <div className="my-auto max-h-[58vh] space-y-3 overflow-y-auto py-4 pr-1">
-        {CARE_OPTIONS.map((opt) => {
-          const Icon = opt.icon;
-          const isSelected = selectedReqs.includes(opt.id);
+      {/* Search Service Options */}
+      <div className="mt-3 relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search care options (e.g. mobility, vitals, dementia)..."
+          className="w-full h-11 pl-10 pr-4 bg-white rounded-2xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-teal-600 shadow-2xs"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
-          return (
-            <button
-              key={opt.id}
-              type="button"
-              onClick={() => toggleReq(opt.id)}
-              className={`flex w-full items-center justify-between gap-3.5 rounded-[24px] border-2 p-4 text-left transition-all duration-200 active:scale-[0.98] ${
-                isSelected
-                  ? "border-primary bg-gradient-to-r from-teal-50 to-emerald-50 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-              }`}
-            >
+      <div className="my-auto max-h-[52vh] space-y-3 overflow-y-auto py-3 pr-1">
+        {filteredOptions.length === 0 ? (
+          <div className="py-8 text-center text-xs text-slate-400">
+            No care options match "{searchQuery}".
+          </div>
+        ) : (
+          filteredOptions.map((opt) => {
+            const Icon = opt.icon;
+            const isSelected = selectedReqs.includes(opt.id);
+
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => toggleReq(opt.id)}
+                className={`flex w-full items-center justify-between gap-3.5 rounded-[24px] border-2 p-4 text-left transition-all duration-200 active:scale-[0.98] ${
+                  isSelected
+                    ? "border-primary bg-gradient-to-r from-teal-50 to-emerald-50 shadow-[0_12px_24px_rgba(0,67,64,0.08)] ring-2 ring-primary/15"
+                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
               <div className="flex min-w-0 flex-1 items-center gap-3.5">
                 <div
                   className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
@@ -136,7 +191,8 @@ export const MobileCareRequirements: React.FC<MobileCareRequirementsProps> = ({
               </div>
             </button>
           );
-        })}
+        })
+      )}
 
         <div className="pt-3">
           <label className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">

@@ -53,6 +53,16 @@ class Caregiver(Base):
     isBufferPool = Column(Boolean, nullable=False, default=False)
     status = Column(String(50), nullable=False, default="AVAILABLE")
     avatarUrl = Column(String(500), nullable=True)
+    qualifications = Column(String(500), nullable=True, default=None)
+
+    # Expanded Caregiver Profile fields
+    educational_qualifications = Column(Text, nullable=True)
+    certifications = Column(Text, nullable=True)
+    previous_experience = Column(Text, nullable=True)
+    preferred_care_types = Column(Text, nullable=True)
+    work_preferences = Column(Text, nullable=True)
+    preferred_hours = Column(String(100), nullable=True)
+    performance_metrics = Column(Text, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

@@ -72,30 +72,30 @@ export const SosModal: React.FC<SosModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-red-300 overflow-hidden animate-in fade-in slide-in-from-bottom duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-xs p-0 sm:p-4">
+      <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-red-300 overflow-hidden max-h-[90dvh] flex flex-col animate-in fade-in slide-in-from-bottom duration-200">
         {/* Banner */}
-        <div className="bg-red-600 px-5 py-4 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-white/20 rounded-xl">
+        <div className="bg-red-600 px-4 sm:px-5 py-3.5 sm:py-4 text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 bg-white/20 rounded-xl shrink-0">
               <ShieldAlert className="w-6 h-6 text-white animate-pulse" />
             </div>
-            <div>
-              <h3 className="font-bold text-base">{t('sosButton')}</h3>
-              <p className="text-red-100 text-xs">Priority 1 Emergency Escalation</p>
+            <div className="min-w-0">
+              <h3 className="font-bold text-base truncate">{t('sosButton')}</h3>
+              <p className="text-red-100 text-xs truncate">Priority 1 Emergency Escalation</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-white/80 hover:text-white rounded-lg"
+            className="p-1.5 text-white/80 hover:text-white rounded-lg shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5">
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1 pb-safe">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />

@@ -203,8 +203,18 @@ export interface AdminCaregiverItem {
   attendanceHistory7Days?: ShiftAttendanceLog[];
   performanceMetrics?: CaregiverPerformanceMetrics;
   emergencyContact?: CaregiverEmergencyContact;
-  bio?: string;
   currentTasks?: ClinicalTaskItem[];
+  bio?: string;
+  // Live KYC & Worker Onboarding Fields
+  userId?: string;
+  isProfileComplete?: boolean;
+  kycStatus?: 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  documentType?: string;
+  maskedDocumentNumber?: string;
+  documentStorageReference?: string;
+  rejectionReason?: string;
+  kycCreatedAt?: string;
+  kycUpdatedAt?: string;
 }
 
 export type Careseeker = AdminElderItem;

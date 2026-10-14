@@ -91,6 +91,47 @@ async def update_care_task(
         "message": f"Task '{task.taskName}' updated to {task.status}."
     }
 
+@router.post("/{task_id}/supervisor-correction", status_code=status.HTTP_200_OK)
+async def supervisor_correct_task(
+    task_id: str,
+    payload: Dict[str, Any],
+    current_user: User = Depends(require_role(["OPS_MANAGER", "ADMIN"])),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Restricted supervisor correction workflow for forgotten tasks after shift is closed.
+    Records reason, actor, timestamp, and audit trail.
+    """
+    status_val = payload.get("status", "COMPLETED")
+    reason = payload.get("reason") or payload.get("correctionReason")
+    if not reason or not reason.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A specific correction reason is required for supervisor task modifications."
+        )
+
+    task = await CareTaskService.supervisor_correct_task(
+        db=db,
+        task_id=task_id,
+        supervisor_user_id=current_user.id,
+        status_val=status_val,
+        correction_reason=reason.strip(),
+        details=payload.get("details"),
+        notes=payload.get("notes")
+    )
+    return {
+        "success": True,
+        "id": task.id,
+        "taskName": task.taskName,
+        "status": task.status,
+        "originalStatus": task.originalStatus,
+        "isSupervisorCorrection": task.isSupervisorCorrection,
+        "correctionReason": task.correctionReason,
+        "correctedByUserId": task.correctedByUserId,
+        "correctedAt": task.correctedAt.isoformat() if task.correctedAt else None,
+        "message": f"Task '{task.taskName}' corrected by supervisor."
+    }
+
 @router.post("/batch", status_code=status.HTTP_200_OK)
 async def batch_sync_tasks(
     payload: BatchSyncTaskRequest,

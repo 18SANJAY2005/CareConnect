@@ -61,19 +61,6 @@ button {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
-.mobile-canvas {
-  width: 100%;
-  max-width: 440px;
-  margin-left: auto;
-  margin-right: auto;
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  background-color: #f8fafc;
-  box-shadow: 0 0 25px -5px rgba(0, 0, 0, 0.08);
-}
 
 /* === CARECONNECT RICH ANIMATIONS & ADAPTIVE ICON SYSTEM === */
 :root {
@@ -133,41 +120,39 @@ button {
 
 body {
   font-family: var(--font-body);
-  background-color: var(--slate-900);
+  background-color: var(--slate-50);
   color: var(--on-surface);
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  min-height: 100dvh;
+  margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
 }
 
 @media (min-width: 640px) {
   body {
-    padding: 24px 0;
+    background-color: #f1f5f9;
   }
 }
 
 .mobile-canvas {
   width: 100%;
-  max-width: 430px;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--slate-50);
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
-  transition: box-shadow 0.3s ease;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .mobile-canvas {
-    min-height: 844px;
-    height: 844px;
-    border-radius: 40px;
-    border: 8px solid #1e293b;
+    max-width: 440px;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -1009,13 +994,14 @@ span[style*="background:#dcfce7"] {
 /* Modals with Fluid Sheet Slide */
 .modal-overlay {
   display: none;
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(8px);
   z-index: 100;
   align-items: flex-end;
   justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   animation: modalFadeIn 0.22s ease-out forwards;
 }
 .modal-overlay.open {
@@ -1033,10 +1019,12 @@ span[style*="background:#dcfce7"] {
 
 .modal-bottom-sheet {
   width: 100%;
-  max-height: 85%;
+  max-width: 440px;
+  max-height: 85vh;
+  max-height: 85dvh;
   background: #ffffff;
   border-radius: 28px 28px 0 0;
-  padding: 24px 20px 32px 20px;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;
   overflow-y: auto;
   box-shadow: 0 -14px 45px rgba(0, 0, 0, 0.28);
   animation: slideSheetUp 0.32s var(--ease-spring) forwards;

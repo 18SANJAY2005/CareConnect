@@ -4,6 +4,7 @@ import type {
   Elder,
   ElderLocation,
   LocationVerifyResponse,
+  ServiceInterest,
   HomeAssessment,
   CareAssignment,
   Caregiver,
@@ -21,6 +22,8 @@ import type {
   Renewal,
   Notification,
   AuditLog,
+  BillingAdjustment,
+  ShiftOtpStatus,
 } from "../types";
 
 import type {
@@ -103,12 +106,32 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A ÔÇö AUTHENTICATION
+     PHASE A — AUTHENTICATION
      ========================================================= */
+
+  async checkPhone(
+    phone: string,
+    countryCode: string = "+91",
+  ): Promise<{
+    exists: boolean;
+    role?: string;
+    fullName?: string;
+    isProfileComplete?: boolean;
+    message?: string;
+  }> {
+    return this.request("/auth/phone/check", {
+      method: "POST",
+      body: JSON.stringify({
+        phone,
+        countryCode,
+      }),
+    });
+  }
 
   async sendOtp(
     phone: string,
     channel: string = "WHATSAPP",
+    countryCode: string = "+91",
   ): Promise<{
     success: boolean;
     message: string;
@@ -120,6 +143,7 @@ class ApiService {
       body: JSON.stringify({
         phone,
         channel,
+        countryCode,
       }),
     });
   }
@@ -129,6 +153,7 @@ class ApiService {
     otp: string,
     fullName?: string,
     email?: string,
+    countryCode: string = "+91",
   ): Promise<AuthResponse> {
     const res = await this.request<AuthResponse>("/auth/otp/verify", {
       method: "POST",
@@ -137,6 +162,7 @@ class ApiService {
         otp,
         fullName,
         email,
+        countryCode,
       }),
     });
 
@@ -169,7 +195,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A ÔÇö ELDER MANAGEMENT
+     PHASE A — ELDER MANAGEMENT
      ========================================================= */
 
   async createElder(data: {
@@ -178,6 +204,7 @@ class ApiService {
     gender: string;
     dateOfBirth?: string | null;
     phoneNumber?: string;
+    isMyself?: boolean;
   }): Promise<Elder> {
     return this.request<Elder>("/elders", {
       method: "POST",
@@ -207,8 +234,23 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE A ÔÇö LOCATION VERIFICATION
+     PHASE A — LOCATION VERIFICATION & INTEREST
      ========================================================= */
+
+  async submitServiceInterest(data: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    postalCode?: string;
+    locality?: string;
+    serviceType?: string;
+    notes?: string;
+  }): Promise<ServiceInterest> {
+    return this.request<ServiceInterest>("/locations/service-interest", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
 
   async verifyLocation(data: {
     addressLine1?: string;
@@ -273,12 +315,40 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B ÔÇö CAREGIVER MATCHING
+     PHASE B — CAREGIVER MATCHING
      ========================================================= */
 
-  async getCuratedMatches(elderId: string): Promise<CuratedMatchesResponse> {
+  async getCuratedMatches(
+    elderId: string,
+    filters?: {
+      gender?: string;
+      qualification?: string;
+      availability?: string;
+      max_daily_rate?: number;
+      search?: string;
+    },
+  ): Promise<CuratedMatchesResponse> {
+    const params = new URLSearchParams();
+    params.append("elder_id", elderId);
+
+    if (filters?.gender) {
+      params.append("gender", filters.gender);
+    }
+    if (filters?.qualification) {
+      params.append("qualification", filters.qualification);
+    }
+    if (filters?.availability) {
+      params.append("availability", filters.availability);
+    }
+    if (filters?.max_daily_rate !== undefined && filters.max_daily_rate !== null) {
+      params.append("max_daily_rate", String(filters.max_daily_rate));
+    }
+    if (filters?.search) {
+      params.append("search", filters.search);
+    }
+
     return this.request<CuratedMatchesResponse>(
-      `/caregivers/matches?elder_id=${encodeURIComponent(elderId)}`,
+      `/caregivers/matches?${params.toString()}`,
     );
   }
 
@@ -311,7 +381,7 @@ class ApiService {
   }
 
   /* =========================================================
-     PHASE B ÔÇö CARE ASSIGNMENTS
+     PHASE B — CARE ASSIGNMENTS
      ========================================================= */
 
   async createAssignment(payload: {
@@ -330,6 +400,38 @@ class ApiService {
 
   async getAssignment(assignmentId: number): Promise<CareAssignment> {
     return this.request<CareAssignment>(`/assignments/${assignmentId}`);
+  }
+
+  async confirmAssignment(assignmentId: string | number): Promise<CareAssignment> {
+    return this.request<CareAssignment>(`/assignments/${assignmentId}/confirm`, {
+      method: "POST",
+    });
+  }
+
+  async rejectAssignment(
+    assignmentId: string | number,
+    reason?: string,
+  ): Promise<CareAssignment> {
+    return this.request<CareAssignment>(`/assignments/${assignmentId}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async cancelAssignment(
+    assignmentId: string | number,
+    reason?: string,
+  ): Promise<CareAssignment> {
+    return this.request<CareAssignment>(`/assignments/${assignmentId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async getAssignmentHistory(elderId: string): Promise<any[]> {
+    return this.request<any[]>(
+      `/assignments/elder/${encodeURIComponent(elderId)}/history`,
+    );
   }
 
   /* =========================================================
@@ -608,6 +710,29 @@ class ApiService {
     return this.request<Invoice[]>(`/operations/invoices${qs}`);
   }
 
+  async createBillingAdjustment(
+    invoiceId: string,
+    data: {
+      serviceChange: string;
+      adjustmentAmount: number;
+      effectiveDate?: string;
+      reason?: string;
+    },
+  ): Promise<BillingAdjustment> {
+    return this.request<BillingAdjustment>(`/invoices/${invoiceId}/adjustments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getInvoiceAdjustments(invoiceId: string): Promise<BillingAdjustment[]> {
+    return this.request<BillingAdjustment[]>(`/invoices/${invoiceId}/adjustments`);
+  }
+
+  async getElderAdjustments(elderId: string): Promise<BillingAdjustment[]> {
+    return this.request<BillingAdjustment[]>(`/invoices/elder/${elderId}/adjustments`);
+  }
+
   // ==========================================
   // --- Phase D04: Renewals & Auto-Debit ---
   // ==========================================
@@ -710,6 +835,44 @@ class ApiService {
       method: "POST",
       body: JSON.stringify({ reason }),
     });
+  }
+
+  async requestStartOtp(shiftId: string): Promise<any> {
+    return this.request(`/shifts/${shiftId}/start-otp/request`, {
+      method: "POST",
+    });
+  }
+
+  async verifyStartOtp(
+    shiftId: string,
+    otp: string,
+    data?: { latitude?: number; longitude?: number },
+  ): Promise<any> {
+    return this.request(`/shifts/${shiftId}/start-otp/verify`, {
+      method: "POST",
+      body: JSON.stringify({ otp, ...data }),
+    });
+  }
+
+  async requestCompletionOtp(shiftId: string): Promise<any> {
+    return this.request(`/shifts/${shiftId}/completion-otp/request`, {
+      method: "POST",
+    });
+  }
+
+  async verifyCompletionOtp(
+    shiftId: string,
+    otp: string,
+    data?: { latitude?: number; longitude?: number; summary?: string },
+  ): Promise<any> {
+    return this.request(`/shifts/${shiftId}/completion-otp/verify`, {
+      method: "POST",
+      body: JSON.stringify({ otp, ...data }),
+    });
+  }
+
+  async getShiftOtpStatus(shiftId: string): Promise<ShiftOtpStatus> {
+    return this.request<ShiftOtpStatus>(`/shifts/${shiftId}/otp-status`);
   }
 
   async seedDemoScenario(): Promise<any> {

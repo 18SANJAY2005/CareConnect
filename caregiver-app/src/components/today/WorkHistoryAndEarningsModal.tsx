@@ -51,31 +51,31 @@ export const WorkHistoryAndEarningsModal: React.FC<WorkHistoryAndEarningsModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
       <div
-        className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-slideUp sm:animate-zoomIn text-slate-800"
+        className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90dvh] animate-slideUp sm:animate-zoomIn text-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 bg-gradient-to-r from-teal-800 to-slate-900 text-white flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-teal-800 to-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center shrink-0">
               <TrendingUp className="w-4 h-4 text-emerald-300" />
             </div>
-            <div>
-              <h3 className="font-bold text-base">My Work & Earnings</h3>
-              <p className="text-[11px] text-teal-200">Completed Care Shifts & Payout Summary</p>
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm sm:text-base truncate">My Work & Earnings</h3>
+              <p className="text-[10px] sm:text-[11px] text-teal-200 truncate">Completed Care Shifts & Payout Summary</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center text-slate-500">
               <RefreshCw className="w-7 h-7 animate-spin text-teal-600 mb-2" />
@@ -88,25 +88,25 @@ export const WorkHistoryAndEarningsModal: React.FC<WorkHistoryAndEarningsModalPr
           ) : (
             <>
               {/* Earnings Cards */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-xs">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold opacity-90">Total Earned</span>
+                    <span className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold opacity-90">Total Earned</span>
                     <IndianRupee className="w-4 h-4 opacity-80" />
                   </div>
-                  <p className="text-2xl font-black">₹{data?.earnings.totalEarned.toLocaleString('en-IN')}</p>
-                  <p className="text-[10px] opacity-80 mt-1">From {data?.earnings.shiftsCompleted} completed shift(s)</p>
+                  <p className="text-xl sm:text-2xl font-black">₹{data?.earnings.totalEarned.toLocaleString('en-IN')}</p>
+                  <p className="text-[10px] opacity-80 mt-0.5 sm:mt-1">From {data?.earnings.shiftsCompleted} completed shift(s)</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">Daily Rate</span>
+                    <span className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-slate-500">Daily Rate</span>
                     <Award className="w-4 h-4 text-teal-600" />
                   </div>
-                  <p className="text-2xl font-black text-slate-900">
+                  <p className="text-xl sm:text-2xl font-black text-slate-900">
                     ₹{data?.earnings.dailyRate.toLocaleString('en-IN')}
                   </p>
-                  <p className="text-[10px] text-teal-700 font-semibold mt-1">Direct Bank Deposit</p>
+                  <p className="text-[10px] text-teal-700 font-semibold mt-0.5 sm:mt-1">Direct Bank Deposit</p>
                 </div>
               </div>
 
@@ -185,11 +185,11 @@ export const WorkHistoryAndEarningsModal: React.FC<WorkHistoryAndEarningsModalPr
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200">
+        <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 pb-safe">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-colors"
+            className="w-full py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs transition-colors min-h-[44px]"
           >
             Close
           </button>

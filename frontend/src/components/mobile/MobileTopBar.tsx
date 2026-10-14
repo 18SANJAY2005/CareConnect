@@ -57,21 +57,21 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl safe-top shadow-sm">
-      <div className="flex h-[66px] items-center justify-between gap-3 px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <CareConnectLogo size="sm" showWordmark />
+      <div className="flex h-[64px] items-center justify-between gap-1.5 sm:gap-3 px-2.5 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <CareConnectLogo size="sm" showWordmark subtitle="" />
           {title && (
-            <span className="max-w-[110px] truncate border-l border-slate-200 pl-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+            <span className="hidden xs:inline-block max-w-[90px] sm:max-w-[110px] truncate border-l border-slate-200 pl-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
               {title}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {activePortal === "FAMILY" && onAddElder && (
             <button
               onClick={onAddElder}
-              className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-50 text-primary border border-teal-100 shadow-sm transition hover:bg-teal-100"
+              className="flex items-center justify-center h-8 w-8 rounded-full bg-teal-50 text-primary border border-teal-100 shadow-sm transition hover:bg-teal-100 shrink-0"
               title="Add New Care Request"
               aria-label="Add New Care Request"
             >
@@ -82,12 +82,12 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 sm:px-2.5 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
               >
-                <span className="max-w-[80px] truncate">
+                <span className="max-w-[62px] sm:max-w-[80px] truncate">
                   {activeElder?.name || "Elder"}
                 </span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+                <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
               </button>
 
               {isDropdownOpen && (
@@ -132,7 +132,7 @@ export const MobileTopBar: React.FC<MobileTopBarProps> = ({
           <button
             onClick={onOpenSos}
             aria-label="Emergency SOS"
-            className="flex items-center gap-1.5 rounded-full bg-rose-600 px-2.5 py-1.5 text-[11px] font-black text-white shadow-sm transition active:scale-95 hover:bg-rose-700"
+            className="flex items-center gap-1 sm:gap-1.5 rounded-full bg-rose-600 px-2 sm:px-2.5 py-1.5 text-[11px] font-black text-white shadow-sm transition active:scale-95 hover:bg-rose-700 shrink-0"
           >
             <AlertCircle className="h-3.5 w-3.5" />
             <span>SOS</span>

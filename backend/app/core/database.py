@@ -89,76 +89,144 @@ async def init_db() -> None:
 
         def sync_migrations(sync_conn):
             from sqlalchemy import inspect, text
-            inspector = inspect(sync_conn)
-            table_names = inspector.get_table_names()
+            is_postgres = sync_conn.dialect.name.startswith("postgres")
 
-            if "elders" in table_names:
-                elder_cols = {c["name"] for c in inspector.get_columns("elders")}
-                if "phoneNumber" not in elder_cols:
-                    try:
+            if is_postgres:
+                # PostgreSQL supports ALTER TABLE ... ADD COLUMN IF NOT EXISTS natively
+                sync_conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS "phoneNumber" VARCHAR(20)'))
+                sync_conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS "isMyself" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS dob VARCHAR(20)'))
+                sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20)'))
+                sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS locality VARCHAR(255)'))
+                sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS "avatarUrl" VARCHAR(500)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS dob VARCHAR(20)'))
+                sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS gender VARCHAR(20) DEFAULT 'FEMALE'"))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS phone VARCHAR(30)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS "avatarUrl" VARCHAR(500)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS "isBufferPool" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'AVAILABLE'"))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS qualifications VARCHAR(500)'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "startOtp" VARCHAR(10)'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "startOtpExpiresAt" TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "startOtpUsed" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "startOtpAttempts" INTEGER DEFAULT 0'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "completionOtp" VARCHAR(10)'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "completionOtpExpiresAt" TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "completionOtpUsed" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text('ALTER TABLE shifts ADD COLUMN IF NOT EXISTS "completionOtpAttempts" INTEGER DEFAULT 0'))
+
+                # Caregiver expanded profile columns
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS educational_qualifications TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS certifications TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS previous_experience TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS preferred_care_types TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS work_preferences TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS preferred_hours VARCHAR(100)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS performance_metrics TEXT'))
+
+                # CareAssignment deadline columns
+                sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "responseDeadline" TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "declinedReason" TEXT'))
+                sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "declinedAt" TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "expiredAt" TIMESTAMP WITH TIME ZONE'))
+
+                # CareTask supervisor correction columns
+                sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "isSupervisorCorrection" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "correctionReason" TEXT'))
+                sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "correctedByUserId" VARCHAR(36)'))
+                sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "correctedAt" TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "originalStatus" VARCHAR(50)'))
+            else:
+                inspector = inspect(sync_conn)
+                table_names = inspector.get_table_names()
+
+                if "elders" in table_names:
+                    elder_cols = {c["name"] for c in inspector.get_columns("elders")}
+                    if "phoneNumber" not in elder_cols:
                         sync_conn.execute(text('ALTER TABLE elders ADD COLUMN "phoneNumber" VARCHAR(20)'))
-                    except Exception:
-                        pass
+                    if "isMyself" not in elder_cols:
+                        sync_conn.execute(text('ALTER TABLE elders ADD COLUMN "isMyself" BOOLEAN DEFAULT 0'))
 
-            if "users" in table_names:
-                user_cols = {c["name"] for c in inspector.get_columns("users")}
-                if "dob" not in user_cols:
-                    try:
+                if "users" in table_names:
+                    user_cols = {c["name"] for c in inspector.get_columns("users")}
+                    if "dob" not in user_cols:
                         sync_conn.execute(text("ALTER TABLE users ADD COLUMN dob VARCHAR(20)"))
-                    except Exception:
-                        pass
-                if "gender" not in user_cols:
-                    try:
+                    if "gender" not in user_cols:
                         sync_conn.execute(text("ALTER TABLE users ADD COLUMN gender VARCHAR(20)"))
-                    except Exception:
-                        pass
-                if "locality" not in user_cols:
-                    try:
+                    if "locality" not in user_cols:
                         sync_conn.execute(text("ALTER TABLE users ADD COLUMN locality VARCHAR(255)"))
-                    except Exception:
-                        pass
-                if "avatarUrl" not in user_cols:
-                    try:
+                    if "avatarUrl" not in user_cols:
                         sync_conn.execute(text('ALTER TABLE users ADD COLUMN "avatarUrl" VARCHAR(500)'))
-                    except Exception:
-                        pass
 
-            if "caregivers" in table_names:
-                cg_cols = {c["name"] for c in inspector.get_columns("caregivers")}
-                if "dob" not in cg_cols:
-                    try:
+                if "caregivers" in table_names:
+                    cg_cols = {c["name"] for c in inspector.get_columns("caregivers")}
+                    if "dob" not in cg_cols:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN dob VARCHAR(20)"))
-                    except Exception:
-                        pass
-                if "gender" not in cg_cols:
-                    try:
+                    if "gender" not in cg_cols:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN gender VARCHAR(20) DEFAULT 'FEMALE'"))
-                    except Exception:
-                        pass
-                if "phone" not in cg_cols:
-                    try:
+                    if "phone" not in cg_cols:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN phone VARCHAR(30)"))
-                    except Exception:
-                        pass
-                if "avatarUrl" not in cg_cols:
-                    try:
+                    if "avatarUrl" not in cg_cols:
                         sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN "avatarUrl" VARCHAR(500)'))
-                    except Exception:
-                        pass
-                if "isBufferPool" not in cg_cols:
-                    try:
+                    if "isBufferPool" not in cg_cols:
                         sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN "isBufferPool" BOOLEAN DEFAULT 0'))
-                    except Exception:
-                        pass
-                if "status" not in cg_cols:
-                    try:
+                    if "status" not in cg_cols:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN status VARCHAR(50) DEFAULT 'AVAILABLE'"))
-                    except Exception:
-                        pass
-                if "updated_at" not in cg_cols:
-                    try:
-                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN updated_at TIMESTAMP"))
-                    except Exception:
-                        pass
+                    if "qualifications" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN qualifications VARCHAR(500)"))
+                    if "educational_qualifications" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN educational_qualifications TEXT"))
+                    if "certifications" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN certifications TEXT"))
+                    if "previous_experience" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN previous_experience TEXT"))
+                    if "preferred_care_types" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN preferred_care_types TEXT"))
+                    if "work_preferences" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN work_preferences TEXT"))
+                    if "preferred_hours" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN preferred_hours VARCHAR(100)"))
+                    if "performance_metrics" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN performance_metrics TEXT"))
+
+                if "care_assignments" in table_names:
+                    asg_cols = {c["name"] for c in inspector.get_columns("care_assignments")}
+                    if "responseDeadline" not in asg_cols:
+                        sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN "responseDeadline" TIMESTAMP'))
+                    if "declinedReason" not in asg_cols:
+                        sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN "declinedReason" TEXT'))
+                    if "declinedAt" not in asg_cols:
+                        sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN "declinedAt" TIMESTAMP'))
+                    if "expiredAt" not in asg_cols:
+                        sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN "expiredAt" TIMESTAMP'))
+
+                if "care_tasks" in table_names:
+                    task_cols = {c["name"] for c in inspector.get_columns("care_tasks")}
+                    if "isSupervisorCorrection" not in task_cols:
+                        sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN "isSupervisorCorrection" BOOLEAN DEFAULT 0'))
+                    if "correctionReason" not in task_cols:
+                        sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN "correctionReason" TEXT'))
+                    if "correctedByUserId" not in task_cols:
+                        sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN "correctedByUserId" VARCHAR(36)'))
+                    if "correctedAt" not in task_cols:
+                        sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN "correctedAt" TIMESTAMP'))
+                    if "originalStatus" not in task_cols:
+                        sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN "originalStatus" VARCHAR(50)'))
+
+                if "shifts" in table_names:
+                    shift_cols = {c["name"] for c in inspector.get_columns("shifts")}
+                    otp_cols = [
+                        ('startOtp', 'VARCHAR(10)'),
+                        ('startOtpExpiresAt', 'TIMESTAMP'),
+                        ('startOtpUsed', 'BOOLEAN DEFAULT 0'),
+                        ('startOtpAttempts', 'INTEGER DEFAULT 0'),
+                        ('completionOtp', 'VARCHAR(10)'),
+                        ('completionOtpExpiresAt', 'TIMESTAMP'),
+                        ('completionOtpUsed', 'BOOLEAN DEFAULT 0'),
+                        ('completionOtpAttempts', 'INTEGER DEFAULT 0'),
+                    ]
+                    for col_name, col_type in otp_cols:
+                        if col_name not in shift_cols:
+                            sync_conn.execute(text(f'ALTER TABLE shifts ADD COLUMN "{col_name}" {col_type}'))
 
         await conn.run_sync(sync_migrations)

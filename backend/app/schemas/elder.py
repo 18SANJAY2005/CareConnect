@@ -26,6 +26,7 @@ class ElderCreate(BaseModel):
     gender: str = Field("FEMALE", pattern="^(MALE|FEMALE|OTHER)$")
     dateOfBirth: Optional[date] = None
     phoneNumber: Optional[str] = None
+    isMyself: Optional[bool] = False
 
 class ElderUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,6 +34,7 @@ class ElderUpdate(BaseModel):
     gender: Optional[str] = None
     dateOfBirth: Optional[date] = None
     phoneNumber: Optional[str] = None
+    isMyself: Optional[bool] = None
     locationId: Optional[str] = None
     mobilityLevel: Optional[str] = None
     medicalConditions: Optional[List[str]] = None
@@ -57,6 +59,7 @@ class ElderResponse(BaseModel):
     age: int
     gender: str
     phoneNumber: Optional[str] = None
+    isMyself: bool = False
     locationId: Optional[str] = None
     mobilityLevel: str
     medicalConditions: List[str] = []

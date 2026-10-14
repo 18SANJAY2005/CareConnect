@@ -23,8 +23,10 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
   const [mediaList, setMediaList] = useState<CareMedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadUpdates = async () => {
-    setIsLoading(true);
+  const loadUpdates = async (isInitial = false) => {
+    if (isInitial) {
+      setIsLoading(true);
+    }
     try {
       const [tline, vitalsData, media] = await Promise.all([
         api.getElderCareTimeline(elder.id).catch(() => []),
@@ -40,19 +42,23 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
   };
 
   useEffect(() => {
-    loadUpdates();
-    const interval = setInterval(loadUpdates, 15000);
+    loadUpdates(true);
+    const interval = setInterval(() => loadUpdates(false), 15000);
     return () => clearInterval(interval);
   }, [elder.id]);
 
   return (
     <div className="space-y-4 px-4 py-4 pb-safe-nav animate-fadeIn text-slate-900">
       <div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-teal-900 text-xs font-bold mb-1.5">
+          <HeartPulse className="w-3.5 h-3.5 text-primary" />
+          <span>{elder.name}'s Health Records & Daily Log</span>
+        </div>
         <h2 className="text-xl font-bold font-heading text-slate-900">
-          Daily Updates
+          Daily Care & Vitals Tracker
         </h2>
         <p className="text-xs text-slate-500">
-          Live timeline, vitals logs, and daily photos
+          Supervised health vitals, daily care activities, and moments for {elder.name}
         </p>
       </div>
 
@@ -67,7 +73,7 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
-          <span>Timeline</span>
+          <span>Care Log</span>
         </button>
 
         <button
@@ -79,7 +85,7 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
           }`}
         >
           <HeartPulse className="w-3.5 h-3.5" />
-          <span>Vitals Trends</span>
+          <span>Health Vitals</span>
         </button>
 
         <button
@@ -91,7 +97,7 @@ export const FamilyUpdatesScreen: React.FC<FamilyUpdatesScreenProps> = ({
           }`}
         >
           <Camera className="w-3.5 h-3.5" />
-          <span>Photos ({mediaList.length})</span>
+          <span>Care Moments ({mediaList.length})</span>
         </button>
       </div>
 

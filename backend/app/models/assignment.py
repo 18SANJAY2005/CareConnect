@@ -72,6 +72,29 @@ class CareAssignment(Base):
     )
 
     # ------------------------------------------------------------------
+    # Assignment offer lifecycle & deadline fields
+    # ------------------------------------------------------------------
+    responseDeadline = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    declinedReason = Column(
+        Text,
+        nullable=True,
+    )
+
+    declinedAt = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    expiredAt = Column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # ------------------------------------------------------------------
     # Timestamps
     # ------------------------------------------------------------------
 

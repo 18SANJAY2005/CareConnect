@@ -27,3 +27,18 @@ class ElderLocation(Base):
     # Relationships
     elder = relationship("Elder", back_populates="location", foreign_keys=[elderId])
 
+
+class ServiceInterest(Base):
+    __tablename__ = "service_interests"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    phone = Column(String(30), nullable=False, index=True)
+    fullName = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    postalCode = Column(String(20), nullable=False)
+    locality = Column(String(100), nullable=True)
+    addressLine1 = Column(String(255), nullable=True)
+    careTypeNeeded = Column(String(100), nullable=True)
+    notes = Column(String(500), nullable=True)
+    createdAt = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+

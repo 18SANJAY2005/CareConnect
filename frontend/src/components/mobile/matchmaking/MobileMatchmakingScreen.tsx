@@ -13,6 +13,11 @@ import {
   CreditCard,
   FileCheck,
   Edit2,
+  Filter,
+  X,
+  Clock,
+  Award,
+  Search,
 } from "lucide-react";
 import { api } from "../../../services/api";
 import type {
@@ -35,6 +40,14 @@ interface MobileMatchmakingScreenProps {
   onEditingSectionChange?: (section: EditableSection | null) => void;
 }
 
+interface CaregiverFilters {
+  gender: string;
+  qualification: string;
+  availability: string;
+  max_daily_rate: number | null;
+  search: string;
+}
+
 export const MobileMatchmakingScreen: React.FC<
   MobileMatchmakingScreenProps
 > = ({
@@ -49,6 +62,16 @@ export const MobileMatchmakingScreen: React.FC<
   const [localEditingSection, setLocalEditingSection] =
     useState<EditableSection | null>(null);
   const [showElderSummary, setShowElderSummary] = useState(false);
+
+  // Filter drawer state
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [filters, setFilters] = useState<CaregiverFilters>({
+    gender: "",
+    qualification: "",
+    availability: "",
+    max_daily_rate: null,
+    search: "",
+  });
 
   const editingSection =
     controlledEditingSection !== undefined
@@ -73,13 +96,14 @@ export const MobileMatchmakingScreen: React.FC<
     null,
   );
   const [assignmentId, setAssignmentId] = useState<number | null>(null);
+  const [assignmentStatus, setAssignmentStatus] = useState<string>("PENDING");
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Booking sub-steps: 'MATCHES' | 'CALL_SCHEDULED' | 'PAYMENT' | 'SLA' | 'SUCCESS'
+  // Booking sub-steps: 'MATCHES' | 'CALL_SCHEDULED' | 'PAYMENT' | 'SLA' | 'PENDING_CONFIRMATION' | 'SUCCESS'
   const [flowStep, setFlowStep] = useState<
-    "MATCHES" | "CALL_SCHEDULED" | "PAYMENT" | "SLA" | "SUCCESS"
+    "MATCHES" | "CALL_SCHEDULED" | "PAYMENT" | "SLA" | "PENDING_CONFIRMATION" | "SUCCESS"
   >("MATCHES");
   const [scheduledCall, setScheduledCall] = useState<IntroCall | null>(null);
   const [paymentOrder, setPaymentOrder] = useState<PaymentOrder | null>(null);
@@ -95,15 +119,17 @@ export const MobileMatchmakingScreen: React.FC<
       const asg = await api.createAssignment({
         elder_id: currentElder.id,
         caregiver_id: Number(cgId) || 1,
-        sponsor_id: currentElder.familyId || 'sponsor',
-        shift_type: currentElder.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
+        sponsor_id: currentElder.familyId || "sponsor",
+        shift_type: currentElder.shiftPreference || "TWELVE_HOUR_DAY_NIGHT",
       });
       const id = Number(asg.id) || 1;
       setAssignmentId(id);
+      setAssignmentStatus(asg.status || "WAITING_CONFIRMATION");
       return id;
     } catch {
       const fallbackId = 1;
       setAssignmentId(fallbackId);
+      setAssignmentStatus("WAITING_CONFIRMATION");
       return fallbackId;
     }
   };
@@ -114,64 +140,43 @@ export const MobileMatchmakingScreen: React.FC<
     return (
       match.caregiver.full_name ||
       match.caregiver.fullName ||
-      "Meenakshi Sundaram"
+      "Priya Sundaram"
     );
   };
 
   // Load matches & SLA template
-  const loadMatches = async (targetElderId?: string) => {
+  const loadMatches = async (targetElderId?: string, activeFilters?: CaregiverFilters) => {
     setIsLoading(true);
     setErrorMessage(null);
     const idToUse = targetElderId || currentElder.id || elder.id;
+    const f = activeFilters || filters;
     try {
       const [matchesRes, slaRes] = await Promise.all([
-        api.getCuratedMatches(idToUse).catch(() => null),
+        api.getCuratedMatches(idToUse, {
+          gender: f.gender || undefined,
+          qualification: f.qualification || undefined,
+          availability: f.availability || undefined,
+          max_daily_rate: f.max_daily_rate ?? undefined,
+          search: f.search || undefined,
+        }).catch(() => null),
         api.getCurrentSLA().catch(() => null),
       ]);
 
       if (matchesRes && matchesRes.matches && matchesRes.matches.length > 0) {
         setMatchesData(matchesRes);
-        setSelectedMatch(matchesRes.matches[0]);
+        if (!selectedMatch || !matchesRes.matches.some(m => m.caregiver.id === selectedMatch.caregiver.id)) {
+          setSelectedMatch(matchesRes.matches[0]);
+        }
       } else {
-        // High quality fallback curated match
-        const fallbackMatch: CaregiverMatchItem = {
-          caregiver: {
-            id: 1,
-            full_name: "Meenakshi Sundaram",
-            locality: "Adyar",
-            experience_years: 6,
-            rating: 4.9,
-            languages: ["Tamil", "English"],
-            specializations: [
-              "Mobility Support",
-              "Hypertension Monitoring",
-              "Medication Management",
-            ],
-            skills: "Bedside care, BP monitoring, Diabetic routine",
-            is_police_verified: true,
-            is_clinical_certified: true,
-          },
-          match_score: 95,
-          match_percentage: 95,
-          rationale:
-            "Perfect corridor proximity, fluent in preferred language, verified clinical background.",
-          matching_skills: [
-            "Mobility Assistance",
-            "Vital Signs Check",
-            "Companionship",
-          ],
-          matching_languages: ["Tamil", "English"],
-          locality_match: true,
-        };
-        setSelectedMatch(fallbackMatch);
         setMatchesData({
           elder_id: currentElder.id,
           elder_name: currentElder.name,
           elder_locality: currentElder.location?.locality || "Adyar",
-          required_care_tier: "Standard 12-Hour Assisted Care",
-          total_candidates: 1,
-          matches: [fallbackMatch],
+          required_care_tier: "Assisted Living Support",
+          total_candidates: 0,
+          matches: [],
         });
+        setSelectedMatch(null);
       }
 
       if (slaRes) {
@@ -191,8 +196,34 @@ export const MobileMatchmakingScreen: React.FC<
   };
 
   useEffect(() => {
-    loadMatches(currentElder.id);
+    loadMatches(currentElder.id, filters);
   }, [currentElder.id]);
+
+  const handleApplyFilters = () => {
+    setIsFilterDrawerOpen(false);
+    loadMatches(currentElder.id, filters);
+  };
+
+  const handleResetFilters = () => {
+    const defaultFilters: CaregiverFilters = {
+      gender: "",
+      qualification: "",
+      availability: "",
+      max_daily_rate: null,
+      search: "",
+    };
+    setFilters(defaultFilters);
+    setIsFilterDrawerOpen(false);
+    loadMatches(currentElder.id, defaultFilters);
+  };
+
+  const activeFilterCount = [
+    filters.gender,
+    filters.qualification,
+    filters.availability,
+    filters.max_daily_rate !== null,
+    filters.search,
+  ].filter(Boolean).length;
 
   // Step 1: Schedule Video Call
   const handleScheduleCall = async () => {
@@ -282,7 +313,7 @@ export const MobileMatchmakingScreen: React.FC<
           signature: "sig_mock_success",
         });
       } catch {
-        // Graceful fallback for mock testing
+        // Fallback
       }
       setFlowStep("SLA");
     } catch (err: any) {
@@ -308,11 +339,30 @@ export const MobileMatchmakingScreen: React.FC<
           confirmed_dpdp_consent: agreedConsent,
         });
       } catch {
-        // Graceful fallback
+        // Fallback
       }
-      setFlowStep("SUCCESS");
+      // Enter Pending Confirmation state while caregiver accepts
+      setAssignmentStatus("WAITING_CONFIRMATION");
+      setFlowStep("PENDING_CONFIRMATION");
     } catch (err: any) {
       setErrorMessage(err.message || "SLA acceptance failed.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // Caregiver or admin confirmation simulation
+  const handleConfirmAssignmentNow = async () => {
+    if (!assignmentId) return;
+    setIsActionLoading(true);
+    try {
+      await api.confirmAssignment(assignmentId);
+      setAssignmentStatus("CONFIRMED");
+      setFlowStep("SUCCESS");
+    } catch {
+      // If endpoint returns updated assignment
+      setAssignmentStatus("CONFIRMED");
+      setFlowStep("SUCCESS");
     } finally {
       setIsActionLoading(false);
     }
@@ -323,20 +373,20 @@ export const MobileMatchmakingScreen: React.FC<
       <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
         <div className="text-sm font-bold text-slate-700">
-          Matching Compatible Attendants...
+          Loading Verified Caregivers...
         </div>
         <div className="text-xs text-slate-400">
-          Verifying locality, language, and clinical profile
+          Revalidating eligibility, qualifications, and corridor schedule
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-between px-5 py-6 animate-fadeIn text-slate-900">
+    <div className="flex-1 flex flex-col justify-between px-4 py-5 animate-fadeIn text-slate-900 overflow-y-auto">
       {/* Top Header */}
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <button
               onClick={onBack}
@@ -347,7 +397,7 @@ export const MobileMatchmakingScreen: React.FC<
             </button>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-primary text-[11px] font-bold">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Curated Care Match</span>
+              <span>Available Attendants</span>
             </div>
           </div>
           <span className="text-xs font-semibold text-slate-500">
@@ -355,13 +405,31 @@ export const MobileMatchmakingScreen: React.FC<
           </span>
         </div>
 
-        <h2 className="text-2xl font-extrabold font-heading text-slate-900">
-          {flowStep === "MATCHES" && "Recommended Care Match"}
-          {flowStep === "CALL_SCHEDULED" && "Video Introduction"}
-          {flowStep === "PAYMENT" && "Confirm Care Plan"}
-          {flowStep === "SLA" && "Service Agreement"}
-          {flowStep === "SUCCESS" && "Care Activated!"}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold font-heading text-slate-900">
+            {flowStep === "MATCHES" && "Verified Caregivers"}
+            {flowStep === "CALL_SCHEDULED" && "Video Introduction"}
+            {flowStep === "PAYMENT" && "Confirm Care Plan"}
+            {flowStep === "SLA" && "Service Agreement"}
+            {flowStep === "PENDING_CONFIRMATION" && "Awaiting Acceptance"}
+            {flowStep === "SUCCESS" && "Care Confirmed!"}
+          </h2>
+
+          {flowStep === "MATCHES" && (
+            <button
+              type="button"
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                activeFilterCount > 0
+                  ? "bg-teal-700 text-white border-teal-700 shadow-sm"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>{activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filter"}</span>
+            </button>
+          )}
+        </div>
 
         {/* Quick Profile Summary Bar with Section Edit Drawer */}
         <div className="mt-2.5 p-2.5 bg-teal-50/70 rounded-2xl border border-teal-200/60 flex items-center justify-between text-xs">
@@ -384,26 +452,53 @@ export const MobileMatchmakingScreen: React.FC<
             className="px-2.5 py-1 rounded-xl bg-white border border-teal-200 text-primary text-[11px] font-bold shrink-0 hover:bg-teal-50 transition shadow-2xs flex items-center gap-1"
           >
             <Edit2 className="w-3 h-3" />
-            <span>{showElderSummary ? "Hide Details" : "Edit Details"}</span>
+            <span>{showElderSummary ? "Hide Details" : "Edit Filters & Care"}</span>
           </button>
         </div>
+
+        {/* Active Filter Chips Bar */}
+        {flowStep === "MATCHES" && activeFilterCount > 0 && (
+          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+            {filters.gender && (
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200 flex items-center gap-1">
+                Gender: {filters.gender}
+              </span>
+            )}
+            {filters.qualification && (
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-semibold border border-teal-200 flex items-center gap-1">
+                {filters.qualification}
+              </span>
+            )}
+            {filters.availability && (
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold border border-emerald-200 flex items-center gap-1">
+                {filters.availability}
+              </span>
+            )}
+            {filters.max_daily_rate !== null && (
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold border border-slate-200 flex items-center gap-1">
+                ≤ ₹{filters.max_daily_rate}/day
+              </span>
+            )}
+            <button
+              onClick={handleResetFilters}
+              className="text-[10px] font-bold text-teal-700 hover:underline ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
         {/* Expandable Section Editor Drawer */}
         {showElderSummary && (
           <div className="mt-2 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2 text-xs animate-fadeIn">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Care Profile & Requirements (Tap Edit to update without
-              restarting)
+              Care Profile & Requirements (Tap Edit to update without restarting)
             </div>
 
             <div className="flex items-center justify-between py-1 border-b border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Name
-                </span>
-                <span className="font-bold text-slate-800">
-                  {currentElder.name}
-                </span>
+                <span className="text-[10px] text-slate-400 block font-medium">Name</span>
+                <span className="font-bold text-slate-800">{currentElder.name}</span>
               </div>
               <button
                 type="button"
@@ -416,9 +511,7 @@ export const MobileMatchmakingScreen: React.FC<
 
             <div className="flex items-center justify-between py-1 border-b border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Age & Gender
-                </span>
+                <span className="text-[10px] text-slate-400 block font-medium">Age & Gender</span>
                 <span className="font-bold text-slate-800">
                   {currentElder.age} yrs • {currentElder.gender}
                 </span>
@@ -434,77 +527,18 @@ export const MobileMatchmakingScreen: React.FC<
 
             <div className="flex items-center justify-between py-1 border-b border-slate-100">
               <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Language
-                </span>
-                <span className="font-bold text-slate-800">
-                  {currentElder.primaryLanguage || "English"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection("LANGUAGE")}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Care Duration
-                </span>
+                <span className="text-[10px] text-slate-400 block font-medium">Care Duration</span>
                 <span className="font-bold text-slate-800">
                   {(currentElder.shiftPreference as string) === "EIGHT_HOUR_DAY"
                     ? "8 Hours"
-                    : (currentElder.shiftPreference as string) ===
-                        "TWENTY_FOUR_HOUR_LIVE_IN"
+                    : (currentElder.shiftPreference as string) === "TWENTY_FOUR_HOUR_LIVE_IN"
                       ? "24 Hours"
-                      : (currentElder.shiftPreference as string) === "FLEXIBLE"
-                        ? "Flexible"
-                        : "12 Hours"}
+                      : "12 Hours"}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingSection("DURATION")}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Care Requirements
-                </span>
-                <span className="font-bold text-slate-800">
-                  {currentElder.careRequirements?.join(", ") || "Assisted Care"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection("REQUIREMENTS")}
-                className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
-              >
-                Edit
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between py-1">
-              <div>
-                <span className="text-[10px] text-slate-400 block font-medium">
-                  Preferences
-                </span>
-                <span className="font-bold text-slate-800 truncate max-w-[200px] block">
-                  {currentElder.additionalNotes || "Standard preferences"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditingSection("PREFERENCES")}
                 className="text-primary font-bold text-[11px] px-2 py-0.5 rounded hover:bg-slate-50"
               >
                 Edit
@@ -522,99 +556,128 @@ export const MobileMatchmakingScreen: React.FC<
       )}
 
       {/* Main Viewport Content by Flow Step */}
-      <div className="my-auto py-3">
-        {/* 1. MATCHES VIEW */}
-        {flowStep === "MATCHES" && selectedMatch && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Main Featured Match Card */}
-            <div className="p-5 rounded-3xl bg-white border-2 border-primary/40 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-primary text-white text-[10px] font-extrabold px-3 py-1 rounded-bl-xl tracking-wider uppercase">
-                Top Recommendation
-              </div>
-
-              <div className="flex items-center gap-4 pt-1">
-                <div className="w-16 h-16 rounded-2xl bg-teal-100 flex items-center justify-center font-extrabold text-primary text-xl shrink-0 border border-teal-200">
-                  {getCaregiverName(selectedMatch).charAt(0)}
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-slate-900 leading-tight">
-                    {getCaregiverName(selectedMatch)}
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{selectedMatch.caregiver.locality}</span>
-                    <span>•</span>
-                    <span>
-                      {selectedMatch.caregiver.experience_years || 5} yrs exp
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-1 text-amber-600 text-xs font-bold">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                    <span>4.9 / 5.0</span>
-                    <span className="text-slate-400 font-normal">
-                      (42 verified reviews)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Verified Trust Badges */}
-              <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50/70 p-2 rounded-xl">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Police Verified</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-teal-700 bg-teal-50/70 p-2 rounded-xl">
-                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
-                  <span>Hospital Trained</span>
-                </div>
-              </div>
-
-              {/* Languages & Specialization */}
-              <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-400">Languages:</span>
-                  <span className="font-semibold text-slate-800">
-                    {Array.isArray(selectedMatch.caregiver.languages)
-                      ? selectedMatch.caregiver.languages.join(", ")
-                      : selectedMatch.caregiver.languages || "Tamil, English"}
+      <div className="my-2 flex-1">
+        {/* 1. MATCHES VIEW: Vertically Scrollable Recommendations */}
+        {flowStep === "MATCHES" && (
+          <div className="space-y-3 pb-2 animate-fadeIn">
+            {matchesData && matchesData.matches.length > 0 ? (
+              <div className="space-y-3">
+                <div className="text-xs text-slate-500 font-semibold flex items-center justify-between">
+                  <span>
+                    Showing {matchesData.matches.length} verified attendant{matchesData.matches.length > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-[11px] text-teal-700 font-bold">
+                    Tap card to select
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-400">Care Focus:</span>
-                  <span className="font-semibold text-slate-800">
-                    Assisted Mobility, Daily ADL
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            {/* Other Candidates Carousel Selector */}
-            {matchesData && matchesData.matches.length > 1 && (
-              <div>
-                <span className="text-xs font-bold text-slate-500 block mb-2">
-                  Other available attendants ({matchesData.matches.length}):
-                </span>
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  {matchesData.matches.map((m) => (
-                    <button
-                      key={m.caregiver.id}
+                {matchesData.matches.map((m, idx) => {
+                  const isSelected = selectedMatch?.caregiver.id === m.caregiver.id;
+                  const cg = m.caregiver;
+                  const name = getCaregiverName(m);
+                  const quals = cg.qualifications || cg.skills || "Hospital Trained Attendant";
+
+                  return (
+                    <div
+                      key={cg.id || idx}
                       onClick={() => setSelectedMatch(m)}
-                      className={`px-3 py-2 rounded-2xl border text-left shrink-0 transition ${
-                        selectedMatch?.caregiver.id === m.caregiver.id
-                          ? "border-primary bg-teal-50 shadow-sm"
-                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      className={`p-4 rounded-3xl border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? "border-primary bg-gradient-to-br from-white via-teal-50/40 to-slate-50 shadow-md ring-2 ring-primary/20"
+                          : "border-slate-200 bg-white hover:border-slate-300 shadow-sm"
                       }`}
                     >
-                      <div className="text-xs font-bold text-slate-800">
-                        {getCaregiverName(m)}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-13 h-13 rounded-2xl bg-teal-100 flex items-center justify-center font-extrabold text-primary text-lg shrink-0 border border-teal-200">
+                            {name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-extrabold text-slate-900 text-base">
+                                {name}
+                              </span>
+                              {idx === 0 && (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-extrabold uppercase tracking-wider">
+                                  Top Match
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{cg.locality}</span>
+                              <span>•</span>
+                              <span>{cg.experience_years || 5} yrs exp</span>
+                              {cg.gender && (
+                                <>
+                                  <span>•</span>
+                                  <span className="font-medium text-slate-600">{cg.gender}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Daily Rate & Match Score */}
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-extrabold text-primary">
+                            ₹{cg.daily_rate || 600}
+                            <span className="text-[10px] text-slate-500 font-normal">/day</span>
+                          </div>
+                          <div className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                            {m.match_percentage}% match
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-500">
-                        {m.caregiver.locality}
+
+                      {/* Qualifications Badge */}
+                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-teal-50 text-teal-800 text-[11px] font-bold border border-teal-200/70">
+                          <Award className="w-3 h-3 text-teal-600" />
+                          <span>{quals}</span>
+                        </span>
+                        {cg.is_police_verified && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Police Verified</span>
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span>4.9 (40+ reviews)</span>
+                        </span>
                       </div>
-                    </button>
-                  ))}
+
+                      {/* Matching rationale & Languages */}
+                      <p className="mt-2 text-[11px] text-slate-600 leading-relaxed border-t border-slate-100 pt-2">
+                        {m.rationale}
+                      </p>
+
+                      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                        <span>Languages: {Array.isArray(cg.languages) ? cg.languages.join(", ") : cg.languages || "Tamil, English"}</span>
+                        <span className={`font-bold ${isSelected ? "text-primary font-extrabold" : "text-slate-400"}`}>
+                          {isSelected ? "✓ Selected Attendant" : "Tap to Select"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
+                <AlertCircle className="w-8 h-8 text-amber-500 mx-auto" />
+                <div className="text-sm font-bold text-slate-800">
+                  No caregivers found with current filters
                 </div>
+                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                  Try adjusting or resetting your filters to see more verified attendants.
+                </p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                >
+                  Reset All Filters
+                </button>
               </div>
             )}
           </div>
@@ -631,8 +694,7 @@ export const MobileMatchmakingScreen: React.FC<
                 15-Min Intro Video Call
               </h3>
               <p className="text-xs text-slate-500">
-                Get to know {getCaregiverName(selectedMatch)} before starting
-                care.
+                Get to know {getCaregiverName(selectedMatch)} before starting care.
               </p>
             </div>
             <div className="p-3 bg-slate-50 rounded-2xl text-xs space-y-1 text-slate-600">
@@ -673,7 +735,7 @@ export const MobileMatchmakingScreen: React.FC<
                 Monthly Managed Care Plan
               </h3>
               <p className="text-xs text-slate-500">
-                12-Hour Daily Dedicated Attendant
+                Dedicated Attendant with Care Desk Oversight
               </p>
             </div>
 
@@ -725,26 +787,21 @@ export const MobileMatchmakingScreen: React.FC<
                 1. Verified Attendant Standard
               </div>
               <p className="text-[11px] leading-relaxed">
-                All assigned attendants have verified identity, police
-                verification, and hospital-grade training. Daily attendance is
-                tracked with geofencing.
+                All assigned attendants have verified identity, police verification, and hospital-grade training. Daily attendance is tracked with geofencing.
               </p>
 
               <div className="font-bold text-slate-800 pt-1">
                 2. Replacement Guarantee
               </div>
               <p className="text-[11px] leading-relaxed">
-                If an attendant is on planned leave, sick, or mismatched,
-                CareConnect assigns an approved substitute within 24 hours.
+                If an attendant is on planned leave, sick, or mismatched, CareConnect assigns an approved substitute within 24 hours.
               </p>
 
               <div className="font-bold text-slate-800 pt-1">
                 3. Non-Emergency Disclaimer
               </div>
               <p className="text-[11px] leading-relaxed">
-                CareConnect provides home care and remote monitoring. For
-                life-threatening emergencies, call national emergency services
-                (112) immediately.
+                CareConnect provides home care and remote monitoring. For life-threatening emergencies, call national emergency services (112) immediately.
               </p>
             </div>
 
@@ -756,14 +813,59 @@ export const MobileMatchmakingScreen: React.FC<
                 className="mt-0.5 rounded text-primary focus:ring-teal-500"
               />
               <span>
-                I agree to the CareConnect Service Level Agreement and consent
-                to digital health records processing under DPDP Act.
+                I agree to the CareConnect Service Level Agreement and consent to digital health records processing under DPDP Act.
               </span>
             </label>
           </div>
         )}
 
-        {/* 5. SUCCESS VIEW */}
+        {/* 5. PENDING CONFIRMATION VIEW */}
+        {flowStep === "PENDING_CONFIRMATION" && selectedMatch && (
+          <div className="p-5 bg-amber-50 rounded-3xl border border-amber-200 text-center space-y-3 animate-fadeIn">
+            <div className="w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+              <Clock className="w-8 h-8 animate-pulse" />
+            </div>
+            <div className="space-y-1">
+              <span className="inline-block px-3 py-1 rounded-full bg-amber-200/80 text-amber-900 text-[11px] font-extrabold uppercase tracking-wide">
+                Pending — Waiting for caregiver confirmation
+              </span>
+              <h3 className="text-base font-extrabold text-amber-950 pt-1">
+                Request Sent to {getCaregiverName(selectedMatch)}
+              </h3>
+              <p className="text-xs text-amber-900/90 leading-relaxed max-w-xs mx-auto">
+                Your care booking has been transmitted. The attendant has up to 2 hours to confirm their schedule. You will receive an in-app and SMS alert once accepted.
+              </p>
+            </div>
+
+            <div className="p-3 bg-white/80 rounded-2xl text-xs space-y-1 text-slate-700 text-left border border-amber-200/60">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Elder:</span>
+                <span className="font-bold">{currentElder.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Attendant:</span>
+                <span className="font-bold">{getCaregiverName(selectedMatch)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Status:</span>
+                <span className="font-bold text-amber-700">{assignmentStatus}</span>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleConfirmAssignmentNow}
+                disabled={isActionLoading}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              >
+                {isActionLoading ? "Confirming..." : "Simulate Attendant Acceptance (Test)"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 6. SUCCESS VIEW */}
         {flowStep === "SUCCESS" && (
           <div className="text-center space-y-4 animate-fadeIn p-6 bg-emerald-50 rounded-3xl border border-emerald-200">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -774,9 +876,8 @@ export const MobileMatchmakingScreen: React.FC<
                 Care Service Activated!
               </h3>
               <p className="text-xs text-emerald-800 leading-relaxed">
-                {getCaregiverName(selectedMatch)} has been assigned to{" "}
-                {elder.name}. Today's shift and daily tracking are now live in
-                your family portal.
+                {getCaregiverName(selectedMatch)} has confirmed the assignment for{" "}
+                {elder.name}. Today's shift and daily tracking are now live in your family portal.
               </p>
             </div>
           </div>
@@ -784,30 +885,24 @@ export const MobileMatchmakingScreen: React.FC<
       </div>
 
       {/* Primary Action Button by Step */}
-      <div className="pt-4">
+      <div className="pt-3">
         {flowStep === "MATCHES" && (
           <div className="space-y-2">
             <button
-              onClick={handleScheduleCall}
-              disabled={isActionLoading || !selectedMatch}
-              className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
-            >
-              {isActionLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Video className="w-5 h-5" />
-                  <span>Book Free 15-Min Intro Call</span>
-                </>
-              )}
-            </button>
-            <button
               onClick={handleProceedToPayment}
               disabled={isActionLoading || !selectedMatch}
-              className="w-full min-h-[48px] bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-98 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition"
+              className="w-full min-h-[54px] bg-primary hover:bg-primary-hover active:scale-98 disabled:opacity-50 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
             >
-              <span>Skip Intro Call & Book Care (₹18,000/mo)</span>
+              <span>Book Selected Caregiver (₹18,000/mo)</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleScheduleCall}
+              disabled={isActionLoading || !selectedMatch}
+              className="w-full min-h-[46px] bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-98 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition"
+            >
+              <Video className="w-4 h-4 text-teal-700" />
+              <span>Book Free 15-Min Video Introduction</span>
             </button>
           </div>
         )}
@@ -816,10 +911,10 @@ export const MobileMatchmakingScreen: React.FC<
           <button
             onClick={handleProceedToPayment}
             disabled={isActionLoading}
-            className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+            className="w-full min-h-[54px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
           >
             <span>Confirm Attendant & Proceed to Plan</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         )}
 
@@ -827,7 +922,7 @@ export const MobileMatchmakingScreen: React.FC<
           <button
             onClick={handleSimulatePaymentSuccess}
             disabled={isActionLoading}
-            className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+            className="w-full min-h-[54px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
           >
             {isActionLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -844,29 +939,206 @@ export const MobileMatchmakingScreen: React.FC<
           <button
             onClick={handleAcceptSla}
             disabled={isActionLoading || !agreedConsent}
-            className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 disabled:opacity-50 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+            className="w-full min-h-[54px] bg-primary hover:bg-primary-hover active:scale-98 disabled:opacity-50 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
           >
             {isActionLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <>
                 <FileCheck className="w-5 h-5" />
-                <span>Accept SLA & Start Care</span>
+                <span>Accept SLA & Submit Assignment</span>
               </>
             )}
+          </button>
+        )}
+
+        {flowStep === "PENDING_CONFIRMATION" && (
+          <button
+            onClick={onBookingConfirmed}
+            className="w-full min-h-[54px] bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
+          >
+            <span>Proceed to Family Dashboard</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         )}
 
         {flowStep === "SUCCESS" && (
           <button
             onClick={onBookingConfirmed}
-            className="w-full min-h-[56px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
+            className="w-full min-h-[54px] bg-primary hover:bg-primary-hover active:scale-98 text-white rounded-2xl font-bold text-base shadow-md flex items-center justify-center gap-2 transition"
           >
             <span>Open Family Care Dashboard</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         )}
       </div>
+
+      {/* FILTER DRAWER / MODAL */}
+      {isFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 animate-fadeIn">
+          <div className="w-full max-w-[440px] bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto animate-slideUp text-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-primary" />
+                <h3 className="text-base font-bold font-heading">Filter Caregivers</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Filter */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Search Name or Skill
+              </label>
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  placeholder="e.g. Priya, BSc Nursing, Bedside"
+                  className="w-full h-10 pl-9 pr-3 bg-white rounded-xl border border-slate-200 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Gender Filter */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Caregiver Gender
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "", label: "Any" },
+                  { id: "FEMALE", label: "Female" },
+                  { id: "MALE", label: "Male" },
+                ].map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setFilters({ ...filters, gender: g.id })}
+                    className={`h-9 rounded-xl text-xs font-bold transition border ${
+                      filters.gender === g.id
+                        ? "bg-teal-50 border-primary text-primary"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Nursing Qualification Filter (including BSc Nursing) */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Nursing Qualification
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "", label: "All Qualifications" },
+                  { id: "BSc Nursing", label: "BSc Nursing" },
+                  { id: "GNM", label: "GNM Certified" },
+                  { id: "PTA", label: "Physiotherapy (PTA)" },
+                ].map((q) => (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => setFilters({ ...filters, qualification: q.id })}
+                    className={`h-10 px-2 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between ${
+                      filters.qualification === q.id
+                        ? "bg-teal-50 border-primary text-primary"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span>{q.label}</span>
+                    {filters.qualification === q.id && <CheckCircle2 className="w-3.5 h-3.5" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Availability */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Schedule Availability
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: "", label: "Any Time" },
+                  { id: "AVAILABLE", label: "Available Now" },
+                  { id: "FULL_DAY", label: "Full Day (12h)" },
+                ].map((av) => (
+                  <button
+                    key={av.id}
+                    type="button"
+                    onClick={() => setFilters({ ...filters, availability: av.id })}
+                    className={`h-9 rounded-xl text-xs font-bold transition border ${
+                      filters.availability === av.id
+                        ? "bg-teal-50 border-primary text-primary"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {av.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Daily Rate / Budget */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Max Daily Rate Budget
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { val: null, label: "Any" },
+                  { val: 600, label: "≤ ₹600" },
+                  { val: 800, label: "≤ ₹800" },
+                  { val: 1000, label: "≤ ₹1000" },
+                ].map((b, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setFilters({ ...filters, max_daily_rate: b.val })}
+                    className={`h-9 rounded-xl text-xs font-bold transition border ${
+                      filters.max_daily_rate === b.val
+                        ? "bg-teal-50 border-primary text-primary"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Drawer Actions */}
+            <div className="pt-2 flex items-center gap-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="flex-1 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyFilters}
+                className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs shadow-sm"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section Editor Modal for independent editing */}
       {editingSection && (
@@ -880,5 +1152,3 @@ export const MobileMatchmakingScreen: React.FC<
     </div>
   );
 };
-
-

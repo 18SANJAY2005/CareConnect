@@ -71,6 +71,7 @@ export interface Elder {
   shiftPreference: ShiftPreference;
   additionalNotes?: string | null;
   personaStatus: PersonaStatus;
+  isMyself?: boolean;
   createdAt: string;
   updatedAt: string;
   location?: ElderLocation | null;
@@ -102,6 +103,18 @@ export interface LocationVerifyResponse {
   city: string;
   postalCode: string;
   assignedHub?: string | null;
+}
+
+export interface ServiceInterest {
+  id: string;
+  fullName: string;
+  phone: string;
+  email?: string | null;
+  postalCode?: string | null;
+  locality?: string | null;
+  serviceType?: string | null;
+  notes?: string | null;
+  createdAt: string;
 }
 
 export interface AuthResponse {
@@ -137,6 +150,7 @@ export interface Caregiver {
   is_clinical_certified?: boolean;
   is_identity_verified?: boolean;
   bio?: string;
+  qualifications?: string;
 
   /*
    * Phase D fields
@@ -161,6 +175,32 @@ export interface CaregiverMatchItem {
   matching_skills: string[];
   matching_languages: string[];
   locality_match: boolean;
+}
+
+export interface BillingAdjustment {
+  id: string;
+  invoiceId: string;
+  elderId?: string | null;
+  effectiveDate: string;
+  serviceChange: string;
+  adjustmentAmount: number;
+  resultingBalance: number;
+  reason?: string | null;
+  createdAt: string;
+}
+
+export interface ShiftOtpStatus {
+  shiftId: string;
+  status: string;
+  startOtpSent: boolean;
+  startOtpUsed: boolean;
+  startOtpExpiresAt?: string | null;
+  completionOtpSent: boolean;
+  completionOtpUsed: boolean;
+  completionOtpExpiresAt?: string | null;
+  smsConfigured?: boolean;
+  emailConfigured?: boolean;
+  deliveryChannel?: string;
 }
 
 export interface CuratedMatchesResponse {

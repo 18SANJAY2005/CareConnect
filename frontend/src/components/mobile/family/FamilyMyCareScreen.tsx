@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Loader2,
   Navigation,
+  History,
 } from "lucide-react";
 import type { Elder } from "../../../types";
 import { api } from "../../../services/api";
@@ -49,6 +50,10 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+
+  // Assignment history state
+  const [historyList, setHistoryList] = useState<any[]>([]);
+
   const editingSection =
     controlledEditingSection !== undefined
       ? controlledEditingSection
@@ -75,7 +80,19 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
 
   useEffect(() => {
     setCurrentElder(elder);
+    loadAssignmentHistory();
   }, [elder]);
+
+  const loadAssignmentHistory = async () => {
+    try {
+      const historyData = await api
+        .getAssignmentHistory(currentElder.id)
+        .catch(() => []);
+      if (historyData) setHistoryList(historyData);
+    } catch {
+      // Graceful fallback
+    }
+  };
 
   const handleSaved = (updated: Elder) => {
     setCurrentElder(updated);
@@ -190,6 +207,51 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
             <span>30-Day Cycle</span>
           </div>
         </div>
+      </div>
+
+
+
+      {/* Historical Care Assignments */}
+      <div className="p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-primary" />
+            <span className="text-xs font-bold text-slate-900">
+              Caregiver Assignment History
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400">
+            {historyList.length} record{historyList.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {historyList.length > 0 ? (
+          <div className="space-y-2">
+            {historyList.map((h, i) => (
+              <div
+                key={h.id || i}
+                className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800">
+                    {h.caregiver?.fullName || h.caregiver?.full_name || "Assigned Attendant"}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800 uppercase tracking-wide">
+                    {h.status || "ACTIVE"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Shift: {h.shift_type || "12-Hour Day Care"}</span>
+                  <span>Started: {h.start_date || "Oct 2026"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-3 rounded-2xl bg-slate-50 text-center text-xs text-slate-400">
+            Current plan is the active assignment. Completed historical shifts remain accessible here.
+          </div>
+        )}
       </div>
 
       {/* 2. Core Profile Details */}

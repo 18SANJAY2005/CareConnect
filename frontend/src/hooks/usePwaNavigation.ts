@@ -117,14 +117,17 @@ function hashToState(
   if (clean.startsWith("more/")) {
     const morePart = clean.replace("more/", "").toUpperCase();
     if (["REPLACEMENT", "FEEDBACK", "BILLING"].includes(morePart)) {
-      return { tab: "MORE", more: morePart as MoreModalType };
+      return { tab: "PROFILE", more: morePart as MoreModalType };
     }
   }
 
   if (clean === "my-care") return { tab: "MY_CARE", step: null };
+  if (clean === "caregiver") return { tab: "CAREGIVER", step: null };
   if (clean === "updates") return { tab: "UPDATES", step: null };
+  if (clean === "payment") return { tab: "PAYMENT", step: null };
+  if (clean === "profile") return { tab: "PROFILE", step: null };
   if (clean === "messages") return { tab: "MESSAGES", step: null };
-  if (clean === "more") return { tab: "MORE", step: null };
+  if (clean === "more") return { tab: "PROFILE", step: null };
 
   return { tab: "HOME", step: null, auth: false };
 }
@@ -267,13 +270,13 @@ export function usePwaNavigation(
       return;
     }
 
-    // 1 time press: REFRESH THE PAGE
+    // 1 time press: Show exit reminder and refresh data in-memory without page reload
     lastBackPressTimeRef.current = now;
 
     setBackNotice({
       visible: true,
       message: "Press back again to exit",
-      isRefreshing: true,
+      isRefreshing: false,
     });
 
     // Trigger in-app immediate data refresh if provided
@@ -283,17 +286,10 @@ export function usePwaNavigation(
       } catch {}
     }
 
-    // After 1500ms, if not double-pressed, reload the page
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
-    }
-    refreshTimerRef.current = setTimeout(() => {
       refreshTimerRef.current = null;
-      lastBackPressTimeRef.current = 0;
-      if (typeof window !== "undefined") {
-        window.location.reload();
-      }
-    }, 1500);
+    }
 
     if (noticeTimerRef.current) {
       clearTimeout(noticeTimerRef.current);
@@ -313,17 +309,7 @@ export function usePwaNavigation(
         (typeof window !== "undefined" &&
           window.location.hash.startsWith("#auth"))
       ) {
-        if (stateRef.current.step) {
-          // Preserve the onboarding intent
-          const next = { ...stateRef.current, auth: false, authStep: "PHONE" as const };
-          stateRef.current = next;
-          setNavState(next);
-          try {
-            window.history.replaceState(next, "", stateToHash(next));
-          } catch {}
-        } else {
-          resetToHome();
-        }
+        resetToHome();
       } else if (
         stateRef.current.tab === "HOME" &&
         stateRef.current.step === null

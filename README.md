@@ -36,41 +36,54 @@ This repository implements **Phase A: Onboarding & Clinical/Lifestyle Intake**:
 
 ---
 
-## Quick Start
+## Quick Start & Development
 
-### 1. Backend Setup (FastAPI)
+For comprehensive architecture details, test credentials, and troubleshooting, see the [Developer & Debugging Guide](file:///c:/Users/manor/Desktop/project/CareConnect/docs/DEBUGGING.md).
 
+### 1. One-Command Full Platform Start
+To run all 4 services (FastAPI Backend, Family PWA, Caregiver PWA, Admin Portal) and the Unified Reverse Proxy together:
+
+```bash
+# Install all frontend dependencies
+npm run install:all
+
+# Run backend + 3 frontends + reverse proxy concurrently
+npm run dev:all
+
+# Check health and connectivity of all services
+npm run health
+
+# Start Cloudflare quick tunnel for remote testing
+npm run tunnel
+```
+
+Once running:
+- **Unified Portal**: `http://localhost:3000`
+- **Family PWA**: `http://localhost:3000/` (direct: `:5173`)
+- **Caregiver PWA**: `http://localhost:3000/caregiver` (direct: `:5174`)
+- **Admin Portal**: `http://localhost:3000/admin` (direct: `:5175`)
+- **Backend API & Swagger Docs**: `http://localhost:3000/docs` (direct: `:8000`)
+- **Live Proxy Diagnostics**: `http://localhost:3000/proxy-status`
+
+On Windows, you can also launch all services with dedicated consoles using `.\scripts\run_project.bat` or `.\scripts\run_project.ps1`, and stop them cleanly with `.\scripts\stop_project.bat`.
+
+### 2. Standalone Service Setup
+
+#### Backend Setup (FastAPI)
 ```bash
 cd backend
-
-# Install dependencies
 python -m pip install -r requirements.txt
-
-# Run automated tests
-python -m pytest
-
-# Start development server
-uvicorn app.main:app --reload --port 8000
+python -m pytest               # Run 129 automated tests
+python run.py                  # Launches on port 8000
 ```
 
-The API will be live at `http://localhost:8000` with interactive Swagger docs at `http://localhost:8000/docs`.
-
-### 2. Frontend Setup (React + Vite + TypeScript)
-
+#### Frontend Setup (Family Portal)
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
+npm run dev                    # Launches on port 5173
+npm run build                  # Production build & typecheck
 ```
-
-The frontend will run at `http://localhost:5173`.
 
 ---
 

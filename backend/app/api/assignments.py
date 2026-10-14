@@ -15,6 +15,8 @@ from app.models.caregiver import Caregiver
 from app.models.assignment import CareAssignment
 from app.models.billing import Invoice, InvoiceLineItem
 from app.models.renewal import Renewal
+from app.models.audit import AuditLog, Notification
+from app.models.shift import CareShift, AttendanceLog
 
 from app.schemas.phase_d import (
     CareAssignmentResponse,
@@ -578,8 +580,38 @@ async def create_care_assignment(
         )
 
     # ------------------------------------------------------------------------
-    # Create Phase B assignment
+    # Revalidate caregiver eligibility, verification, and schedule availability
     # ------------------------------------------------------------------------
+    if not caregiver.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Caregiver {caregiver.full_name} is inactive and cannot be assigned.",
+        )
+
+    if not caregiver.is_identity_verified and not caregiver.is_clinical_certified:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Caregiver {caregiver.full_name} has not completed mandatory identity verification.",
+        )
+
+    # Check for conflicting active assignment
+    conflict_res = await db.execute(
+        select(CareAssignment).where(
+            CareAssignment.caregiver_id == caregiver_id,
+            CareAssignment.status.in_(["ACTIVE", "SERVICE_CONFIRMED"]),
+            CareAssignment.elder_id != elder_id,
+        )
+    )
+    if conflict_res.scalars().first():
+        raise HTTPException(
+            status_code=409,
+            detail=f"Caregiver {caregiver.full_name} already has an active overlapping care assignment.",
+        )
+
+    # ------------------------------------------------------------------------
+    # Create CareAssignment (supports WAITING_CONFIRMATION, PENDING, or CAREGIVER_SELECTED)
+    # ------------------------------------------------------------------------
+    initial_status = payload.get("status") or "CAREGIVER_SELECTED"
 
     assignment = CareAssignment(
         elder_id=elder_id,
@@ -589,13 +621,58 @@ async def create_care_assignment(
             payload.get("shift_type")
             or "Day 10-Hour"
         ),
-        start_date=payload.get("start_date"),
-        status="CAREGIVER_SELECTED",
+        start_date=payload.get("start_date") or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        status=initial_status,
         notes=payload.get("notes"),
-        monthly_rate=22000.0,
+        monthly_rate=float(payload.get("monthly_rate") or (caregiver.daily_rate * 26) or 22000.0),
     )
 
     db.add(assignment)
+    await db.flush()
+
+    # ------------------------------------------------------------------------
+    # Dispatch notification to CareSeeker / Sponsor (prevent duplicate notifications)
+    # ------------------------------------------------------------------------
+    notif_res = await db.execute(
+        select(Notification).where(
+            Notification.recipientUserId == sponsor_id,
+            Notification.eventType == "ASSIGNMENT_SCHEDULED",
+            Notification.referenceId == str(assignment.id),
+        )
+    )
+    if not notif_res.scalars().first():
+        sched_time = assignment.start_date or "the requested start date"
+        db.add(
+            Notification(
+                recipientUserId=sponsor_id,
+                eventType="ASSIGNMENT_SCHEDULED",
+                referenceType="ASSIGNMENT",
+                referenceId=str(assignment.id),
+                title="Caregiver Assignment Requested",
+                message=(
+                    f"Caregiver assignment with {caregiver.full_name} for {elder.name} is scheduled for {sched_time}. "
+                    "Status: Pending — Waiting for caregiver confirmation."
+                ),
+            )
+        )
+
+    # Record Audit Log
+    db.add(
+        AuditLog(
+            actorUserId=sponsor_id,
+            entityType="ASSIGNMENT",
+            entityId=str(assignment.id),
+            action="CREATED",
+            oldValue=None,
+            newValue=initial_status,
+            auditMetadata={
+                "elderId": elder_id,
+                "caregiverId": caregiver_id,
+                "caregiverName": caregiver.full_name,
+                "shiftType": assignment.shift_type,
+            },
+        )
+    )
 
     await db.commit()
     await db.refresh(assignment)
@@ -603,7 +680,6 @@ async def create_care_assignment(
     # ------------------------------------------------------------------------
     # Reload caregiver relationship
     # ------------------------------------------------------------------------
-
     result = await db.execute(
         select(CareAssignment)
         .options(
@@ -621,6 +697,226 @@ async def create_care_assignment(
     return assignment_response(
         refreshed_assignment
     )
+
+
+# ============================================================================
+# ASSIGNMENT STATUS LIFECYCLE (Confirm, Reject, Cancel)
+# ============================================================================
+
+@router.post("/assignments/{assignment_id}/confirm", response_model=CareAssignmentResponse)
+async def confirm_care_assignment(
+    assignment_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Caregiver or coordinator confirms assignment.
+    Transitions from WAITING_CONFIRMATION / PENDING to SERVICE_CONFIRMED.
+    Revalidates caregiver eligibility before confirming.
+    """
+    result = await db.execute(
+        select(CareAssignment)
+        .options(selectinload(CareAssignment.caregiver))
+        .where(CareAssignment.id == assignment_id)
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Care assignment not found.")
+
+    caregiver = assignment.caregiver
+    if not caregiver or not caregiver.is_active:
+        raise HTTPException(status_code=400, detail="Assigned caregiver is not active.")
+
+    old_status = assignment.status
+    assignment.status = "SERVICE_CONFIRMED"
+
+    # Send confirmation notification (prevent duplicates)
+    notif_res = await db.execute(
+        select(Notification).where(
+            Notification.recipientUserId == assignment.sponsor_id,
+            Notification.eventType == "ASSIGNMENT_CONFIRMED",
+            Notification.referenceId == str(assignment.id),
+        )
+    )
+    if not notif_res.scalars().first():
+        db.add(
+            Notification(
+                recipientUserId=assignment.sponsor_id,
+                eventType="ASSIGNMENT_CONFIRMED",
+                referenceType="ASSIGNMENT",
+                referenceId=str(assignment.id),
+                title="Caregiver Confirmed",
+                message=(
+                    f"Good news! {caregiver.full_name} has accepted the care assignment starting {assignment.start_date}. "
+                    "Your care coordinator will oversee onboarding."
+                ),
+            )
+        )
+
+    # Audit log
+    db.add(
+        AuditLog(
+            actorUserId=str(caregiver.id),
+            entityType="ASSIGNMENT",
+            entityId=str(assignment.id),
+            action="STATUS_CHANGED",
+            oldValue=old_status,
+            newValue="SERVICE_CONFIRMED",
+        )
+    )
+
+    await db.commit()
+    await db.refresh(assignment)
+    return assignment_response(assignment)
+
+
+@router.post("/assignments/{assignment_id}/reject", response_model=CareAssignmentResponse)
+async def reject_care_assignment(
+    assignment_id: int,
+    payload: dict = {},
+    db: AsyncSession = Depends(get_db),
+):
+    """Caregiver or coordinator rejects assignment."""
+    result = await db.execute(
+        select(CareAssignment)
+        .options(selectinload(CareAssignment.caregiver))
+        .where(CareAssignment.id == assignment_id)
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Care assignment not found.")
+
+    old_status = assignment.status
+    assignment.status = "REJECTED"
+    if payload.get("reason"):
+        assignment.notes = f"{assignment.notes or ''} [Rejection reason: {payload['reason']}]"
+
+    db.add(
+        AuditLog(
+            actorUserId=assignment.sponsor_id,
+            entityType="ASSIGNMENT",
+            entityId=str(assignment.id),
+            action="STATUS_CHANGED",
+            oldValue=old_status,
+            newValue="REJECTED",
+        )
+    )
+
+    await db.commit()
+    await db.refresh(assignment)
+    return assignment_response(assignment)
+
+
+@router.post("/assignments/{assignment_id}/cancel", response_model=CareAssignmentResponse)
+async def cancel_care_assignment(
+    assignment_id: int,
+    payload: dict = {},
+    db: AsyncSession = Depends(get_db),
+):
+    """Cancel assignment (by family sponsor or admin)."""
+    result = await db.execute(
+        select(CareAssignment)
+        .options(selectinload(CareAssignment.caregiver))
+        .where(CareAssignment.id == assignment_id)
+    )
+    assignment = result.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Care assignment not found.")
+
+    old_status = assignment.status
+    assignment.status = "CANCELLED"
+    if payload.get("reason"):
+        assignment.notes = f"{assignment.notes or ''} [Cancellation reason: {payload['reason']}]"
+
+    db.add(
+        AuditLog(
+            actorUserId=assignment.sponsor_id,
+            entityType="ASSIGNMENT",
+            entityId=str(assignment.id),
+            action="STATUS_CHANGED",
+            oldValue=old_status,
+            newValue="CANCELLED",
+        )
+    )
+
+    await db.commit()
+    await db.refresh(assignment)
+    return assignment_response(assignment)
+
+
+# ============================================================================
+# ASSIGNMENT HISTORY PER ELDER
+# ============================================================================
+
+@router.get("/assignments/elder/{elder_id}/history")
+async def get_elder_assignment_history(
+    elder_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Maintain assignment history per elder, including caregiver, scheduled dates,
+    assignment status, and available completed-task details.
+    Historical records remain accessible after completion.
+    """
+    res = await db.execute(
+        select(CareAssignment)
+        .options(selectinload(CareAssignment.caregiver))
+        .where(CareAssignment.elder_id == elder_id)
+        .order_by(CareAssignment.created_at.desc())
+    )
+    assignments = res.scalars().all()
+
+    # Query completed shifts and attendance details for this elder
+    shifts_res = await db.execute(
+        select(CareShift).where(CareShift.elderId == elder_id)
+    )
+    shifts = shifts_res.scalars().all()
+
+    completed_shifts_summary = [
+        {
+            "shiftId": s.id,
+            "status": s.status,
+            "shiftType": s.shiftType,
+            "scheduledStart": s.scheduledStart.isoformat() if s.scheduledStart else None,
+            "scheduledEnd": s.scheduledEnd.isoformat() if s.scheduledEnd else None,
+            "supervisorNotes": s.supervisorNotes,
+        }
+        for s in shifts
+        if s.status in ["COMPLETED", "CHECKED_OUT"]
+    ]
+
+    history = []
+    for asg in assignments:
+        cg = asg.caregiver
+        history.append({
+            "id": asg.id,
+            "elderId": asg.elder_id,
+            "caregiverId": asg.caregiver_id,
+            "caregiver": {
+                "id": cg.id if cg else asg.caregiver_id,
+                "fullName": cg.full_name if cg else "Caregiver",
+                "phone": cg.phone if cg else None,
+                "gender": cg.gender if cg else None,
+                "rating": cg.rating if cg else 4.8,
+                "specializations": cg.specializations if cg else None,
+                "qualifications": getattr(cg, "qualifications", None) if cg else None,
+                "locality": cg.locality if cg else None,
+            } if cg else None,
+            "shiftType": asg.shift_type,
+            "startDate": asg.start_date or (asg.created_at.isoformat() if asg.created_at else None),
+            "status": asg.status,
+            "statusLabel": (
+                "Pending — Waiting for caregiver confirmation"
+                if asg.status in ["WAITING_CONFIRMATION", "PENDING"]
+                else asg.status
+            ),
+            "monthlyRate": asg.monthly_rate,
+            "notes": asg.notes,
+            "createdAt": asg.created_at.isoformat() if asg.created_at else None,
+            "completedTasksCount": len(completed_shifts_summary),
+            "completedShifts": completed_shifts_summary,
+        })
+
+    return history
 
 
 # ============================================================================

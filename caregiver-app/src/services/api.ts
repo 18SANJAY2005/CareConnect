@@ -8,6 +8,13 @@ import type {
   AvailableCareJob,
   AcceptJobResponse,
   WorkHistoryResponse,
+  AssignmentOffer,
+  ScheduleItem,
+  FullCaregiverProfile,
+  PayoutSummary,
+  ShiftEarningItem,
+  ElderEarningGroup,
+  PayoutHistoryItem,
 } from '../types';
 import { offlineQueue } from './offlineQueue';
 
@@ -282,9 +289,20 @@ class CaregiverApiService {
   async submitMyKyc(payload: {
     document_type: string;
     document_number: string;
+    mobile_number?: string;
     document_storage_reference?: string;
+    terms_accepted?: boolean;
+    service_consent?: boolean;
+    promotional_consent?: boolean;
   }): Promise<CaregiverKyc> {
     return this.request<CaregiverKyc>('/caregivers/kyc/me', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async supervisorCorrectTask(taskId: string, payload: { status: string; correctionReason: string }): Promise<any> {
+    return this.request<any>(`/care-tasks/${taskId}/supervisor-correction`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -336,6 +354,66 @@ class CaregiverApiService {
     return this.request<WorkHistoryResponse>('/caregivers/me/work-history', { method: 'GET' });
   }
 
+  // --- Assignment Offers Lifecycle with Deadline ---
+  async getAssignmentOffers(): Promise<AssignmentOffer[]> {
+    return this.request<AssignmentOffer[]>('/caregivers/assignment-offers', { method: 'GET' });
+  }
+
+  async acceptAssignmentOffer(assignmentId: number): Promise<AcceptJobResponse> {
+    return this.request<AcceptJobResponse>(`/caregivers/assignments/${assignmentId}/accept`, {
+      method: 'POST',
+    });
+  }
+
+  async declineAssignmentOffer(assignmentId: number, reason?: string): Promise<{ success: boolean; message: string }> {
+    return this.request<{ success: boolean; message: string }>(`/caregivers/assignments/${assignmentId}/decline`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  // --- Read-Oriented Calendar / Schedule ---
+  async getSchedule(): Promise<ScheduleItem[]> {
+    return this.request<ScheduleItem[]>('/caregivers/schedule', { method: 'GET' });
+  }
+
+  // --- Expanded Caregiver Profile ---
+  async getFullProfile(): Promise<FullCaregiverProfile> {
+    return this.request<FullCaregiverProfile>('/caregivers/me/full-profile', { method: 'GET' });
+  }
+
+  async updateFullProfile(payload: Partial<FullCaregiverProfile>): Promise<FullCaregiverProfile> {
+    return this.request<FullCaregiverProfile>('/caregivers/me/full-profile', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // --- Authoritative Financial Payouts ---
+  async getPayoutSummary(period: string = 'this_month'): Promise<PayoutSummary> {
+    return this.request<PayoutSummary>(`/payouts/caregiver/summary?period=${period}`, { method: 'GET' });
+  }
+
+  async getShiftEarnings(period: string = 'all'): Promise<ShiftEarningItem[]> {
+    return this.request<ShiftEarningItem[]>(`/payouts/caregiver/shifts?period=${period}`, { method: 'GET' });
+  }
+
+  async getEarningsByElder(): Promise<ElderEarningGroup[]> {
+    return this.request<ElderEarningGroup[]>('/payouts/caregiver/by-elder', { method: 'GET' });
+  }
+
+  async getPayoutHistory(): Promise<PayoutHistoryItem[]> {
+    return this.request<PayoutHistoryItem[]>('/payouts/caregiver/history', { method: 'GET' });
+  }
+
+  // --- Consent Disclosures ---
+  async recordConsent(payload: { phone?: string; consents: Array<{ consentType: string; granted: boolean; version?: string; purpose?: string; userAction?: string }> }) {
+    return this.request<any>('/auth/consent', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // --- Demo Seeding Helper (dev only) ---
   async seedDemoScenario() {
     return this.request<any>('/shifts/seed-demo', { method: 'POST' });
@@ -343,4 +421,5 @@ class CaregiverApiService {
 }
 
 export const caregiverApi = new CaregiverApiService();
+
 

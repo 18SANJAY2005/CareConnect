@@ -60,16 +60,16 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({
   };
 
   return (
-    <div className="flex h-[calc(100vh-120px)] flex-1 animate-fadeIn flex-col px-4 py-3 text-slate-900">
+    <div className="flex h-[calc(100dvh-120px)] flex-1 animate-fadeIn flex-col px-3.5 sm:px-4 py-3 text-slate-900">
       <div className="mb-3 flex shrink-0 items-center gap-3 rounded-[24px] border border-slate-200 bg-white p-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-primary">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-primary">
           <ShieldCheck className="h-5 w-5" />
         </div>
-        <div>
-          <div className="text-sm font-bold text-slate-900">
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-slate-900 truncate">
             Care coordinator desk
           </div>
-          <div className="text-[10px] font-semibold text-emerald-600">
+          <div className="text-[10px] font-semibold text-emerald-600 truncate">
             ● Active • Typical reply in under 5 mins
           </div>
         </div>
@@ -95,7 +95,7 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({
             if (isSystem) {
               return (
                 <div key={m.id} className="my-2 flex justify-center">
-                  <div className="max-w-[85%] rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-center text-[10px] font-medium text-slate-600">
+                  <div className="max-w-[90%] rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-center text-[10px] font-medium text-slate-600 break-words">
                     {m.content}
                   </div>
                 </div>
@@ -105,8 +105,8 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({
             if (isMe) {
               return (
                 <div key={m.id} className="flex flex-col items-end my-1">
-                  <div className="max-w-[78%] rounded-[22px] rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm">
-                    <p>{m.content}</p>
+                  <div className="max-w-[85%] sm:max-w-[78%] rounded-[22px] rounded-br-md bg-primary px-3.5 sm:px-4 py-2.5 text-sm leading-relaxed text-white shadow-sm break-words">
+                    <p className="break-words">{m.content}</p>
                   </div>
                   <span className="mt-1 mr-1 text-[9px] text-slate-400">
                     {new Date(m.createdAt).toLocaleTimeString([], {
@@ -121,18 +121,18 @@ export const FamilyMessagesScreen: React.FC<FamilyMessagesScreenProps> = ({
             return (
               <div key={m.id} className="my-1 flex flex-col items-start">
                 <div className="mb-1 ml-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                  <span>
+                  <span className="truncate max-w-[150px]">
                     {m.senderName ||
                       (m.senderRole === "COORDINATOR"
                         ? "Care Coordinator"
                         : "Attendant")}
                   </span>
-                  <span className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700 border border-teal-200/60">
+                  <span className="rounded bg-teal-50 px-1.5 py-0.5 text-[9px] font-semibold text-teal-700 border border-teal-200/60 shrink-0">
                     {m.senderRole === "COORDINATOR" ? "Desk" : "Caregiver"}
                   </span>
                 </div>
-                <div className="max-w-[78%] rounded-[22px] rounded-bl-md border border-slate-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm">
-                  <p>{m.content}</p>
+                <div className="max-w-[85%] sm:max-w-[78%] rounded-[22px] rounded-bl-md border border-slate-200 bg-white px-3.5 sm:px-4 py-2.5 text-sm leading-relaxed text-slate-800 shadow-sm break-words">
+                  <p className="break-words">{m.content}</p>
                 </div>
                 <span className="mt-1 ml-1 text-[9px] text-slate-400">
                   {new Date(m.createdAt).toLocaleTimeString([], {

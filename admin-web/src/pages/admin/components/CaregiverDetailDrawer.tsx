@@ -20,15 +20,20 @@ import {
   FileText,
   Calendar,
   ListChecks,
+  Eye,
+  UserCheck,
+  XCircle,
 } from 'lucide-react';
 import type { AdminCaregiverItem, ClinicalTaskItem } from '../types';
 import { serviceableCorridors, sample7DayHistoryPriya } from '../mockData';
+import { api } from '../../../services/api';
 
 interface CaregiverDetailDrawerProps {
   caregiver: AdminCaregiverItem | null;
   isOpen?: boolean;
   onClose: () => void;
   onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => void;
+  onKycStatusChange?: (caregiverId: string, newStatus: 'VERIFIED' | 'REJECTED', rejectionReason?: string) => Promise<any>;
   onReassignCorridor?: (caregiverId: string, newCorridor: string) => void;
   onViewElder?: (elderName: string, elderId?: string) => void;
   onDispatchToSos?: (caregiver: AdminCaregiverItem) => void;
@@ -39,6 +44,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   isOpen,
   onClose,
   onStatusChange,
+  onKycStatusChange,
   onReassignCorridor,
   onViewElder,
   onDispatchToSos,
@@ -49,14 +55,77 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [taskList, setTaskList] = useState<ClinicalTaskItem[]>(() => caregiver?.currentTasks || []);
 
-  // Sync corridor selection and task list when caregiver changes
+  // KYC Verification states
+  const [isVerifyingKyc, setIsVerifyingKyc] = useState(false);
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [localKycStatus, setLocalKycStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED'>('PENDING');
+  const [localIsVerified, setLocalIsVerified] = useState(false);
+  const [localRejectionReason, setLocalRejectionReason] = useState<string | null>(null);
+
+  // Sync corridor selection, tasks, and KYC state when caregiver changes
   useEffect(() => {
     if (caregiver) {
       setSelectedCorridor(caregiver.locality);
       setIsFlagged(false);
       setTaskList(caregiver.currentTasks || []);
+      setShowRejectInput(false);
+      setRejectReason('');
+      setLocalKycStatus((caregiver.kycStatus || (caregiver.isIdentityVerified ? 'VERIFIED' : 'PENDING')) as any);
+      setLocalIsVerified(Boolean(caregiver.isIdentityVerified || caregiver.kycStatus === 'VERIFIED'));
+      setLocalRejectionReason(caregiver.rejectionReason || null);
     }
   }, [caregiver]);
+
+  const handleVerifyKyc = async () => {
+    if (!caregiver || isVerifyingKyc) return;
+    setIsVerifyingKyc(true);
+    try {
+      if (onKycStatusChange) {
+        await onKycStatusChange(caregiver.id, 'VERIFIED');
+      } else {
+        await api.updateCaregiverKycStatus(caregiver.userId || caregiver.id, {
+          verification_status: 'VERIFIED',
+        });
+      }
+      setLocalKycStatus('VERIFIED');
+      setLocalIsVerified(true);
+      setLocalRejectionReason(null);
+      setShowRejectInput(false);
+      setToastMessage('KYC verified successfully. Caregiver is now eligible for work.');
+    } catch (err: any) {
+      setToastMessage(`Verification failed: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsVerifyingKyc(false);
+    }
+  };
+
+  const handleRejectKyc = async () => {
+    if (!caregiver || isVerifyingKyc) return;
+    const reason = rejectReason.trim() || 'Document photo illegible or details mismatch.';
+    setIsVerifyingKyc(true);
+    try {
+      if (onKycStatusChange) {
+        await onKycStatusChange(caregiver.id, 'REJECTED', reason);
+      } else {
+        await api.updateCaregiverKycStatus(caregiver.userId || caregiver.id, {
+          verification_status: 'REJECTED',
+          rejection_reason: reason,
+        });
+      }
+      setLocalKycStatus('REJECTED');
+      setLocalIsVerified(false);
+      setLocalRejectionReason(reason);
+      setShowRejectInput(false);
+      setToastMessage('KYC rejected. Rejection reason recorded.');
+    } catch (err: any) {
+      setToastMessage(`Rejection failed: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsVerifyingKyc(false);
+    }
+  };
+
 
   // Handle escape key to close
   useEffect(() => {
@@ -121,11 +190,11 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
       credentialId: 'PCC-CHN-2026-11',
     },
     {
-      name: 'Aadhaar Identity KYC',
-      issuer: 'UIDAI Verified',
-      issueDate: '2021-11-04',
-      verified: true,
-      credentialId: 'UID-BIOMETRIC-OK',
+      name: `${caregiver.documentType || 'Aadhaar'} Identity KYC`,
+      issuer: localIsVerified ? 'UIDAI / CareConnect Verified' : 'Review Required',
+      issueDate: caregiver.kycUpdatedAt ? new Date(caregiver.kycUpdatedAt).toLocaleDateString() : 'Pending',
+      verified: localIsVerified,
+      credentialId: caregiver.maskedDocumentNumber || (localIsVerified ? 'UID-BIOMETRIC-OK' : 'PENDING-VERIFY'),
     },
   ];
 
@@ -706,6 +775,198 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
             </div>
           </div>
 
+          {/* Section: Government Identity & KYC Verification */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-teal-600" />
+                <span>Government KYC & Identity Document Verification</span>
+              </h3>
+              <div>
+                {localKycStatus === 'VERIFIED' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>✓ KYC Verified</span>
+                  </span>
+                ) : localKycStatus === 'PENDING' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>● Pending Admin Review</span>
+                  </span>
+                ) : localKycStatus === 'REJECTED' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                    <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                    <span>✕ KYC Rejected</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                    <span>Not Submitted</span>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Worker Gate Status Banner */}
+            {localKycStatus === 'VERIFIED' ? (
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>Worker Gate Unlocked:</strong> Caregiver identity is verified. They can toggle availability and accept active care shifts.</span>
+              </div>
+            ) : localKycStatus === 'PENDING' ? (
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span><strong>Worker Gate Active:</strong> Caregiver is currently blocked from accepting care work until approved by an administrator.</span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span><strong>Worker Gate Blocked:</strong> Verification was rejected. Caregiver cannot accept care work.</span>
+              </div>
+            )}
+
+            {/* KYC Record Metadata */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">Document Type</span>
+                <span className="font-bold text-slate-800 text-sm">
+                  {caregiver.documentType || 'Aadhaar (UIDAI)'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">Document Number (Masked)</span>
+                <span className="font-mono font-bold text-slate-900 text-sm">
+                  {caregiver.maskedDocumentNumber || (localIsVerified ? 'XXXX-XXXX-****' : 'Not Provided')}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">Submission Date</span>
+                <span className="font-medium text-slate-700">
+                  {caregiver.kycCreatedAt
+                    ? new Date(caregiver.kycCreatedAt).toLocaleString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : 'Registered with Profile'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block font-bold uppercase">Document Proof</span>
+                {caregiver.documentStorageReference ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowDocModal(true)}
+                    className="mt-0.5 text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-teal-600" />
+                    <span>View Uploaded Document</span>
+                  </button>
+                ) : (
+                  <span className="text-slate-500 font-medium">Standard electronic verification</span>
+                )}
+              </div>
+            </div>
+
+            {/* Rejection Reason Display */}
+            {localRejectionReason && (
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+                <span className="font-bold block flex items-center gap-1 text-rose-900">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Recorded Rejection Reason:
+                </span>
+                <p>{localRejectionReason}</p>
+              </div>
+            )}
+
+            {/* Admin Action Buttons */}
+            <div className="space-y-2 pt-1">
+              {localKycStatus === 'PENDING' ? (
+                <>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isVerifyingKyc}
+                      onClick={handleVerifyKyc}
+                      className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      <span>{isVerifyingKyc ? 'Verifying...' : 'Verify & Approve KYC'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isVerifyingKyc}
+                      onClick={() => setShowRejectInput(!showRejectInput)}
+                      className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      <span>Reject KYC</span>
+                    </button>
+                  </div>
+
+                  {showRejectInput && (
+                    <div className="p-3.5 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-2 animate-fadeIn">
+                      <label className="text-[11px] font-bold text-rose-900 block">
+                        Reason for KYC Rejection (communicated to caregiver):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Document image blurry, ID number does not match name..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-rose-300 bg-white text-slate-800 focus:outline-none focus:border-rose-500"
+                      />
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowRejectInput(false)}
+                          className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800 font-bold"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isVerifyingKyc}
+                          onClick={handleRejectKyc}
+                          className="px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-2xs cursor-pointer disabled:opacity-50"
+                        >
+                          {isVerifyingKyc ? 'Rejecting...' : 'Confirm Rejection'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span className="text-slate-500">
+                    Status audit: <strong>{localKycStatus}</strong>
+                  </span>
+                  <div className="flex gap-2">
+                    {localKycStatus === 'VERIFIED' ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowRejectInput(true)}
+                        className="text-[11px] text-slate-500 hover:text-rose-600 font-bold underline"
+                      >
+                        Revoke / Re-evaluate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleVerifyKyc}
+                        disabled={isVerifyingKyc}
+                        className="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold underline"
+                      >
+                        Re-approve KYC
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Section 2: Clinical Competencies & Verified Credentials */}
           <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -724,7 +985,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                     key={idx}
                     className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-xs"
                   >
-                    <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <BadgeCheck className={`w-4 h-4 shrink-0 mt-0.5 ${cert.verified ? 'text-emerald-600' : 'text-amber-500'}`} />
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-slate-800 truncate">{cert.name}</div>
                       <div className="text-[10px] text-slate-500 truncate">{cert.issuer}</div>
@@ -736,6 +997,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                 ))}
               </div>
             </div>
+
 
             {/* Clinical Competency Tags */}
             <div className="space-y-2 pt-1">
@@ -965,6 +1227,67 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Document Proof Preview Modal */}
+      {showDocModal && caregiver.documentStorageReference && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-teal-600" />
+                <h4 className="font-bold text-slate-900 text-sm">
+                  {caregiver.documentType || 'Government ID'} Document Proof
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDocModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center p-2">
+              {caregiver.documentStorageReference.startsWith('data:image/') ? (
+                <img
+                  src={caregiver.documentStorageReference}
+                  alt="KYC Document Attachment"
+                  className="max-h-[55vh] max-w-full object-contain rounded-xl"
+                />
+              ) : caregiver.documentStorageReference.startsWith('data:application/pdf') ? (
+                <div className="p-8 text-center space-y-3">
+                  <FileText className="w-12 h-12 text-teal-600 mx-auto" />
+                  <p className="text-xs text-slate-600 font-medium">PDF Document Uploaded</p>
+                  <a
+                    href={caregiver.documentStorageReference}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-sm"
+                  >
+                    Open PDF in New Tab
+                  </a>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-xs text-slate-600">
+                  <p className="font-mono bg-white p-3 rounded border border-slate-300 break-all">
+                    {caregiver.documentStorageReference}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDocModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

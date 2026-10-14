@@ -22,6 +22,25 @@ async def create_elder(
     current_user: User = Depends(get_current_user)
 ):
     """Register an elder under the authenticated family sponsor account."""
+    is_myself_request = bool(payload.isMyself) or (
+        bool(payload.phoneNumber and current_user.phone and payload.phoneNumber.strip() == current_user.phone.strip())
+    )
+
+    if is_myself_request:
+        # Enforce rule: Permit only one active "Myself" service per person
+        existing_myself_res = await db.execute(
+            select(Elder).where(
+                Elder.familyId == current_user.id,
+                Elder.personaStatus != "DELETED",
+                (Elder.isMyself.is_(True) | (Elder.phoneNumber == current_user.phone))
+            )
+        )
+        if existing_myself_res.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only one active 'Myself' service is permitted per person."
+            )
+
     elder = Elder(
         familyId=current_user.id,
         name=payload.name,
@@ -29,6 +48,7 @@ async def create_elder(
         gender=payload.gender,
         dateOfBirth=payload.dateOfBirth,
         phoneNumber=payload.phoneNumber,
+        isMyself=is_myself_request,
         personaStatus="DRAFT"
     )
     db.add(elder)

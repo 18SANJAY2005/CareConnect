@@ -4,14 +4,20 @@
   "private": true,
   "scripts": {
     "install:all": "npm --prefix frontend install && npm --prefix caregiver-app install && npm --prefix admin-web install",
-    "dev:backend": "cd backend && python run.py",
-    "dev:family": "cd frontend && npm run dev",
-    "dev:caregiver": "cd caregiver-app && npm run dev",
-    "dev:admin": "cd admin-web && npm run dev",
-    "dev:proxy": "node scripts/proxy.js",
     "dev": "concurrently -c \"blue,green,magenta,yellow\" -n \"api,fam,car,adm\" \"npm run dev:backend\" \"npm run dev:family\" \"npm run dev:caregiver\" \"npm run dev:admin\"",
     "dev:all": "concurrently -c \"blue,green,magenta,yellow,cyan\" -n \"api,fam,car,adm,prx\" \"npm run dev:backend\" \"npm run dev:family\" \"npm run dev:caregiver\" \"npm run dev:admin\" \"npm run dev:proxy\"",
-    "tunnel": "powershell -Command \"./scripts/cloudflared.exe tunnel --url http://localhost:3000\""
+    "dev:backend": "cd backend && python run.py",
+    "dev:family": "npm --prefix frontend run dev",
+    "dev:caregiver": "npm --prefix caregiver-app run dev",
+    "dev:admin": "npm --prefix admin-web run dev",
+    "dev:proxy": "node scripts/proxy.js",
+    "health": "node scripts/health_check.js",
+    "build:all": "npm --prefix frontend run build && npm --prefix caregiver-app run build && npm --prefix admin-web run build",
+    "typecheck:all": "npm --prefix frontend exec tsc -b && npm --prefix caregiver-app exec tsc -b && npm --prefix admin-web exec tsc -b",
+    "test:backend": "cd backend && python -m pytest",
+    "test:all": "npm run test:backend",
+    "lint:all": "npm --prefix frontend run lint",
+    "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/run_tunnel.ps1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -56,11 +56,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Local Binaries
+# Local Binaries & Logs
 bin/
 scratch/
+*.exe
+cloudflared.exe
+scripts/cloudflared.exe
+*.log
+*.log.*
 
 # Temporary phase audit reports
 phase_*.md
 
-scripts/cloudflared.exe

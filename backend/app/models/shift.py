@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Text, Boolean, Integer
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -35,6 +35,18 @@ class CareShift(Base):
 
     geofenceRadiusMeters = Column(Float, nullable=False, default=200.0)
     supervisorNotes = Column(Text, nullable=True)
+
+    # Visit Start OTP (sent to CareSeeker, verified by Caregiver at visit start)
+    startOtp = Column(String(10), nullable=True)
+    startOtpExpiresAt = Column(DateTime(timezone=True), nullable=True)
+    startOtpUsed = Column(Boolean, nullable=False, default=False)
+    startOtpAttempts = Column(Integer, nullable=False, default=0)
+
+    # Visit Completion OTP (sent to CareSeeker, verified by Caregiver at visit completion)
+    completionOtp = Column(String(10), nullable=True)
+    completionOtpExpiresAt = Column(DateTime(timezone=True), nullable=True)
+    completionOtpUsed = Column(Boolean, nullable=False, default=False)
+    completionOtpAttempts = Column(Integer, nullable=False, default=0)
 
     createdAt = Column(
         DateTime(timezone=True),

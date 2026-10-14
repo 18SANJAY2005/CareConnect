@@ -9,6 +9,8 @@ import { TodayScreen } from './components/today/TodayScreen';
 import { TasksScreen } from './components/tasks/TasksScreen';
 import { VitalsAndLogsScreen } from './components/logs/VitalsAndLogsScreen';
 import { ElderProfileScreen } from './components/elder/ElderProfileScreen';
+import { ScheduleScreen } from './components/schedule/ScheduleScreen';
+import { PayoutScreen } from './components/payout/PayoutScreen';
 import { CaregiverProfileScreen } from './components/profile/CaregiverProfileScreen';
 import { SupportScreen } from './components/support/SupportScreen';
 import { caregiverApi } from './services/api';
@@ -72,7 +74,13 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-800">
-      <CaregiverHeader isOnDuty={isOnDuty} onNavigateToProfile={() => setCurrentTab('profile')} />
+      {/* Sticky SOS Header on EVERY Screen (Requirement 7 & 10) */}
+      <CaregiverHeader
+        isOnDuty={isOnDuty}
+        shiftDetails={shiftDetails}
+        onNavigateToProfile={() => setCurrentTab('profile')}
+        onRefreshShift={fetchShift}
+      />
 
       <main className="flex-1 w-full">
         {currentTab === 'today' && (
@@ -86,17 +94,19 @@ const AppContent: React.FC = () => {
           />
         )}
 
+        {currentTab === 'schedule' && <ScheduleScreen />}
+
+        {currentTab === 'payout' && <PayoutScreen />}
+
+        {currentTab === 'profile' && <CaregiverProfileScreen />}
+
         {currentTab === 'tasks' && <TasksScreen shiftDetails={shiftDetails} />}
 
         {currentTab === 'logs' && <VitalsAndLogsScreen shiftDetails={shiftDetails} />}
 
-        {currentTab === 'elder' && <ElderProfileScreen shiftDetails={shiftDetails} />}
-
-        {currentTab === 'profile' && <CaregiverProfileScreen />}
-
-        {currentTab === 'support' && <SupportScreen />}
       </main>
 
+      {/* Overhauled 3-Tab Bottom Nav (Today, Schedule, Payout - Requirement 11) */}
       <CaregiverBottomNav
         currentTab={currentTab}
         onSelectTab={setCurrentTab}

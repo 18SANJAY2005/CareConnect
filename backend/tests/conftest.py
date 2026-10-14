@@ -184,3 +184,42 @@ async def ops_headers(ops_user: User) -> dict:
     return {
         "Authorization": f"Bearer {token}",
     }
+
+
+# ============================================================
+# Admin Test Fixtures
+# ============================================================
+
+@pytest_asyncio.fixture(scope="function")
+async def admin_user(test_db: AsyncSession) -> User:
+    """Create a default test administrator user."""
+
+    user = User(
+        fullName="Platform Administrator",
+        phone="+919876588888",
+        email="admin@careconnect.com",
+        role="ADMIN",
+        authProvider="LOCAL_ADMIN",
+    )
+
+    test_db.add(user)
+    await test_db.commit()
+    await test_db.refresh(user)
+
+    return user
+
+
+@pytest_asyncio.fixture(scope="function")
+async def admin_headers(admin_user: User) -> dict:
+    """Generate auth headers for administrator."""
+
+    token = create_access_token(
+        {
+            "sub": admin_user.id,
+            "role": admin_user.role,
+        }
+    )
+
+    return {
+        "Authorization": f"Bearer {token}",
+    }

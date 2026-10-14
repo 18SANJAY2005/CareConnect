@@ -215,3 +215,115 @@ export interface WorkHistoryResponse {
   earnings: EarningsSummary;
 }
 
+export interface AssignmentOffer {
+  id: number;
+  elderId: string;
+  elderName: string;
+  careRequirements: string[];
+  locality: string;
+  address?: string;
+  shiftType: string;
+  startDate: string;
+  dailyRate: number;
+  responseDeadline?: string | null;
+  status: string;
+  isExpired: boolean;
+  careType?: string;
+  elderAge?: number;
+  elderGender?: string;
+  scheduledStart?: string;
+  scheduledEnd?: string;
+}
+
+export interface ScheduleItem {
+  id: string;
+  type: 'SHIFT' | 'ASSIGNMENT';
+  elderId: string;
+  elderName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  shiftType: string;
+  status: string;
+  locality: string;
+  address?: string;
+}
+
+export interface FullCaregiverProfile {
+  id: number;
+  userId: string;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  dob?: string;
+  gender?: string;
+  locality?: string;
+  avatarUrl?: string;
+  bio?: string;
+  rating: number;
+  reviewCount: number;
+  hourlyRate: number;
+  dailyRate: number;
+  status: string;
+  isBufferPool?: boolean;
+  qualifications?: string;
+  educationalQualifications?: string;
+  certifications?: string;
+  previousExperience?: string;
+  preferredCareTypes?: string;
+  workPreferences?: string;
+  preferredHours?: string;
+  performanceMetrics?: string;
+  kycStatus: string;
+  isProfileComplete?: boolean;
+}
+
+export interface PayoutSummary {
+  totalEarned: number;
+  pendingPayout: number;
+  approvedPayout: number;
+  paidPayout: number;
+  deductionsAmount: number;
+  currency: string;
+  period: string;
+  shiftsCount: number;
+}
+
+export interface ShiftEarningItem {
+  id: string;
+  shiftId?: string;
+  elderId: string;
+  elderName: string;
+  shiftDate: string;
+  hoursWorked: number;
+  dailyRate: number;
+  earnedAmount: number;
+  status: string;
+  payoutId?: string | null;
+  notes?: string | null;
+}
+
+export interface ElderEarningGroup {
+  elderId: string;
+  elderName: string;
+  shiftsCompleted: number;
+  totalEarned: number;
+  locality?: string;
+}
+
+export interface PayoutHistoryItem {
+  id: string;
+  payoutNumber: string;
+  periodStart: string;
+  periodEnd: string;
+  totalEarned: number;
+  deductionsAmount: number;
+  netPayoutAmount: number;
+  currency: string;
+  status: string;
+  providerReference?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+

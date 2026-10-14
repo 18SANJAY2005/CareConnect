@@ -32,9 +32,11 @@ import { MobileMatchmakingScreen } from "./components/mobile/matchmaking/MobileM
 // Family Mobile Screens
 import { FamilyHomeScreen } from "./components/mobile/family/FamilyHomeScreen";
 import { FamilyMyCareScreen } from "./components/mobile/family/FamilyMyCareScreen";
+import { FamilyCaregiverScreen } from "./components/mobile/family/FamilyCaregiverScreen";
 import { FamilyUpdatesScreen } from "./components/mobile/family/FamilyUpdatesScreen";
+import { FamilyPaymentScreen } from "./components/mobile/family/FamilyPaymentScreen";
+import { FamilyProfileScreen } from "./components/mobile/family/FamilyProfileScreen";
 import { FamilyMessagesScreen } from "./components/mobile/family/FamilyMessagesScreen";
-import { FamilyMoreScreen } from "./components/mobile/family/FamilyMoreScreen";
 
 // Caregiver & Operations Portals
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
@@ -45,6 +47,7 @@ import {
   Sparkles,
   UserPlus,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   RotateCw,
   LogOut,
@@ -60,7 +63,8 @@ const AppContent: React.FC = () => {
     "FAMILY" | "CAREGIVER" | "OPERATIONS"
   >("FAMILY");
 
-  const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const [authMode, setAuthMode] = useState<"SIGN_IN" | "SIGN_UP">("SIGN_IN");
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
 
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
@@ -78,9 +82,7 @@ const AppContent: React.FC = () => {
     isSosOpen,
     editingSection,
     isDeleteModalOpen,
-    activeMoreModal,
     setOnboardingStep,
-    replaceOnboardingStep,
     resetToHome,
     backNotice,
     setActiveFamilyTab,
@@ -89,7 +91,6 @@ const AppContent: React.FC = () => {
     setIsSosOpen,
     setEditingSection,
     setIsDeleteModalOpen,
-    setActiveMoreModal,
     goBack,
   } = usePwaNavigation(isKnownAuthenticated, refreshElders);
   const [draftRecipient, setDraftRecipient] = useState<
@@ -154,15 +155,7 @@ const AppContent: React.FC = () => {
     }
   }, [user?.role]);
 
-  // Handle immediate redirection for users with zero elders right after login
-  useEffect(() => {
-    if (user && justLoggedIn) {
-      setJustLoggedIn(false);
-      if (elders.length === 0) {
-        setOnboardingStep("WHO");
-      }
-    }
-  }, [user, elders, justLoggedIn, setOnboardingStep]);
+
 
   // Persist elder draft into backend
   const finalizeElderOnboarding = async (
@@ -183,15 +176,17 @@ const AppContent: React.FC = () => {
       const effectiveIntake = intakeOverride || draftIntake;
 
       // 1. Create Elder record
+      const isMyself = draftRecipient === "ME";
       const created = await api.createElder({
-        name: draftBasic.name || "Elder",
+        name: draftBasic.name || (isMyself ? user?.fullName || "Myself" : "Elder"),
         age: draftBasic.age || 70,
         gender: draftBasic.gender || "FEMALE",
         dateOfBirth: draftBasic.dob || null,
         phoneNumber:
-          draftRecipient === "ME"
+          isMyself
             ? user?.phone || undefined
             : draftBasic.phone || undefined,
+        isMyself: isMyself,
       });
 
       // 2. Persist Location if available
@@ -322,8 +317,8 @@ const AppContent: React.FC = () => {
   // Loading Screen
   if (isAuthLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center gap-3 sm:shadow-lg sm:border-x sm:border-slate-200">
           <CareConnectLogo size="lg" className="animate-pulse" />
           <span className="text-xs font-bold text-teal-800 tracking-wide">
             Loading CareConnect...
@@ -336,24 +331,18 @@ const AppContent: React.FC = () => {
   // 1. Auth Screen Modal (renders when isAuthOpen is true and user is not yet logged in)
   if (isAuthOpen && !user) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           <MobileAuthScreen
+            initialMode={authMode}
             authStep={authStep}
             onStepChange={(step) => setAuthStep(step)}
             savedPhone={draftPhone}
             onPhoneChange={(p) => setDraftPhone(p)}
             onBack={goBack}
             onSuccess={() => {
-              setJustLoggedIn(true);
-              if (onboardingStep === "WHO") {
-                // Do nothing, the modal will close and the WHO screen will render
-              } else if (onboardingStep) {
-                // Immediately route directly to REQUIREMENTS, replacing #auth in history
-                replaceOnboardingStep("REQUIREMENTS");
-              } else {
-                resetToHome();
-              }
+              // Direct user to dashboard immediately after entering OTP for both sign in and create account
+              resetToHome();
             }}
           />
         </div>
@@ -364,17 +353,21 @@ const AppContent: React.FC = () => {
   // 2. Unauthenticated Entry Screen (when not signed in and not onboarding)
   if (!user && onboardingStep === null) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <MobileEntryScreen
             onGetStarted={() => {
-              setOnboardingStep("WHO");
+              setAuthMode("SIGN_UP");
               setIsAuthOpen(true, "PHONE");
             }}
-            onSignIn={() => setIsAuthOpen(true, "PHONE")}
+            onSignIn={() => {
+              setAuthMode("SIGN_IN");
+              setIsAuthOpen(true, "PHONE");
+            }}
             onSelectRole={(role) => {
               setActivePortal(role);
+              setAuthMode("SIGN_IN");
               setIsAuthOpen(true, "PHONE");
             }}
           />
@@ -386,8 +379,8 @@ const AppContent: React.FC = () => {
   // 3. Mobile Onboarding Flow (Accessible to Guests & Authenticated Users)
   if (onboardingStep !== null) {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col sm:shadow-lg sm:border-x sm:border-slate-200">
           {actionError && (
             <div className="m-3 p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-center justify-between">
               <span>{actionError}</span>
@@ -418,7 +411,7 @@ const AppContent: React.FC = () => {
               initialValue={draftRecipient || undefined}
               isMyselfActive={
                 !!user?.phone &&
-                elders.some((elder) => elder.phoneNumber === user.phone)
+                elders.some((elder) => elder.isMyself || elder.phoneNumber === user.phone)
               }
               onSelect={(recipient) => {
                 setDraftRecipient(recipient);
@@ -528,8 +521,8 @@ const AppContent: React.FC = () => {
   // 4. Authenticated Caregiver Portal
   if (activePortal === "CAREGIVER") {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <CaregiverMobileApp onSwitchPortal={setActivePortal} />
           {renderBackNotice()}
@@ -541,8 +534,8 @@ const AppContent: React.FC = () => {
   // 5. Authenticated Operations Portal
   if (activePortal === "OPERATIONS") {
     return (
-      <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-        <div className="mobile-canvas w-full max-w-[430px] min-h-screen bg-slate-50 flex flex-col relative">
+      <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+        <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
           <PwaInstallBanner />
           <MobileOperationsApp onSwitchPortal={setActivePortal} />
           {renderBackNotice()}
@@ -553,8 +546,8 @@ const AppContent: React.FC = () => {
 
   // 6. Authenticated Family / Client Portal
   return (
-    <div className="min-h-screen bg-slate-900 sm:py-6 flex justify-center items-center">
-      <div className="mobile-canvas w-full max-w-[430px] min-h-screen sm:min-h-[844px] bg-slate-50 flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex justify-center items-start">
+      <div className="mobile-canvas w-full max-w-[440px] min-h-screen min-h-[100dvh] bg-slate-50 flex flex-col relative sm:shadow-lg sm:border-x sm:border-slate-200">
         <PwaInstallBanner />
         {/* Top App Bar */}
         <MobileTopBar
@@ -647,7 +640,13 @@ const AppContent: React.FC = () => {
               {activeFamilyTab === "HOME" && (
                 <FamilyHomeScreen
                   elder={activeElder || elders[0]}
-                  onOpenTab={(tab) => setActiveFamilyTab(tab as FamilyTab)}
+                  onOpenTab={(tab) => {
+                    if (tab === "MESSAGES") {
+                      setIsMessagesOpen(true);
+                    } else {
+                      setActiveFamilyTab(tab as FamilyTab);
+                    }
+                  }}
                   onOpenSos={() => setIsSosOpen(true)}
                 />
               )}
@@ -668,22 +667,43 @@ const AppContent: React.FC = () => {
                 />
               )}
 
+              {activeFamilyTab === "CAREGIVER" && (
+                <FamilyCaregiverScreen
+                  elder={activeElder || elders[0]}
+                  onOpenMessages={() => setIsMessagesOpen(true)}
+                  onOpenTab={(tab) => {
+                    if (tab === "MESSAGES") {
+                      setIsMessagesOpen(true);
+                    } else {
+                      setActiveFamilyTab(tab as FamilyTab);
+                    }
+                  }}
+                />
+              )}
+
               {activeFamilyTab === "UPDATES" && (
                 <FamilyUpdatesScreen elder={activeElder || elders[0]} />
+              )}
+
+              {activeFamilyTab === "PAYMENT" && (
+                <FamilyPaymentScreen elder={activeElder || elders[0]} />
+              )}
+
+              {activeFamilyTab === "PROFILE" && (
+                <FamilyProfileScreen
+                  elder={activeElder || elders[0]}
+                  onAddElder={() => {
+                    setDraftRecipient(null);
+                    setDraftBasic({ name: "", age: 0, gender: "FEMALE" });
+                    setOnboardingStep("WHO");
+                  }}
+                />
               )}
 
               {activeFamilyTab === "MESSAGES" && (
                 <FamilyMessagesScreen
                   elder={activeElder || elders[0]}
                   currentUser={user}
-                />
-              )}
-
-              {activeFamilyTab === "MORE" && (
-                <FamilyMoreScreen
-                  elder={activeElder || elders[0]}
-                  activeModal={activeMoreModal}
-                  onActiveModalChange={setActiveMoreModal}
                 />
               )}
             </>
@@ -713,6 +733,31 @@ const AppContent: React.FC = () => {
           elderId={activeElder?.id}
           elderName={activeElder?.name}
         />
+
+        {/* Messages Drawer / Modal */}
+        {isMessagesOpen && (
+          <div className="fixed inset-0 z-50 flex justify-center bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-[440px] h-full bg-slate-50 flex flex-col shadow-2xl">
+              <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0 safe-top">
+                <button
+                  onClick={() => setIsMessagesOpen(false)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover active:scale-95 transition"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <span className="text-xs font-extrabold text-slate-800">Care Desk Chat</span>
+                <div className="w-10" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <FamilyMessagesScreen
+                  elder={activeElder || elders[0]}
+                  currentUser={user}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Home Double-Back & Refresh Toast Notification */}
         {renderBackNotice()}

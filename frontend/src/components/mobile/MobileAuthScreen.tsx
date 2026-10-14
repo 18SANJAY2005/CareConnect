@@ -2,25 +2,29 @@ import React, { useState } from "react";
 import { CareConnectLogo } from "../common/CareConnectLogo";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/api";
-import { ArrowLeft, AlertCircle, Loader2, ChevronDown, Check, X } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, ChevronDown, Check, X, UserCheck } from "lucide-react";
 
 // Add Country Codes data
 const COUNTRY_CODES = [
-  { code: "+91", country: "India", flag: "🇮🇳" },
-  { code: "+1", country: "US/Canada", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+61", country: "Australia", flag: "🇦🇺" },
-  { code: "+65", country: "Singapore", flag: "🇸🇬" },
-  { code: "+971", country: "UAE", flag: "🇦🇪" },
+  { code: "+91", country: "India", flag: "🇮🇳", min: 10, max: 10, placeholder: "98765 43210" },
+  { code: "+1", country: "US/Canada", flag: "🇺🇸", min: 10, max: 10, placeholder: "20255 50143" },
+  { code: "+44", country: "UK", flag: "🇬🇧", min: 10, max: 11, placeholder: "7911 123456" },
+  { code: "+61", country: "Australia", flag: "🇦🇺", min: 9, max: 10, placeholder: "412 345 678" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬", min: 8, max: 8, placeholder: "8123 4567" },
+  { code: "+971", country: "UAE", flag: "🇦🇪", min: 9, max: 9, placeholder: "50 123 4567" },
+  { code: "+60", country: "Malaysia", flag: "🇲🇾", min: 9, max: 10, placeholder: "12 345 6789" },
+  { code: "+94", country: "Sri Lanka", flag: "🇱🇰", min: 9, max: 9, placeholder: "71 234 5678" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦", min: 9, max: 9, placeholder: "50 123 4567" },
 ];
 
 interface MobileAuthScreenProps {
   onBack: () => void;
-  onSuccess: () => void;
+  onSuccess: (isNewUser?: boolean) => void;
   authStep?: "PHONE" | "OTP";
   onStepChange?: (step: "PHONE" | "OTP") => void;
   savedPhone?: string;
   onPhoneChange?: (phone: string) => void;
+  initialMode?: "SIGN_IN" | "SIGN_UP";
 }
 
 export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
@@ -30,9 +34,11 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
   onStepChange,
   savedPhone = "",
   onPhoneChange,
+  initialMode = "SIGN_IN",
 }) => {
   const { loginWithOtp } = useAuth();
 
+  const [mode, setMode] = useState<"SIGN_IN" | "SIGN_UP">(initialMode);
   const [step, setStep] = useState<"PHONE" | "OTP">(authStep);
   const [phone, setPhone] = useState(savedPhone);
   const [countryCode, setCountryCode] = useState("+91");
@@ -40,6 +46,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
   const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [existingUserPrompt, setExistingUserPrompt] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (authStep && authStep !== step) {
@@ -58,16 +65,42 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!phone.trim() || phone.replace(/\D/g, "").length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number.");
+    const cleanPhone = phone.replace(/\D/g, "");
+    const selected = COUNTRY_CODES.find((c) => c.code === countryCode);
+    const minDigits = selected ? selected.min : 6;
+    const maxDigits = selected ? selected.max : 15;
+
+    if (!cleanPhone || cleanPhone.length < minDigits || cleanPhone.length > maxDigits) {
+      setErrorMessage(
+        selected
+          ? `Please enter a valid ${selected.min === selected.max ? `${selected.min}-digit` : `${selected.min}-${selected.max} digit`} mobile number.`
+          : "Please enter a valid mobile number (6-15 digits)."
+      );
+      return;
+    }
+
+    if (mode === "SIGN_UP" && !fullName.trim()) {
+      setErrorMessage("Please enter your name to create your account.");
       return;
     }
 
     setIsLoading(true);
     setErrorMessage(null);
+    setExistingUserPrompt(null);
 
     try {
-      const res = await api.sendOtp(phone);
+      // Check if phone number already exists
+      const checkRes = await api.checkPhone(cleanPhone, countryCode).catch(() => null);
+
+      if (mode === "SIGN_UP" && checkRes?.exists) {
+        setExistingUserPrompt(
+          `An account already exists for ${countryCode} ${cleanPhone}. Please sign in to access your dashboard.`,
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await api.sendOtp(cleanPhone, "WHATSAPP", countryCode);
       if (res.dev_otp) {
         setDevOtp(res.dev_otp);
         setOtp(res.dev_otp); // Auto-fill for convenience in test/demo mode
@@ -92,8 +125,17 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
     setErrorMessage(null);
 
     try {
-      await loginWithOtp(phone, otp, fullName || undefined);
-      onSuccess();
+      // In SIGN_IN: strictly phone + OTP without name
+      // In SIGN_UP: pass fullName
+      const cleanPhone = phone.replace(/\D/g, "");
+      await loginWithOtp(
+        cleanPhone,
+        otp,
+        mode === "SIGN_UP" ? fullName.trim() : undefined,
+        undefined,
+        countryCode,
+      );
+      onSuccess(mode === "SIGN_UP");
     } catch (err: any) {
       setErrorMessage(
         err.message || "Invalid verification code. Please check and try again.",
@@ -111,7 +153,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
       const res = await api.sendOtp(demoPhone);
       const code = res.dev_otp || "123456";
       await loginWithOtp(demoPhone, code, demoName);
-      onSuccess();
+      onSuccess(false);
     } catch (err: any) {
       setErrorMessage(err.message || "Quick sign in failed.");
     } finally {
@@ -126,6 +168,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
         <button
           onClick={onBack}
           className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition"
+          aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -134,17 +177,57 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
       </div>
 
       {/* Main Card Content */}
-      <div className="my-auto py-4 space-y-6">
+      <div className="my-auto py-4 space-y-5">
+        {/* Mode Selector Tabs (Sign In vs Sign Up) */}
+        {step === "PHONE" && (
+          <div className="flex bg-slate-100 p-1 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("SIGN_IN");
+                setErrorMessage(null);
+                setExistingUserPrompt(null);
+              }}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                mode === "SIGN_IN"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("SIGN_UP");
+                setErrorMessage(null);
+                setExistingUserPrompt(null);
+              }}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                mode === "SIGN_UP"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
+        )}
+
         <div>
           <h2 className="text-2xl font-extrabold font-heading text-slate-900">
             {step === "PHONE"
-              ? "Sign in with Mobile"
+              ? mode === "SIGN_IN"
+                ? "Sign in with Mobile"
+                : "Create CareSeeker Account"
               : "Enter Verification Code"}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
             {step === "PHONE"
-              ? "We will send a one-time verification code to verify your mobile number."
-              : `Code sent to +91 ${phone}`}
+              ? mode === "SIGN_IN"
+                ? "Sign in directly with your phone number and OTP."
+                : "Verify your phone and enter your details to begin."
+              : `Code sent to ${countryCode} ${phone}`}
           </p>
         </div>
 
@@ -152,6 +235,26 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
           <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <span className="leading-relaxed font-medium">{errorMessage}</span>
+          </div>
+        )}
+
+        {existingUserPrompt && (
+          <div className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 text-xs space-y-2">
+            <div className="flex items-start gap-2">
+              <UserCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <span className="leading-relaxed font-semibold">{existingUserPrompt}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("SIGN_IN");
+                setExistingUserPrompt(null);
+                handleSendOtp();
+              }}
+              className="w-full py-2 bg-primary text-white rounded-xl font-bold text-xs shadow hover:bg-primary-hover transition"
+            >
+              Switch to Sign In & Send Code
+            </button>
           </div>
         )}
 
@@ -174,37 +277,45 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  maxLength={10}
+                  maxLength={16}
                   value={phone}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, "");
                     setPhone(val);
                     onPhoneChange?.(val);
+                    setExistingUserPrompt(null);
                   }}
-                  placeholder="98765 43210"
+                  placeholder={COUNTRY_CODES.find((c) => c.code === countryCode)?.placeholder || "Enter mobile number"}
                   className="w-full h-14 pl-[72px] pr-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-bold text-base focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
                   required
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Your Name{" "}
-                <span className="font-normal text-slate-400">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Ramesh Kumar"
-                className="w-full h-12 px-4 bg-white rounded-2xl border border-slate-300 text-slate-900 text-sm focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
-              />
-            </div>
+            {/* In SIGN_UP mode, collect new account information */}
+            {mode === "SIGN_UP" && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Your Full Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Ramesh Kumar"
+                  required
+                  className="w-full h-14 px-4 bg-white rounded-2xl border border-slate-300 text-slate-900 font-medium text-sm focus:border-primary focus:ring-2 focus:ring-teal-500/20 shadow-sm"
+                />
+              </div>
+            )}
 
             <button
               type="submit"
-              disabled={isLoading || phone.length < 10}
+              disabled={
+                isLoading ||
+                phone.replace(/\D/g, "").length < (COUNTRY_CODES.find((c) => c.code === countryCode)?.min || 6) ||
+                (mode === "SIGN_UP" && !fullName.trim())
+              }
               className="w-full min-h-[54px] bg-primary hover:bg-primary-hover disabled:opacity-50 text-white rounded-2xl font-bold text-sm shadow-md flex items-center justify-center gap-2 transition"
             >
               {isLoading ? (
@@ -213,7 +324,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                   <span>Sending code...</span>
                 </>
               ) : (
-                <span>Get Verification Code</span>
+                <span>{mode === "SIGN_IN" ? "Sign In with OTP" : "Get Verification Code"}</span>
               )}
             </button>
           </form>
@@ -221,7 +332,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                6-Digit Code
+                6-Digit Verification Code
               </label>
               <input
                 type="text"
@@ -254,7 +365,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                   <span>Verifying...</span>
                 </>
               ) : (
-                <span>Verify & Continue</span>
+                <span>Verify & Enter Dashboard</span>
               )}
             </button>
 
@@ -269,7 +380,7 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
         )}
 
         {/* 1-Tap Quick Demo Client */}
-        <div className="pt-4 border-t border-slate-100 space-y-2">
+        <div className="pt-3 border-t border-slate-100 space-y-2">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
             Demo Account
           </div>
@@ -293,23 +404,23 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
       {isCountryCodeDrawerOpen && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fadeIn"
             onClick={() => setIsCountryCodeDrawerOpen(false)}
           />
-          
+
           {/* Drawer Content */}
           <div className="relative bg-white w-full max-h-[70vh] rounded-t-3xl shadow-2xl flex flex-col animate-slideUp">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <h3 className="font-bold text-lg text-slate-900">Select Country Code</h3>
-              <button 
+              <button
                 onClick={() => setIsCountryCodeDrawerOpen(false)}
                 className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="overflow-y-auto p-2">
               {COUNTRY_CODES.map((item) => (
                 <button
@@ -320,7 +431,9 @@ export const MobileAuthScreen: React.FC<MobileAuthScreenProps> = ({
                     setIsCountryCodeDrawerOpen(false);
                   }}
                   className={`w-full flex items-center justify-between p-4 rounded-xl transition-colors ${
-                    countryCode === item.code ? 'bg-teal-50 text-teal-900' : 'hover:bg-slate-50 text-slate-700'
+                    countryCode === item.code
+                      ? "bg-teal-50 text-teal-900"
+                      : "hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   <div className="flex items-center gap-3">

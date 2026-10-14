@@ -137,76 +137,138 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const loadLiveData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const eldersRes = await api.listElders().catch(() => null);
-      if (eldersRes && Array.isArray(eldersRes) && eldersRes.length > 0) {
-        const mappedElders: AdminElderItem[] = eldersRes.map((e: any, idx: number) => ({
-          id: e.id || `eld_live_${idx}`,
-          name: e.name || 'Elder Beneficiary',
-          age: e.age || 75,
-          gender: e.gender || 'FEMALE',
-          sponsorName: e.sponsor_name || e.emergency_contact_name || 'Family Sponsor',
-          sponsorPhone: e.sponsor_phone || e.emergency_contact_phone || '+91 98400 00000',
-          sponsorRelation: 'Family Sponsor',
-          addressLine1: e.address || 'Chennai Address',
-          locality: e.locality || 'South Chennai Corridor (Adyar)',
-          city: 'Chennai',
-          postalCode: e.postal_code || '600020',
-          latitude: e.latitude || 13.0067,
-          longitude: e.longitude || 80.2575,
-          assignedCaregiverName: e.assigned_caregiver_name || 'Priya Sundaram',
-          status: e.status === 'ACTIVE' ? 'ACTIVE' : 'ACTIVE',
-          mobilityLevel: e.mobility_level || 'CANE_WALKER',
-          medicalConditions: e.medical_conditions || ['Hypertension'],
-          medicalDevices: e.medical_devices || [],
-          dietaryPreferences: e.dietary_preferences || ['Vegetarian'],
-          languages: ['Tamil', 'English'],
-          primaryLanguage: 'Tamil',
-          shiftPreference: 'TWELVE_HOUR_DAY_NIGHT',
-          activeShiftStatus: 'ON_DUTY',
-          lastVitals: {
-            bp: '128/82',
-            pulse: 74,
-            recordedAt: 'Today, 08:30 AM',
-          },
-        }));
-        setElders(mappedElders);
+      const results = await Promise.allSettled([
+        api.listElders(),
+        api.getAllCaregivers(),
+        api.getIncidentDesk(),
+      ]);
+
+      // 1. Elders
+      if (results[0].status === 'fulfilled' && Array.isArray(results[0].value) && results[0].value.length > 0) {
+        const liveElders = results[0].value;
+        setElders((prev) => {
+          // Merge live elders with existing mock elders
+          const mappedLive: AdminElderItem[] = liveElders.map((e: any, idx: number) => ({
+            id: e.id,
+            name: e.name,
+            age: e.age || 70,
+            gender: e.gender || 'FEMALE',
+            dateOfBirth: e.dateOfBirth || '1954-05-15',
+            sponsorName: 'Verified Family Contact',
+            sponsorPhone: '+91 98400 99881',
+            sponsorRelation: 'Primary Sponsor',
+            addressLine1: e.location?.addressLine1 || 'Verified Chennai Residence',
+            locality: e.location?.locality || 'Adyar',
+            city: e.location?.city || 'Chennai',
+            postalCode: e.location?.postalCode || '600020',
+            latitude: e.location?.latitude || (13.0067 + idx * 0.01),
+            longitude: e.location?.longitude || (80.2575 + idx * 0.01),
+            assignedCaregiverName: 'Priya Sundaram',
+            assignedCaregiverRating: 4.9,
+            status: e.personaStatus === 'SAVED' ? 'ACTIVE' : 'PENDING',
+            mobilityLevel: e.mobilityLevel || 'CANE_WALKER',
+            medicalConditions: e.medicalConditions || ['Hypertension'],
+            medicalDevices: e.medicalDevices || [],
+            dietaryPreferences: e.dietaryPreferences || ['Vegetarian'],
+            languages: e.languages || ['Tamil', 'English'],
+            primaryLanguage: e.primaryLanguage || 'Tamil',
+            shiftPreference: e.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
+            dailyRoutine: e.dailyRoutine || { wakeTime: '06:30', bedTime: '21:30' },
+            additionalNotes: e.additionalNotes || 'Directly loaded from CareConnect backend.',
+            activeShiftStatus: 'ON_DUTY',
+            lastVitals: { bp: '126/82', pulse: 76, recordedAt: 'Today, 08:30 AM' },
+          }));
+
+          // Deduplicate by ID
+          const existingIds = new Set(mappedLive.map((m) => m.id));
+          const rest = prev.filter((p) => !existingIds.has(p.id));
+          return [...mappedLive, ...rest];
+        });
       }
 
-      const caregiversRes = await api.getAllCaregivers().catch(() => null);
-      if (caregiversRes && Array.isArray(caregiversRes) && caregiversRes.length > 0) {
-        const mappedCg: AdminCaregiverItem[] = caregiversRes.map((c: any, idx: number) => ({
-          id: c.id || `cg_live_${idx}`,
-          fullName: c.full_name || c.name || 'Care Attendant',
-          phone: c.phone || '+91 98400 11111',
-          gender: c.gender || 'Female',
-          rating: c.rating || 4.8,
-          experienceYears: c.experience_years || 5,
-          locality: c.locality || 'South Chennai Corridor (Adyar)',
-          primaryLanguage: 'Tamil',
-          languages: Array.isArray(c.languages)
-            ? c.languages
-            : typeof c.languages === 'string'
-            ? c.languages.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : ['Tamil', 'English'],
-          skills: Array.isArray(c.skills)
-            ? c.skills
-            : typeof c.skills === 'string'
-            ? c.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : ['Assisted Daily Living (ADL)', 'Vitals Triage'],
-          specializations: Array.isArray(c.specializations)
-            ? c.specializations
-            : typeof c.specializations === 'string'
-            ? c.specializations.split(',').map((s: string) => s.trim()).filter(Boolean)
-            : ['Assisted Daily Living (ADL) Support'],
-          isBufferPool: Boolean(c.is_buffer_pool),
-          isStandbyReserve: Boolean(c.is_buffer_pool),
-          isPoliceVerified: true,
-          isClinicalCertified: true,
-          isIdentityVerified: true,
-          status: c.status === 'ON_DUTY' ? 'ON_DUTY' : 'AVAILABLE',
-          rosterStatus: c.status === 'ON_DUTY' ? 'ACTIVE_SHIFT' : 'STANDBY_RESERVE',
+      // 2. Caregivers
+      if (results[1].status === 'fulfilled' && Array.isArray(results[1].value) && results[1].value.length > 0) {
+        const liveCgs = results[1].value;
+        const mappedCgs: AdminCaregiverItem[] = liveCgs.map((cg: any) => ({
+          id: String(cg.id),
+          userId: cg.userId ? String(cg.userId) : String(cg.id),
+          fullName: cg.fullName || cg.full_name || 'Caregiver',
+          phone: cg.phone || '+91 98402 11223',
+          gender: cg.gender || 'Female',
+          rating: cg.rating || 4.8,
+          experienceYears: cg.experienceYears || cg.experience_years || 4,
+          locality: cg.locality || 'Adyar',
+          primaryLanguage: cg.primary_language || 'Tamil',
+          languages: Array.isArray(cg.languages) ? cg.languages : [cg.languages || 'Tamil'],
+          skills: Array.isArray(cg.skills) ? cg.skills : ['Elder Care', 'Patient Care Assistance'],
+          specializations: Array.isArray(cg.specializations) ? cg.specializations : ['Geriatric Care'],
+          isBufferPool: Boolean(cg.isBufferPool),
+          isPoliceVerified: Boolean(cg.is_police_verified ?? true),
+          isClinicalCertified: Boolean(cg.is_clinical_certified ?? true),
+          isIdentityVerified: Boolean(cg.isIdentityVerified ?? cg.is_identity_verified ?? (cg.kycStatus === 'VERIFIED')),
+          status: cg.status || 'AVAILABLE',
+          isProfileComplete: Boolean(cg.isProfileComplete ?? true),
+          kycStatus: (cg.kycStatus || (cg.isIdentityVerified ? 'VERIFIED' : 'PENDING')) as any,
+          documentType: cg.documentType || 'AADHAAR',
+          maskedDocumentNumber: cg.maskedDocumentNumber,
+          documentStorageReference: cg.documentStorageReference,
+          rejectionReason: cg.rejectionReason,
+          kycCreatedAt: cg.kycCreatedAt,
+          kycUpdatedAt: cg.kycUpdatedAt,
         }));
-        setCaregivers(mappedCg);
+        if (mappedCgs.length > 0) {
+          setCaregivers((prev) => {
+            const liveIds = new Set(mappedCgs.map((c) => c.id));
+            const livePhones = new Set(mappedCgs.map((c) => c.phone));
+            const rest = prev.filter((p) => !liveIds.has(p.id) && !livePhones.has(p.phone));
+            return [...mappedCgs, ...rest];
+          });
+        }
+      }
+
+      // 3. Incidents / SOS
+      if (results[2].status === 'fulfilled' && Array.isArray(results[2].value) && results[2].value.length > 0) {
+        const liveIncidents = results[2].value;
+        setAlerts((currentAlerts) => {
+          const resolvedSet = new Set(
+            currentAlerts.filter((a) => a.status === 'RESOLVED').map((a) => a.id)
+          );
+          const mappedAlerts: AdminSosAlert[] = liveIncidents.map((inc: any) => ({
+            id: inc.id,
+            elderId: inc.elderId || 'eld_unknown',
+            elderName: inc.elderName || 'CareConnect Beneficiary',
+            elderAge: 75,
+            locality: inc.locality || 'Central Chennai',
+            postalCode: '600020',
+            latitude: inc.locationCoordinates?.latitude || 13.0067,
+            longitude: inc.locationCoordinates?.longitude || 80.2575,
+            emergencyContact: 'Family Primary Contact',
+            emergencyPhone: '+91 98401 23456',
+            assignedCaregiver: inc.reportedBy || 'Corridor Care Attendant',
+            priority: inc.priority || 'P1',
+            status: resolvedSet.has(inc.id)
+              ? 'RESOLVED'
+              : inc.status === 'RESOLVED'
+              ? 'RESOLVED'
+              : inc.status === 'ACKNOWLEDGED'
+              ? 'DISPATCHED'
+              : 'OPEN',
+            title: inc.title || 'Emergency Care Alert',
+            description: inc.description || 'Emergency notification logged by attendant.',
+            triggeredAt: new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            resolutionNotes: inc.resolutionNotes,
+          }));
+
+          const liveIds = new Set(mappedAlerts.map((m) => m.id));
+          const unrepresented = currentAlerts.filter((c) => !liveIds.has(c.id));
+          const merged = [...mappedAlerts, ...unrepresented];
+          try {
+            localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(merged));
+          } catch (e) {
+            console.warn('Error saving merged SOS alerts:', e);
+          }
+          return merged;
+        });
       }
     } catch (e) {
       console.warn('Backend live sync failed, continuing with cached operational state:', e);
@@ -307,6 +369,61 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
       );
     },
     []
+  );
+
+  // Handle KYC verification / rejection from Admin
+  const handleKycStatusChange = useCallback(
+    async (
+      caregiverId: string,
+      newStatus: 'VERIFIED' | 'REJECTED',
+      rejectionReason?: string
+    ) => {
+      const targetCg = caregivers.find(
+        (c) => c.id === caregiverId || c.userId === caregiverId
+      );
+      const targetId = targetCg?.userId || caregiverId;
+
+      const res = await api.updateCaregiverKycStatus(targetId, {
+        verification_status: newStatus,
+        rejection_reason: rejectionReason,
+      });
+
+      setCaregivers((prev) =>
+        prev.map((c) => {
+          if (c.id === caregiverId || c.userId === caregiverId) {
+            return {
+              ...c,
+              kycStatus: newStatus,
+              isIdentityVerified: newStatus === 'VERIFIED',
+              rejectionReason: newStatus === 'REJECTED' ? rejectionReason : undefined,
+              kycUpdatedAt: new Date().toISOString(),
+            };
+          }
+          return c;
+        })
+      );
+
+      if (
+        selectedCaregiverForDrawer &&
+        (selectedCaregiverForDrawer.id === caregiverId ||
+          selectedCaregiverForDrawer.userId === caregiverId)
+      ) {
+        setSelectedCaregiverForDrawer((prev) =>
+          prev
+            ? {
+                ...prev,
+                kycStatus: newStatus,
+                isIdentityVerified: newStatus === 'VERIFIED',
+                rejectionReason: newStatus === 'REJECTED' ? rejectionReason : undefined,
+                kycUpdatedAt: new Date().toISOString(),
+              }
+            : null
+        );
+      }
+
+      return res;
+    },
+    [caregivers, selectedCaregiverForDrawer]
   );
 
   const handleReassignCorridor = useCallback((caregiverId: string, newCorridor: string) => {
@@ -461,6 +578,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               caregivers={displayedCaregivers}
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
               onStatusChange={handleCaregiverStatusChange}
+              onKycStatusChange={handleKycStatusChange}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
@@ -548,6 +666,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           isOpen={Boolean(selectedCaregiverForDrawer)}
           onClose={() => setSelectedCaregiverForDrawer(null)}
           onStatusChange={handleCaregiverStatusChange}
+          onKycStatusChange={handleKycStatusChange}
           onReassignCorridor={handleReassignCorridor}
           onViewElder={handleViewElderFromCaregiver}
           onDispatchToSos={handleDispatchCaregiverToSos}

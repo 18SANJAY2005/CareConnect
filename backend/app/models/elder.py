@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     JSON,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 
@@ -41,6 +42,7 @@ class Elder(Base):
     age = Column(Integer, nullable=False, default=70)
     gender = Column(String(50), nullable=False, default="FEMALE")
     phoneNumber = Column(String(20), nullable=True)
+    isMyself = Column(Boolean, nullable=False, default=False)
 
     locationId = Column(String(36), nullable=True)
 

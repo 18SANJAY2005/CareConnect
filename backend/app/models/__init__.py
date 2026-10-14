@@ -1,6 +1,6 @@
 from app.models.user import User
 from app.models.elder import Elder
-from app.models.location import ElderLocation
+from app.models.location import ElderLocation, ServiceInterest
 from app.models.assessment import HomeAssessmentRequest
 
 # ============================================================
@@ -30,9 +30,11 @@ from app.models.incident import Incident, CareMedia, ChatMessage
 
 from app.models.replacement import ReplacementRequest, ReplacementStatusHistory
 from app.models.feedback import CareFeedback, OperationsIssue
-from app.models.billing import Invoice, InvoiceLineItem, PaymentTransaction
+from app.models.billing import Invoice, InvoiceLineItem, PaymentTransaction, BillingAdjustment
 from app.models.renewal import Renewal
 from app.models.audit import AuditLog, Notification
+from app.models.user_consent import UserConsent
+from app.models.payout import CaregiverPayout, CaregiverShiftEarning
 
 
 __all__ = [
@@ -40,6 +42,7 @@ __all__ = [
     "User",
     "Elder",
     "ElderLocation",
+    "ServiceInterest",
     "HomeAssessmentRequest",
 
     # Phase B
@@ -73,4 +76,7 @@ __all__ = [
     "Renewal",
     "AuditLog",
     "Notification",
+    "UserConsent",
+    "CaregiverPayout",
+    "CaregiverShiftEarning",
 ]

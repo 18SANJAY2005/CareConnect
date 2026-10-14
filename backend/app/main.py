@@ -59,6 +59,7 @@ from app.api import (
     billing,
     renewals,
     audit,
+    payouts,
 )
 
 
@@ -115,7 +116,9 @@ cors_kwargs = {
     "allow_headers": ["*"],
 }
 if settings.ENVIRONMENT in ["development", "test"]:
-    cors_kwargs["allow_origin_regex"] = r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:[0-9]+)?)$"
+    cors_kwargs["allow_origin_regex"] = (
+        r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|.*\.trycloudflare\.com)(:[0-9]+)?)$"
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -324,4 +327,14 @@ app.include_router(
 app.include_router(
     audit.router,
     prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    payouts.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    payouts.router,
+    prefix="/api/v1",
 )

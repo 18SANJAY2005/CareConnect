@@ -16,13 +16,14 @@ import type { AdminCaregiverItem, ShiftAttendanceLog } from '../types';
 import { CaregiverDetailDrawer } from '../components/CaregiverDetailDrawer';
 import { initialShiftAttendanceLogs } from '../mockData';
 
-export type CaregiverStatusFilter = 'ALL' | 'AVAILABLE' | 'ON_DUTY' | 'STANDBY' | 'ON_HANDOFF';
+export type CaregiverStatusFilter = 'ALL' | 'KYC_PENDING' | 'AVAILABLE' | 'ON_DUTY' | 'STANDBY' | 'ON_HANDOFF';
 
 interface AdminCaregiversViewProps {
   caregivers: AdminCaregiverItem[];
   onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
   onBackToDashboard?: () => void;
   onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => void;
+  onKycStatusChange?: (caregiverId: string, newStatus: 'VERIFIED' | 'REJECTED', rejectionReason?: string) => Promise<any>;
 }
 
 export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
@@ -30,6 +31,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
   onSelectCaregiver,
   onBackToDashboard,
   onStatusChange,
+  onKycStatusChange,
 }) => {
   const [localSelectedCaregiver, setLocalSelectedCaregiver] = useState<AdminCaregiverItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,7 +48,9 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         c.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()));
 
       let matchesStatus = true;
-      if (statusFilter === 'AVAILABLE') {
+      if (statusFilter === 'KYC_PENDING') {
+        matchesStatus = c.kycStatus === 'PENDING' || (!c.isIdentityVerified && c.kycStatus !== 'VERIFIED');
+      } else if (statusFilter === 'AVAILABLE') {
         matchesStatus = c.status === 'AVAILABLE';
       } else if (statusFilter === 'ON_DUTY') {
         matchesStatus = c.status === 'ON_DUTY';
@@ -62,6 +66,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
 
   const onDutyCount = caregivers.filter((c) => c.status === 'ON_DUTY').length;
   const standbyCount = caregivers.filter((c) => (c.isBufferPool || c.isStandbyReserve) && c.status === 'AVAILABLE').length;
+  const kycPendingCount = caregivers.filter((c) => c.kycStatus === 'PENDING' || (!c.isIdentityVerified && c.kycStatus !== 'VERIFIED')).length;
 
   const handleCardClick = (cg: AdminCaregiverItem) => {
     if (onSelectCaregiver) {
@@ -92,7 +97,6 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
             </h2>
           </div>
         </div>
-
         {/* View Mode Toggle & Telemetry */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Sub-view toggle */}
@@ -120,6 +124,18 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
             </button>
           </div>
 
+          {/* Quick Summary Badges */}
+          {kycPendingCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter('KYC_PENDING')}
+              className="px-3 py-1.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+              <span>{kycPendingCount} KYC Review Pending</span>
+            </button>
+          )}
+
           <div className="px-3 py-1.5 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
             <span>{onDutyCount} Active Shifts</span>
@@ -146,18 +162,17 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
 
         {/* Status Filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {(
-            [
-              { id: 'ALL', label: 'All Status' },
-              { id: 'AVAILABLE', label: 'Available' },
-              { id: 'ON_DUTY', label: 'Active Shift' },
-              { id: 'STANDBY', label: 'Standby Reserve' },
-              { id: 'ON_HANDOFF', label: 'On Handoff' },
-            ] as const
-          ).map((s) => (
+          {[
+            { id: 'ALL', label: 'All Status' },
+            { id: 'KYC_PENDING', label: `KYC Pending (${kycPendingCount})` },
+            { id: 'AVAILABLE', label: 'Available' },
+            { id: 'ON_DUTY', label: 'Active Shift' },
+            { id: 'STANDBY', label: 'Standby Reserve' },
+            { id: 'ON_HANDOFF', label: 'On Handoff' },
+          ].map((s) => (
             <button
               key={s.id}
-              onClick={() => setStatusFilter(s.id)}
+              onClick={() => setStatusFilter(s.id as CaregiverStatusFilter)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 statusFilter === s.id
                   ? 'bg-teal-700 text-white shadow-2xs'
@@ -231,14 +246,19 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
                   </div>
                 </div>
 
-                {/* Verification Badges (Aadhaar, Police clearance, Clinical cert) */}
+                {/* Verification Badges (Aadhaar, Police clearance, Clinical cert, KYC review) */}
                 <div className="flex flex-wrap items-center gap-1 text-[10px]">
-                  {cg.isIdentityVerified && (
+                  {cg.kycStatus === 'PENDING' ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 font-bold border border-amber-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span>KYC Review Required</span>
+                    </span>
+                  ) : (cg.isIdentityVerified || cg.kycStatus === 'VERIFIED') ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200/80">
                       <ShieldCheck className="w-3 h-3 text-emerald-600" />
                       <span>Aadhaar KYC</span>
                     </span>
-                  )}
+                  ) : null}
                   {cg.isPoliceVerified && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-semibold border border-teal-200/80">
                       <BadgeCheck className="w-3 h-3 text-teal-600" />
@@ -463,8 +483,10 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
           isOpen={Boolean(localSelectedCaregiver)}
           onClose={() => setLocalSelectedCaregiver(null)}
           onStatusChange={onStatusChange}
+          onKycStatusChange={onKycStatusChange}
         />
       )}
+
     </div>
   );
 };

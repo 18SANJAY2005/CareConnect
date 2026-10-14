@@ -64,11 +64,24 @@ async def get_curated_matches(
         ...,
         description="Elder persona ID to match against",
     ),
+    gender: Optional[str] = Query(None, description="Filter by caregiver gender (FEMALE, MALE)"),
+    qualification: Optional[str] = Query(None, description="Filter by nursing qualification (e.g. BSc Nursing, PTA)"),
+    availability: Optional[str] = Query(None, description="Filter by availability or shift type"),
+    max_daily_rate: Optional[float] = Query(None, description="Filter by maximum daily rate/budget in INR"),
+    search: Optional[str] = Query(None, description="Search term across name, locality, skills"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Returns 2-3 curated, vetted caregiver candidates."""
+    """Returns curated, vetted caregiver candidates matching elder needs and requested filters."""
     try:
-        return await get_curated_caregivers_for_elder(db, elder_id)
+        return await get_curated_caregivers_for_elder(
+            db=db,
+            elder_id=elder_id,
+            gender=gender,
+            qualification=qualification,
+            availability=availability,
+            max_daily_rate=max_daily_rate,
+            search=search,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except Exception as exc:
@@ -210,6 +223,105 @@ async def submit_my_kyc(
     )
 
 
+@router.get("/admin/all")
+async def list_admin_caregivers(
+    current_user: User = Depends(require_role(["ADMIN", "OPS_MANAGER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List all caregivers with their KYC verification records and work details for the Admin Portal.
+    """
+    await seed_initial_data_if_empty(db)
+
+    # Ensure all registered CAREGIVER users have a directory record
+    cg_users_res = await db.execute(
+        select(User).where(User.role == "CAREGIVER")
+    )
+    cg_users = cg_users_res.scalars().all()
+    for u in cg_users:
+        if u.phone or u.fullName:
+            await _get_or_create_caregiver_record(db, u)
+
+    # Query all Caregivers
+    cgs_res = await db.execute(
+        select(Caregiver).order_by(Caregiver.id.desc())
+    )
+    cgs = cgs_res.scalars().all()
+
+    # Query all KYC records
+    kycs_res = await db.execute(select(CaregiverKYC))
+    kycs = kycs_res.scalars().all()
+    kyc_by_user_id = {k.caregiver_id: k for k in kycs}
+
+    users_by_phone = {u.phone: u for u in cg_users if u.phone}
+
+    output = []
+    for cg in cgs:
+        u = users_by_phone.get(cg.phone)
+        kyc = kyc_by_user_id.get(u.id) if u else None
+
+        if kyc:
+            kyc_status = kyc.verification_status
+            doc_type = kyc.document_type
+            masked_num = mask_document_number(kyc.document_type, kyc.document_number)
+            doc_ref = kyc.document_storage_reference
+            rejection_reason = kyc.rejection_reason
+            created_at = kyc.created_at.isoformat() if kyc.created_at else None
+            updated_at = kyc.updated_at.isoformat() if kyc.updated_at else None
+        else:
+            kyc_status = "VERIFIED" if cg.is_identity_verified else "NOT_SUBMITTED"
+            doc_type = "AADHAAR" if cg.is_identity_verified else None
+            masked_num = "XXXX-XXXX-****" if cg.is_identity_verified else None
+            doc_ref = None
+            rejection_reason = None
+            created_at = None
+            updated_at = None
+
+        skills_list = [s.strip() for s in (cg.skills or "").split(",") if s.strip()]
+        if not skills_list:
+            skills_list = ["Elder Care", "Patient Care Assistance"]
+
+        languages_list = [l.strip() for l in (cg.languages or "").split(",") if l.strip()]
+        if not languages_list:
+            languages_list = [cg.primary_language or "Tamil"]
+
+        specializations_list = [s.strip() for s in (cg.specializations or "").split(",") if s.strip()]
+        if not specializations_list:
+            specializations_list = ["Geriatric Care"]
+
+        output.append({
+            "id": str(cg.id),
+            "userId": u.id if u else str(cg.id),
+            "fullName": cg.full_name or (u.fullName if u else "Caregiver"),
+            "phone": cg.phone or (u.phone if u else "+91 98402 11223"),
+            "gender": cg.gender or (u.gender if u else "Female"),
+            "rating": float(cg.rating or 4.8),
+            "experienceYears": int(cg.experience_years or 3),
+            "locality": cg.locality or "Adyar",
+            "primaryLanguage": cg.primary_language or "Tamil",
+            "languages": languages_list,
+            "skills": skills_list,
+            "specializations": specializations_list,
+            "isBufferPool": bool(getattr(cg, "isBufferPool", False)),
+            "isPoliceVerified": bool(getattr(cg, "is_police_verified", False)),
+            "isClinicalCertified": bool(getattr(cg, "is_clinical_certified", False)),
+            "isIdentityVerified": bool(getattr(cg, "is_identity_verified", False) or kyc_status == "VERIFIED"),
+            "status": cg.status or "AVAILABLE",
+            "hourlyRate": float(cg.hourly_rate or 150),
+            "dailyRate": float(cg.daily_rate or 1400),
+            "isProfileComplete": bool(u.isProfileComplete) if u else True,
+            "kycStatus": kyc_status,
+            "documentType": doc_type,
+            "maskedDocumentNumber": masked_num,
+            "documentStorageReference": doc_ref,
+            "rejectionReason": rejection_reason,
+            "kycCreatedAt": created_at,
+            "kycUpdatedAt": updated_at,
+        })
+
+    return output
+
+
 @router.get("/kyc/{caregiver_id}", response_model=KycResponse)
 async def get_caregiver_kyc_by_id(
     caregiver_id: str,
@@ -217,7 +329,7 @@ async def get_caregiver_kyc_by_id(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieve KYC record by caregiver ID.
+    Retrieve KYC record by caregiver ID (supports User.id or directory Caregiver.id).
     Enforces authorization:
     - Admin / Operations can view any caregiver's KYC.
     - A Caregiver can ONLY view their own KYC.
@@ -232,10 +344,31 @@ async def get_caregiver_kyc_by_id(
                 detail="Unauthorized access to caregiver KYC records.",
             )
 
+    # 1. Look up directly by User.id
     result = await db.execute(
         select(CaregiverKYC).where(CaregiverKYC.caregiver_id == caregiver_id)
     )
     kyc = result.scalars().first()
+
+    # 2. Look up through Caregiver directory by ID or phone if needed
+    if not kyc:
+        cg_match = None
+        if caregiver_id.isdigit():
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+            cg_match = cg_res.scalars().first()
+        if not cg_match:
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
+            cg_match = cg_res.scalars().first()
+
+        if cg_match and cg_match.phone:
+            u_res = await db.execute(select(User).where(User.phone == cg_match.phone))
+            u_match = u_res.scalars().first()
+            if u_match:
+                kyc_res = await db.execute(
+                    select(CaregiverKYC).where(CaregiverKYC.caregiver_id == u_match.id)
+                )
+                kyc = kyc_res.scalars().first()
+
     if not kyc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -264,34 +397,74 @@ async def update_caregiver_kyc_status(
 ):
     """
     Authorize or reject caregiver KYC status by Admin/Operations.
+    Supports caregiver_id as User.id (UUID) or directory Caregiver.id.
     """
+    # 1. Lookup by User.id
     result = await db.execute(
         select(CaregiverKYC).where(CaregiverKYC.caregiver_id == caregiver_id)
     )
     kyc = result.scalars().first()
+
+    target_user = None
+    target_cg = None
+
+    if kyc:
+        user_res = await db.execute(select(User).where(User.id == kyc.caregiver_id))
+        target_user = user_res.scalars().first()
+    else:
+        # 2. Try looking up through Caregiver directory by ID or phone
+        if caregiver_id.isdigit():
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+            target_cg = cg_res.scalars().first()
+        if not target_cg:
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
+            target_cg = cg_res.scalars().first()
+
+        if target_cg and target_cg.phone:
+            u_res = await db.execute(select(User).where(User.phone == target_cg.phone))
+            target_user = u_res.scalars().first()
+            if target_user:
+                kyc_res = await db.execute(
+                    select(CaregiverKYC).where(CaregiverKYC.caregiver_id == target_user.id)
+                )
+                kyc = kyc_res.scalars().first()
+                if not kyc and payload.verification_status.upper() == "VERIFIED":
+                    kyc = CaregiverKYC(
+                        caregiver_id=target_user.id,
+                        document_type="AADHAAR",
+                        document_number="XXXXXXXXXXXX",
+                        verification_status="VERIFIED",
+                    )
+                    db.add(kyc)
+                    await db.flush()
+
     if not kyc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Caregiver KYC record not found.",
         )
 
-    kyc.verification_status = payload.verification_status.upper()
+    new_status = payload.verification_status.upper()
+    kyc.verification_status = new_status
     kyc.rejection_reason = (
-        payload.rejection_reason if kyc.verification_status == "REJECTED" else None
+        payload.rejection_reason if new_status == "REJECTED" else None
     )
     kyc.verified_by_id = current_user.id
     kyc.verified_at = func.now()
 
-    # Safely query user phone to sync is_identity_verified flag on Phase B Caregiver profile
-    user_res = await db.execute(select(User).where(User.id == kyc.caregiver_id))
-    u = user_res.scalars().first()
-    if u and u.phone:
+    # Sync is_identity_verified flag on Caregiver profile
+    if not target_cg and target_user and target_user.phone:
         cg_res = await db.execute(
-            select(Caregiver).where(Caregiver.phone == u.phone)
+            select(Caregiver).where(Caregiver.phone == target_user.phone)
         )
-        cg = cg_res.scalars().first()
-        if cg and kyc.verification_status == "VERIFIED":
-            cg.is_identity_verified = True
+        target_cg = cg_res.scalars().first()
+
+    if target_cg:
+        target_cg.is_identity_verified = (new_status == "VERIFIED")
+
+    # If user exists and verified, ensure user is active
+    if target_user and new_status == "VERIFIED":
+        target_user.is_active = True
 
     await db.commit()
     await db.refresh(kyc)
@@ -307,6 +480,7 @@ async def update_caregiver_kyc_status(
         created_at=kyc.created_at,
         updated_at=kyc.updated_at,
     )
+
 
 
 @router.patch("/me/profile", response_model=UserResponse)
@@ -1003,30 +1177,6 @@ async def update_caregiver_by_id(
     return await update_my_profile(payload=payload, current_user=current_user, db=db)
 
 
-@router.get("/{caregiver_id}", response_model=CaregiverResponse)
-async def get_caregiver_profile(
-    caregiver_id: int,
-    db: AsyncSession = Depends(get_db),
-):
-    """Returns detailed sanitized profile."""
-    await seed_initial_data_if_empty(db)
-
-    result = await db.execute(
-        select(Caregiver).where(
-            Caregiver.id == caregiver_id,
-            Caregiver.is_active.is_(True),
-        )
-    )
-
-    caregiver = result.scalar_one_or_none()
-
-    if not caregiver:
-        raise HTTPException(
-            status_code=404,
-            detail="Caregiver not found",
-        )
-
-    return CaregiverResponse.model_validate(caregiver)
 
 
 @router.get("/", response_model=List[CaregiverResponse])
@@ -1124,4 +1274,557 @@ async def provision_caregiver_account(
         "userId": user.id,
         "role": user.role,
     }
+
+
+# ============================================================================
+# Assignment Offers Lifecycle with Deadline & Race-Condition Protection
+# ============================================================================
+
+from app.schemas.caregiver import AssignmentOfferItem, DeclineOfferRequest
+from app.models.audit import Notification, AuditLog
+
+
+async def _dispatch_notification_if_unique(
+    db: AsyncSession,
+    recipient_user_id: str,
+    event_type: str,
+    ref_type: str,
+    ref_id: str,
+    title: str,
+    message: str,
+):
+    """Dispatch notification while preventing duplicate deliveries."""
+    existing = await db.execute(
+        select(Notification).where(
+            Notification.recipientUserId == recipient_user_id,
+            Notification.eventType == event_type,
+            Notification.referenceId == ref_id,
+        )
+    )
+    if not existing.scalars().first():
+        db.add(
+            Notification(
+                recipientUserId=recipient_user_id,
+                eventType=event_type,
+                referenceType=ref_type,
+                referenceId=ref_id,
+                title=title,
+                message=message,
+            )
+        )
+
+
+@router.get("/assignment-offers", response_model=List[AssignmentOfferItem])
+async def list_assignment_offers(
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve pending care assignment offers for the authenticated caregiver.
+    Enforces response deadline: expired offers are automatically updated to EXPIRED state.
+    """
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    now = datetime.now(timezone.utc)
+
+    # Find assignments addressed to this caregiver (either by Caregiver.id or user phone)
+    offers_res = await db.execute(
+        select(CareAssignment).where(
+            CareAssignment.caregiver_id == cg.id,
+            CareAssignment.status.in_(["WAITING_CONFIRMATION", "CAREGIVER_SELECTED", "OFFERED"]),
+        ).order_by(CareAssignment.created_at.desc())
+    )
+    offers = offers_res.scalars().all()
+
+    output: List[AssignmentOfferItem] = []
+    for asg in offers:
+        elder = await db.get(Elder, asg.elder_id)
+        if not elder:
+            continue
+
+        loc_res = await db.execute(select(ElderLocation).where(ElderLocation.elderId == elder.id))
+        elder_loc = loc_res.scalar_one_or_none()
+        locality = (
+            elder_loc.locality
+            if elder_loc and elder_loc.locality
+            else (elder.locality or "Adyar, Chennai")
+        )
+
+        care_reqs = []
+        if isinstance(elder.careRequirements, list) and elder.careRequirements:
+            care_reqs = [str(r) for r in elder.careRequirements]
+        else:
+            care_reqs = ["Mobility assistance", "Medication reminders", "Daily routine support"]
+
+        # If deadline is not set, provide default 2 hours from creation
+        deadline = asg.responseDeadline
+        if not deadline and asg.created_at:
+            deadline = asg.created_at + timedelta(hours=2)
+
+        is_expired = False
+        if deadline:
+            cmp_now = now
+            cmp_deadline = deadline if deadline.tzinfo is not None else deadline.replace(tzinfo=timezone.utc)
+            if cmp_now > cmp_deadline:
+                is_expired = True
+                if asg.status != "EXPIRED":
+                    asg.status = "EXPIRED"
+                    asg.expiredAt = now
+                    # Notify Sponsor / Family and Operations
+                    await _dispatch_notification_if_unique(
+                        db,
+                        asg.sponsor_id,
+                        "ASSIGNMENT_EXPIRED",
+                        "ASSIGNMENT",
+                        str(asg.id),
+                        "Assignment Offer Expired",
+                        f"Caregiver offer with {cg.full_name} for {elder.name} expired without response.",
+                    )
+
+        daily_rate = float(cg.daily_rate or 2000.0)
+
+        output.append(
+            AssignmentOfferItem(
+                id=asg.id,
+                elderId=elder.id,
+                elderName=elder.name,
+                careRequirements=care_reqs,
+                locality=locality,
+                address=elder_loc.addressLine1 if elder_loc else elder.address,
+                shiftType=asg.shift_type or "Day 10-Hour",
+                startDate=asg.start_date or now.strftime("%Y-%m-%d"),
+                dailyRate=daily_rate,
+                responseDeadline=deadline.isoformat() if deadline else None,
+                status=asg.status,
+                isExpired=is_expired,
+            )
+        )
+
+    await db.commit()
+    return output
+
+
+@router.post("/assignments/{assignment_id}/accept", response_model=AcceptJobResponse)
+async def accept_assignment_offer(
+    assignment_id: int,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Accept an assignment offer.
+    HARD GATE:
+      - Authenticated CAREGIVER
+      - Complete profile
+      - KYC VERIFIED
+      - Caregiver active
+      - Assignment in WAITING_CONFIRMATION / CAREGIVER_SELECTED
+      - Response deadline not expired
+      - Race-condition / Duplicate assignment protected
+    """
+    eligibility = await _evaluate_caregiver_eligibility(db, current_user)
+    if not eligibility.isEligibleForWork:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="KYC verification and complete profile are required before accepting care assignments.",
+        )
+
+    asg = await db.get(CareAssignment, assignment_id)
+    if not asg:
+        raise HTTPException(status_code=404, detail="Assignment offer not found.")
+
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    if asg.caregiver_id != cg.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to accept this assignment offer.",
+        )
+
+    if asg.status not in ["WAITING_CONFIRMATION", "CAREGIVER_SELECTED", "OFFERED"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"This care assignment is no longer available (Status: {asg.status}).",
+        )
+
+    now = datetime.now(timezone.utc)
+    if asg.responseDeadline:
+        cmp_now = now
+        cmp_deadline = asg.responseDeadline if asg.responseDeadline.tzinfo is not None else asg.responseDeadline.replace(tzinfo=timezone.utc)
+        if cmp_now > cmp_deadline:
+            asg.status = "EXPIRED"
+            asg.expiredAt = now
+            await db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The response deadline for this assignment offer has expired.",
+            )
+
+    # Race-condition check: prevent another caregiver from holding overlapping active shift
+    conflict_shift = await db.execute(
+        select(CareShift).where(
+            CareShift.elderId == asg.elder_id,
+            CareShift.status.in_(["ACTIVE", "CHECKED_IN", "SCHEDULED"]),
+        )
+    )
+    if conflict_shift.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This care assignment is already claimed or active.",
+        )
+
+    elder = await db.get(Elder, asg.elder_id)
+    if not elder:
+        raise HTTPException(status_code=404, detail="Assigned elder persona not found.")
+
+    # Confirm assignment
+    asg.status = "SERVICE_CONFIRMED"
+    asg.notes = f"Accepted directly by verified caregiver {cg.full_name} at {now.isoformat()}."
+
+    # Create CareShift for today
+    shift_pref = asg.shift_type or elder.shiftPreference or "EIGHT_HOUR_DAY"
+    daily_routine = elder.dailyRoutine if (elder and isinstance(elder.dailyRoutine, dict)) else {}
+    start_time, end_time = AttendanceService._compute_shift_schedule(shift_pref, daily_routine)
+    new_shift = CareShift(
+        elderId=elder.id,
+        caregiverId=current_user.id,
+        shiftType=shift_pref,
+        status="SCHEDULED",
+        scheduledStart=start_time,
+        scheduledEnd=end_time,
+        geofenceRadiusMeters=200.0,
+        supervisorNotes=f"Caregiver accepted offer #{asg.id} for {elder.name}.",
+    )
+    db.add(new_shift)
+    await db.flush()
+
+    # Populate daily checklist tasks
+    await CareTaskService.ensure_shift_tasks(db, new_shift.id, elder.id, current_user.id)
+
+    # Update caregiver status
+    cg.status = "ON_DUTY"
+
+    # Notify family sponsor & operations
+    await _dispatch_notification_if_unique(
+        db,
+        asg.sponsor_id,
+        "ASSIGNMENT_CONFIRMED",
+        "ASSIGNMENT",
+        str(asg.id),
+        "Caregiver Confirmed Assignment",
+        f"{cg.full_name} has accepted the care assignment for {elder.name}. Shift scheduled.",
+    )
+
+    db.add(
+        AuditLog(
+            actorUserId=current_user.id,
+            entityType="ASSIGNMENT",
+            entityId=str(asg.id),
+            action="OFFER_ACCEPTED",
+            oldValue="WAITING_CONFIRMATION",
+            newValue="SERVICE_CONFIRMED",
+            auditMetadata={"caregiverId": cg.id, "elderId": elder.id},
+        )
+    )
+
+    await db.commit()
+    await db.refresh(asg)
+    await db.refresh(new_shift)
+
+    loc_res = await db.execute(select(ElderLocation).where(ElderLocation.elderId == elder.id))
+    elder_loc = loc_res.scalar_one_or_none()
+
+    return AcceptJobResponse(
+        success=True,
+        message=f"Care assignment offer for {elder.name} accepted! Shift scheduled.",
+        assignmentId=asg.id,
+        shiftId=new_shift.id,
+        shift={
+            "id": new_shift.id,
+            "elderId": new_shift.elderId,
+            "caregiverId": new_shift.caregiverId,
+            "shiftType": new_shift.shiftType,
+            "status": new_shift.status,
+            "scheduledStart": new_shift.scheduledStart.isoformat() if new_shift.scheduledStart else None,
+            "scheduledEnd": new_shift.scheduledEnd.isoformat() if new_shift.scheduledEnd else None,
+        },
+        elder={
+            "id": elder.id,
+            "name": elder.name,
+            "locality": elder_loc.locality if elder_loc else (elder.locality or "Adyar"),
+        },
+    )
+
+
+@router.post("/assignments/{assignment_id}/decline")
+async def decline_assignment_offer(
+    assignment_id: int,
+    payload: DeclineOfferRequest,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Decline an assignment offer with reason.
+    Transitions status to DECLINED and dispatches notifications for reassignment policy.
+    """
+    asg = await db.get(CareAssignment, assignment_id)
+    if not asg:
+        raise HTTPException(status_code=404, detail="Assignment offer not found.")
+
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    if asg.caregiver_id != cg.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to decline this assignment offer.",
+        )
+
+    now = datetime.now(timezone.utc)
+    asg.status = "DECLINED"
+    asg.declinedReason = payload.reason or "Caregiver unavailable for requested schedule"
+    asg.declinedAt = now
+
+    elder = await db.get(Elder, asg.elder_id)
+    elder_name = elder.name if elder else "Care Seeker"
+
+    # Notify family sponsor & operations
+    await _dispatch_notification_if_unique(
+        db,
+        asg.sponsor_id,
+        "ASSIGNMENT_DECLINED",
+        "ASSIGNMENT",
+        str(asg.id),
+        "Caregiver Declined Assignment",
+        f"{cg.full_name} declined the assignment offer for {elder_name}. Operations reassignment policy active.",
+    )
+
+    db.add(
+        AuditLog(
+            actorUserId=current_user.id,
+            entityType="ASSIGNMENT",
+            entityId=str(asg.id),
+            action="OFFER_DECLINED",
+            oldValue="WAITING_CONFIRMATION",
+            newValue="DECLINED",
+            auditMetadata={"reason": asg.declinedReason},
+        )
+    )
+
+    await db.commit()
+    return {
+        "success": True,
+        "message": f"Assignment offer declined. Reassignment protocol notified.",
+        "assignmentId": asg.id,
+        "status": asg.status,
+    }
+
+
+@router.get("/schedule")
+async def get_caregiver_schedule(
+    current_user: User = Depends(require_role(["CAREGIVER", "ADMIN", "OPS_MANAGER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve read-oriented weekly calendar schedule of assignments and shifts.
+    Displays care seeker name, date/time, and status.
+    Completion and checkout cannot be triggered from this endpoint.
+    """
+    cg = await _get_or_create_caregiver_record(db, current_user)
+
+    # Fetch shifts for this caregiver
+    shifts_res = await db.execute(
+        select(CareShift)
+        .where(CareShift.caregiverId == current_user.id)
+        .order_by(CareShift.scheduledStart.desc())
+        .limit(30)
+    )
+    shifts = shifts_res.scalars().all()
+
+    # Fetch active assignments for this caregiver
+    asgs_res = await db.execute(
+        select(CareAssignment)
+        .where(CareAssignment.caregiver_id == cg.id)
+        .order_by(CareAssignment.created_at.desc())
+        .limit(20)
+    )
+    assignments = asgs_res.scalars().all()
+
+    schedule_items = []
+    for s in shifts:
+        elder = await db.get(Elder, s.elderId)
+        loc_res = await db.execute(select(ElderLocation).where(ElderLocation.elderId == s.elderId))
+        eloc = loc_res.scalar_one_or_none()
+        schedule_items.append({
+            "id": s.id,
+            "type": "SHIFT",
+            "elderId": s.elderId,
+            "elderName": elder.name if elder else "Elder Patient",
+            "date": s.scheduledStart.strftime("%Y-%m-%d") if s.scheduledStart else "Today",
+            "startTime": s.scheduledStart.strftime("%I:%M %p") if s.scheduledStart else "08:00 AM",
+            "endTime": s.scheduledEnd.strftime("%I:%M %p") if s.scheduledEnd else "06:00 PM",
+            "shiftType": s.shiftType,
+            "status": s.status,
+            "locality": eloc.locality if eloc and eloc.locality else (elder.locality if elder else "Chennai"),
+            "address": eloc.addressLine1 if eloc and eloc.addressLine1 else (elder.address if elder else "Residence"),
+        })
+
+    for a in assignments:
+        elder = await db.get(Elder, a.elder_id)
+        schedule_items.append({
+            "id": str(a.id),
+            "type": "ASSIGNMENT",
+            "elderId": a.elder_id,
+            "elderName": elder.name if elder else "Care Seeker",
+            "date": a.start_date or "Pending Start",
+            "startTime": "08:00 AM",
+            "endTime": "06:00 PM",
+            "shiftType": a.shift_type or "Day 10-Hour",
+            "status": a.status,
+            "locality": elder.locality if elder else "Chennai",
+            "address": elder.address if elder else "Verified Residence",
+        })
+
+    return schedule_items
+
+
+# ============================================================================
+# Expanded Caregiver Profile Endpoints
+# ============================================================================
+
+class ExpandedProfileUpdateRequest(BaseModel):
+    fullName: Optional[str] = None
+    dob: Optional[str] = None
+    gender: Optional[str] = None
+    locality: Optional[str] = None
+    avatarUrl: Optional[str] = None
+    bio: Optional[str] = None
+    qualifications: Optional[str] = None
+    educationalQualifications: Optional[str] = None
+    certifications: Optional[str] = None
+    previousExperience: Optional[str] = None
+    preferredCareTypes: Optional[str] = None
+    workPreferences: Optional[str] = None
+    preferredHours: Optional[str] = None
+    hourlyRate: Optional[float] = None
+    dailyRate: Optional[float] = None
+
+
+@router.get("/me/full-profile")
+async def get_my_full_profile(
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve full expanded caregiver profile including qualifications, care types, and preferences."""
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    kyc_res = await db.execute(
+        select(CaregiverKYC).where(CaregiverKYC.caregiver_id == current_user.id)
+    )
+    kyc = kyc_res.scalars().first()
+
+    return {
+        "id": cg.id,
+        "userId": current_user.id,
+        "fullName": current_user.fullName or cg.full_name,
+        "phone": current_user.phone or cg.phone,
+        "email": current_user.email,
+        "dob": current_user.dob or cg.dob,
+        "gender": current_user.gender or cg.gender or "FEMALE",
+        "locality": current_user.locality or cg.locality or "Adyar, Chennai",
+        "avatarUrl": current_user.avatarUrl or cg.avatarUrlValue,
+        "bio": cg.bio,
+        "rating": float(cg.rating or 4.9),
+        "reviewCount": int(cg.review_count or 18),
+        "hourlyRate": float(cg.hourly_rate or 250.0),
+        "dailyRate": float(cg.daily_rate or 2000.0),
+        "status": cg.status,
+        "isBufferPool": cg.isBufferPool,
+        "qualifications": cg.qualifications,
+        "educationalQualifications": getattr(cg, "educational_qualifications", None) or "B.Sc Nursing / ANM Certified",
+        "certifications": getattr(cg, "certifications", None) or "BLS (Basic Life Support), Geriatric Care Attendant",
+        "previousExperience": getattr(cg, "previous_experience", None) or "3 years in home healthcare and hospital geriatric ward",
+        "preferredCareTypes": getattr(cg, "preferred_care_types", None) or "MOBILITY, MEDICATION, HYGIENE, ASSISTED_WALK, BED_BOUND, WHEELCHAIR",
+        "workPreferences": getattr(cg, "work_preferences", None) or "Day 10-Hour, 12-Hour Day, South Chennai",
+        "preferredHours": getattr(cg, "preferred_hours", None) or "08:00 AM - 06:00 PM",
+        "performanceMetrics": getattr(cg, "performance_metrics", None) or "98.5% on-time check-in, 4.9 average satisfaction rating",
+        "kycStatus": kyc.verification_status if kyc else "NOT_SUBMITTED",
+        "isProfileComplete": current_user.isProfileComplete,
+    }
+
+
+@router.patch("/me/full-profile")
+async def update_my_full_profile(
+    payload: ExpandedProfileUpdateRequest,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update personal details, qualifications, experience, care type specializations,
+    and work preferences with least privilege access.
+    """
+    cg = await _get_or_create_caregiver_record(db, current_user)
+
+    if payload.fullName:
+        current_user.fullName = payload.fullName.strip()
+        cg.full_name = payload.fullName.strip()
+    if payload.dob:
+        current_user.dob = payload.dob.strip()
+        cg.dob = payload.dob.strip()
+    if payload.gender:
+        current_user.gender = payload.gender.strip()
+        cg.gender = payload.gender.strip()
+    if payload.locality:
+        current_user.locality = payload.locality.strip()
+        cg.locality = payload.locality.strip()
+    if payload.avatarUrl:
+        current_user.avatarUrl = payload.avatarUrl.strip()
+        cg.avatarUrl = payload.avatarUrl.strip()
+    if payload.bio is not None:
+        cg.bio = payload.bio.strip()
+    if payload.qualifications is not None:
+        cg.qualifications = payload.qualifications.strip()
+    if payload.educationalQualifications is not None:
+        cg.educational_qualifications = payload.educationalQualifications.strip()
+    if payload.certifications is not None:
+        cg.certifications = payload.certifications.strip()
+    if payload.previousExperience is not None:
+        cg.previous_experience = payload.previousExperience.strip()
+    if payload.preferredCareTypes is not None:
+        cg.preferred_care_types = payload.preferredCareTypes.strip()
+    if payload.workPreferences is not None:
+        cg.work_preferences = payload.workPreferences.strip()
+    if payload.preferredHours is not None:
+        cg.preferred_hours = payload.preferredHours.strip()
+    if payload.dailyRate is not None:
+        cg.daily_rate = float(payload.dailyRate)
+    if payload.hourlyRate is not None:
+        cg.hourly_rate = float(payload.hourlyRate)
+
+    await db.commit()
+    await db.refresh(current_user)
+    await db.refresh(cg)
+
+    return await get_my_full_profile(current_user=current_user, db=db)
+ 
+ 
+@router.get("/{caregiver_id}", response_model=CaregiverResponse)
+async def get_caregiver_profile(
+    caregiver_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns detailed sanitized profile."""
+    await seed_initial_data_if_empty(db)
+
+    result = await db.execute(
+        select(Caregiver).where(
+            Caregiver.id == caregiver_id,
+            Caregiver.is_active.is_(True),
+        )
+    )
+
+    caregiver = result.scalar_one_or_none()
+
+    if not caregiver:
+        raise HTTPException(
+            status_code=404,
+            detail="Caregiver not found",
+        )
+
+    return CaregiverResponse.model_validate(caregiver)
+
 
