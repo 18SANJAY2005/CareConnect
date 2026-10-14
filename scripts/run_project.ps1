@@ -46,8 +46,8 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Free ports 8000, 5173, 5174, and 5175 if occupied by prior or orphaned processes
-Get-NetTCPConnection -LocalPort 8000, 5173, 5174, 5175 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+# Free ports 8000, 5173, 5174, 5175, and 3000 if occupied by prior or orphaned processes
+Get-NetTCPConnection -LocalPort 8000, 5173, 5174, 5175, 3000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
     Write-Host "[*] Freeing occupied port $($_.LocalPort) (PID: $($_.OwningProcess))..." -ForegroundColor Yellow
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
@@ -64,8 +64,11 @@ Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$CaregiverDir`" && title Care
 Write-Host "[4/5] Starting Vite Admin Portal on Port 5175..." -ForegroundColor Green
 Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$AdminDir`" && title CareConnect Admin Portal [Vite :5175] && npm run dev"
 
-Write-Host "[5/5] Waiting for servers to initialize..." -ForegroundColor Yellow
-Start-Sleep -Seconds 5
+Write-Host "[5/5] Starting Unified Reverse Proxy on Port 3000..." -ForegroundColor Green
+Start-Process cmd.exe -ArgumentList "/k", "cd /d `"$ProjectRoot`" && title CareConnect Reverse Proxy [:3000] && node scripts/proxy.js"
+
+Write-Host "[*] Waiting for servers to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 6
 
 Write-Host ""
 Write-Host "---------------------------------------------------" -ForegroundColor Gray
@@ -100,17 +103,25 @@ if ($adminTest) {
     Write-Host "  [!] Admin Portal is still initializing or encountered an error. Check Admin window." -ForegroundColor Yellow
 }
 
+$proxyTest = Test-NetConnection -ComputerName 127.0.0.1 -Port 3000 -InformationLevel Quiet -WarningAction SilentlyContinue
+if ($proxyTest) {
+    Write-Host "  [OK] Reverse Proxy  is LISTENING on http://localhost:3000" -ForegroundColor Green
+} else {
+    Write-Host "  [!] Reverse Proxy is still initializing. Check Proxy window." -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host "         CareConnect is now running!               " -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
-Write-Host "  - Family PWA       : http://localhost:5173" -ForegroundColor White
-Write-Host "  - Caregiver PWA    : http://localhost:5174" -ForegroundColor White
-Write-Host "  - Admin Portal     : http://localhost:5175" -ForegroundColor White
-Write-Host "  - Backend REST API : http://localhost:8000" -ForegroundColor White
-Write-Host "  - Swagger API Docs : http://localhost:8000/docs" -ForegroundColor White
+Write-Host "  - Unified Entrypoint : http://localhost:3000" -ForegroundColor Green
+Write-Host "  - Family PWA         : http://localhost:3000/ (or :5173)" -ForegroundColor White
+Write-Host "  - Caregiver PWA      : http://localhost:3000/caregiver (or :5174)" -ForegroundColor White
+Write-Host "  - Admin Portal       : http://localhost:3000/admin (or :5175)" -ForegroundColor White
+Write-Host "  - Backend REST API   : http://localhost:3000/api (or :8000)" -ForegroundColor White
+Write-Host "  - Swagger API Docs   : http://localhost:3000/docs" -ForegroundColor White
+Write-Host "  - Proxy Status Check : http://localhost:3000/proxy-status" -ForegroundColor White
 Write-Host ""
 
-Start-Process "http://localhost:5173"
-Start-Process "http://localhost:5174"
-Start-Process "http://localhost:5175"
+Start-Process "http://localhost:3000"
+

@@ -32,9 +32,11 @@ import { MobileMatchmakingScreen } from "./components/mobile/matchmaking/MobileM
 // Family Mobile Screens
 import { FamilyHomeScreen } from "./components/mobile/family/FamilyHomeScreen";
 import { FamilyMyCareScreen } from "./components/mobile/family/FamilyMyCareScreen";
+import { FamilyCaregiverScreen } from "./components/mobile/family/FamilyCaregiverScreen";
 import { FamilyUpdatesScreen } from "./components/mobile/family/FamilyUpdatesScreen";
 import { FamilyPaymentScreen } from "./components/mobile/family/FamilyPaymentScreen";
 import { FamilyProfileScreen } from "./components/mobile/family/FamilyProfileScreen";
+import { FamilyMessagesScreen } from "./components/mobile/family/FamilyMessagesScreen";
 
 // Caregiver & Operations Portals
 import { CaregiverMobileApp } from "./components/caregiver/CaregiverMobileApp";
@@ -45,6 +47,7 @@ import {
   Sparkles,
   UserPlus,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   RotateCw,
   LogOut,
@@ -60,8 +63,8 @@ const AppContent: React.FC = () => {
     "FAMILY" | "CAREGIVER" | "OPERATIONS"
   >("FAMILY");
 
-  const [justLoggedIn, setJustLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<"SIGN_IN" | "SIGN_UP">("SIGN_IN");
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
 
 
   // Synchronous check so that if user is stored in localStorage, hasUser is true on initial mount
@@ -80,7 +83,6 @@ const AppContent: React.FC = () => {
     editingSection,
     isDeleteModalOpen,
     setOnboardingStep,
-    replaceOnboardingStep,
     resetToHome,
     backNotice,
     setActiveFamilyTab,
@@ -153,15 +155,7 @@ const AppContent: React.FC = () => {
     }
   }, [user?.role]);
 
-  // Handle immediate redirection for users with zero elders right after login
-  useEffect(() => {
-    if (user && justLoggedIn) {
-      setJustLoggedIn(false);
-      if (elders.length === 0) {
-        setOnboardingStep("WHO");
-      }
-    }
-  }, [user, elders, justLoggedIn, setOnboardingStep]);
+
 
   // Persist elder draft into backend
   const finalizeElderOnboarding = async (
@@ -346,19 +340,9 @@ const AppContent: React.FC = () => {
             savedPhone={draftPhone}
             onPhoneChange={(p) => setDraftPhone(p)}
             onBack={goBack}
-            onSuccess={(isNewUser) => {
-              setJustLoggedIn(true);
-              if (authMode === "SIGN_IN") {
-                // Sign In must be phone number → OTP → dashboard, without onboarding questions or a name field
-                resetToHome();
-              } else if (isNewUser) {
-                // Sign Up verifies phone OTP before checking service availability
-                setOnboardingStep("LOCATION");
-              } else if (onboardingStep) {
-                replaceOnboardingStep("REQUIREMENTS");
-              } else {
-                resetToHome();
-              }
+            onSuccess={() => {
+              // Direct user to dashboard immediately after entering OTP for both sign in and create account
+              resetToHome();
             }}
           />
         </div>
@@ -656,7 +640,13 @@ const AppContent: React.FC = () => {
               {activeFamilyTab === "HOME" && (
                 <FamilyHomeScreen
                   elder={activeElder || elders[0]}
-                  onOpenTab={(tab) => setActiveFamilyTab(tab as FamilyTab)}
+                  onOpenTab={(tab) => {
+                    if (tab === "MESSAGES") {
+                      setIsMessagesOpen(true);
+                    } else {
+                      setActiveFamilyTab(tab as FamilyTab);
+                    }
+                  }}
                   onOpenSos={() => setIsSosOpen(true)}
                 />
               )}
@@ -677,6 +667,20 @@ const AppContent: React.FC = () => {
                 />
               )}
 
+              {activeFamilyTab === "CAREGIVER" && (
+                <FamilyCaregiverScreen
+                  elder={activeElder || elders[0]}
+                  onOpenMessages={() => setIsMessagesOpen(true)}
+                  onOpenTab={(tab) => {
+                    if (tab === "MESSAGES") {
+                      setIsMessagesOpen(true);
+                    } else {
+                      setActiveFamilyTab(tab as FamilyTab);
+                    }
+                  }}
+                />
+              )}
+
               {activeFamilyTab === "UPDATES" && (
                 <FamilyUpdatesScreen elder={activeElder || elders[0]} />
               )}
@@ -693,6 +697,13 @@ const AppContent: React.FC = () => {
                     setDraftBasic({ name: "", age: 0, gender: "FEMALE" });
                     setOnboardingStep("WHO");
                   }}
+                />
+              )}
+
+              {activeFamilyTab === "MESSAGES" && (
+                <FamilyMessagesScreen
+                  elder={activeElder || elders[0]}
+                  currentUser={user}
                 />
               )}
             </>
@@ -722,6 +733,31 @@ const AppContent: React.FC = () => {
           elderId={activeElder?.id}
           elderName={activeElder?.name}
         />
+
+        {/* Messages Drawer / Modal */}
+        {isMessagesOpen && (
+          <div className="fixed inset-0 z-50 flex justify-center bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+            <div className="w-full max-w-[440px] h-full bg-slate-50 flex flex-col shadow-2xl">
+              <div className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0 safe-top">
+                <button
+                  onClick={() => setIsMessagesOpen(false)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary-hover active:scale-95 transition"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
+                </button>
+                <span className="text-xs font-extrabold text-slate-800">Care Desk Chat</span>
+                <div className="w-10" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <FamilyMessagesScreen
+                  elder={activeElder || elders[0]}
+                  currentUser={user}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Home Double-Back & Refresh Toast Notification */}
         {renderBackNotice()}

@@ -85,6 +85,11 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5175" ^| findstr "LISTENING
     taskkill /f /pid %%a >nul 2>&1
 )
 
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
+    echo [*] Port 3000 is occupied by PID %%a. Freeing port...
+    taskkill /f /pid %%a >nul 2>&1
+)
+
 echo [1/5] Launching FastAPI Backend on Port 8000...
 start "CareConnect Backend" cmd /k "cd /d %BACKEND_DIR% && python run.py"
 
@@ -97,7 +102,10 @@ start "CareConnect Caregiver PWA" cmd /k "cd /d %CAREGIVER_DIR% && npm run dev"
 echo [4/5] Launching Vite Admin Portal on Port 5175...
 start "CareConnect Admin Portal" cmd /k "cd /d %ADMIN_DIR% && npm run dev"
 
-echo [5/5] Waiting for services to initialize...
+echo [5/5] Launching Unified Reverse Proxy on Port 3000...
+start "CareConnect Reverse Proxy" cmd /k "cd /d %PROJECT_ROOT% && node scripts/proxy.js"
+
+echo [*] Waiting for services to initialize...
 ping -n 6 127.0.0.1 >nul
 
 echo.
@@ -133,21 +141,28 @@ if %ERRORLEVEL% equ 0 (
     echo   [!] Admin Portal is still starting or failed. See Admin window.
 )
 
+netstat -ano | findstr ":3000" | findstr "LISTENING" >nul
+if %ERRORLEVEL% equ 0 (
+    echo   [OK] Reverse Proxy is LISTENING on http://localhost:3000
+) else (
+    echo   [!] Reverse Proxy is still starting. See Proxy window.
+)
+
 echo.
 echo ===================================================
 echo           CareConnect Platform is Ready!
 echo ===================================================
-echo   - Family PWA      : http://localhost:5173
-echo   - Caregiver PWA   : http://localhost:5174
-echo   - Admin Portal    : http://localhost:5175
-echo   - Backend REST API: http://localhost:8000
-echo   - Swagger Docs    : http://localhost:8000/docs
+echo   - Unified Entrypoint: http://localhost:3000
+echo   - Family PWA        : http://localhost:3000/ (or :5173)
+echo   - Caregiver PWA     : http://localhost:3000/caregiver (or :5174)
+echo   - Admin Portal      : http://localhost:3000/admin (or :5175)
+echo   - Backend REST API  : http://localhost:3000/api (or :8000)
+echo   - Swagger API Docs  : http://localhost:3000/docs
+echo   - Proxy Status Check: http://localhost:3000/proxy-status
 echo ===================================================
 echo.
-echo Opening web browsers to Family PWA, Caregiver PWA, and Admin Portal...
-start http://localhost:5173
-start http://localhost:5174
-start http://localhost:5175
+echo Opening web browser to Unified Portal (:3000)...
+start http://localhost:3000
 
 echo.
 echo Leave this and the spawned server windows open while using the platform.

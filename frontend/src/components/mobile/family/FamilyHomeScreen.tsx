@@ -105,11 +105,19 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
         </button>
       </div>
 
-      <div className="rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <div 
+        onClick={() => onOpenTab("CAREGIVER")}
+        role="button"
+        tabIndex={0}
+        className="cursor-pointer rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-teal-200 active:scale-[0.99]"
+      >
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
-            Care team
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+              Care team
+            </span>
+            <ChevronRight className="h-3 w-3 text-slate-400" />
+          </div>
           <span
             className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${
               isOnDuty
@@ -147,6 +155,7 @@ export const FamilyHomeScreen: React.FC<FamilyHomeScreenProps> = ({
           </div>
           <a
             href="tel:+914448552200"
+            onClick={(e) => e.stopPropagation()}
             className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl border border-teal-200 bg-teal-50 text-primary shadow-sm transition hover:bg-teal-100 active:scale-95"
             title="Call Care Desk"
             aria-label="Call Care Desk"

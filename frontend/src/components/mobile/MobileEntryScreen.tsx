@@ -25,12 +25,6 @@ export const MobileEntryScreen: React.FC<MobileEntryScreenProps> = ({
       <div>
         <div className="flex items-center justify-between">
           <CareConnectLogo size="md" showWordmark />
-          <button
-            onClick={onSignIn}
-            className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-[11px] font-bold text-primary transition hover:bg-teal-100"
-          >
-            Sign In
-          </button>
         </div>
         
         {/* Coverage Notice */}

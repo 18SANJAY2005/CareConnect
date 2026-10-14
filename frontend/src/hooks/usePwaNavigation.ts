@@ -122,10 +122,12 @@ function hashToState(
   }
 
   if (clean === "my-care") return { tab: "MY_CARE", step: null };
+  if (clean === "caregiver") return { tab: "CAREGIVER", step: null };
   if (clean === "updates") return { tab: "UPDATES", step: null };
   if (clean === "payment") return { tab: "PAYMENT", step: null };
   if (clean === "profile") return { tab: "PROFILE", step: null };
-  if (clean === "messages" || clean === "more") return { tab: "PROFILE", step: null };
+  if (clean === "messages") return { tab: "MESSAGES", step: null };
+  if (clean === "more") return { tab: "PROFILE", step: null };
 
   return { tab: "HOME", step: null, auth: false };
 }
@@ -307,17 +309,7 @@ export function usePwaNavigation(
         (typeof window !== "undefined" &&
           window.location.hash.startsWith("#auth"))
       ) {
-        if (stateRef.current.step) {
-          // Preserve the onboarding intent
-          const next = { ...stateRef.current, auth: false, authStep: "PHONE" as const };
-          stateRef.current = next;
-          setNavState(next);
-          try {
-            window.history.replaceState(next, "", stateToHash(next));
-          } catch {}
-        } else {
-          resetToHome();
-        }
+        resetToHome();
       } else if (
         stateRef.current.tab === "HOME" &&
         stateRef.current.step === null

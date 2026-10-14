@@ -16,10 +16,9 @@ import {
   AlertCircle,
   Loader2,
   Navigation,
-  KeyRound,
   History,
 } from "lucide-react";
-import type { Elder, ShiftOtpStatus } from "../../../types";
+import type { Elder } from "../../../types";
 import { api } from "../../../services/api";
 import { ElderSectionEditorModal } from "../profile/ElderSectionEditorModal";
 import type { EditableSection } from "../profile/ElderSectionEditorModal";
@@ -51,13 +50,6 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // OTP and Shift state
-  const [activeShift, setActiveShift] = useState<any>(null);
-  const [otpStatus, setOtpStatus] = useState<ShiftOtpStatus | null>(null);
-  const [startOtp, setStartOtp] = useState<string | null>(null);
-  const [completionOtp, setCompletionOtp] = useState<string | null>(null);
-  const [otpMessage, setOtpMessage] = useState<string | null>(null);
-  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
 
   // Assignment history state
   const [historyList, setHistoryList] = useState<any[]>([]);
@@ -88,60 +80,17 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
 
   useEffect(() => {
     setCurrentElder(elder);
-    loadShiftAndHistory();
+    loadAssignmentHistory();
   }, [elder]);
 
-  const loadShiftAndHistory = async () => {
+  const loadAssignmentHistory = async () => {
     try {
-      const [shiftData, historyData] = await Promise.all([
-        api.getElderShiftStatus(currentElder.id).catch(() => null),
-        api.getAssignmentHistory(currentElder.id).catch(() => []),
-      ]);
-
-      if (shiftData) {
-        setActiveShift(shiftData);
-        if (shiftData.id) {
-          const status = await api.getShiftOtpStatus(shiftData.id).catch(() => null);
-          if (status) setOtpStatus(status);
-        }
-      }
+      const historyData = await api
+        .getAssignmentHistory(currentElder.id)
+        .catch(() => []);
       if (historyData) setHistoryList(historyData);
     } catch {
       // Graceful fallback
-    }
-  };
-
-  const handleRequestStartOtp = async () => {
-    const shiftId = activeShift?.id || "shift-demo-1";
-    setIsRequestingOtp(true);
-    setOtpMessage(null);
-    try {
-      const res = await api.requestStartOtp(shiftId);
-      if (res?.startOtp) setStartOtp(res.startOtp);
-      setOtpMessage("Visit-start OTP generated (10-min validity). Share with attendant upon arrival.");
-      const st = await api.getShiftOtpStatus(shiftId).catch(() => null);
-      if (st) setOtpStatus(st);
-    } catch (err: any) {
-      setOtpMessage(err.message || "Failed to generate start OTP.");
-    } finally {
-      setIsRequestingOtp(false);
-    }
-  };
-
-  const handleRequestCompletionOtp = async () => {
-    const shiftId = activeShift?.id || "shift-demo-1";
-    setIsRequestingOtp(true);
-    setOtpMessage(null);
-    try {
-      const res = await api.requestCompletionOtp(shiftId);
-      if (res?.completionOtp) setCompletionOtp(res.completionOtp);
-      setOtpMessage("Completion OTP generated. Share with attendant only after verifying care tasks.");
-      const st = await api.getShiftOtpStatus(shiftId).catch(() => null);
-      if (st) setOtpStatus(st);
-    } catch (err: any) {
-      setOtpMessage(err.message || "Failed to generate completion OTP.");
-    } finally {
-      setIsRequestingOtp(false);
     }
   };
 
@@ -260,90 +209,7 @@ export const FamilyMyCareScreen: React.FC<FamilyMyCareScreenProps> = ({
         </div>
       </div>
 
-      {/* Visit Start & Completion Verification OTPs */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-teal-50 text-primary flex items-center justify-center">
-              <KeyRound className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900">
-                Visit Verification OTPs
-              </div>
-              <div className="text-[10px] text-slate-500">
-                Backend-generated single-use codes for visit start and completion
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {otpMessage && (
-          <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-xs">
-            {otpMessage}
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-2.5">
-          {/* Start OTP */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-700">Visit-Start OTP</span>
-              {otpStatus?.startOtpUsed && (
-                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Verified</span>
-              )}
-            </div>
-            {startOtp ? (
-              <div className="text-center py-1">
-                <span className="text-xl font-mono font-extrabold text-primary tracking-widest">
-                  {startOtp}
-                </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">Valid for 10 min (Single-use)</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRequestStartOtp}
-                disabled={isRequestingOtp}
-                className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
-              >
-                {isRequestingOtp ? "Generating..." : "Generate Code"}
-              </button>
-            )}
-          </div>
-
-          {/* Completion OTP */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-700">Completion OTP</span>
-              {otpStatus?.completionOtpUsed && (
-                <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Verified</span>
-              )}
-            </div>
-            {completionOtp ? (
-              <div className="text-center py-1">
-                <span className="text-xl font-mono font-extrabold text-primary tracking-widest">
-                  {completionOtp}
-                </span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">Valid for 10 min (Single-use)</span>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRequestCompletionOtp}
-                disabled={isRequestingOtp}
-                className="w-full py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-bold rounded-xl transition"
-              >
-                {isRequestingOtp ? "Generating..." : "Generate Code"}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="text-[10px] text-slate-400 leading-relaxed border-t border-slate-100 pt-2">
-          Note: Delivered via secure in-app channel. Physical SMS / Email delivery depends on configured third-party gateway credentials.
-        </div>
-      </div>
 
       {/* Historical Care Assignments */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">

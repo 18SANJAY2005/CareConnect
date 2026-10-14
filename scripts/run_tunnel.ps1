@@ -1,4 +1,8 @@
 # CareConnect Cloudflare Quick Tunnel Launcher
+param(
+    [int]$TargetPort = 3000
+)
+
 Clear-Host
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host "        CareConnect Cloudflare Tunnel Launcher     " -ForegroundColor Cyan
@@ -6,27 +10,31 @@ Write-Host "===================================================" -ForegroundColo
 Write-Host ""
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$CloudflaredExe = "E:\CareConnect\cloudflared.exe"
+$ProjectRoot = (Resolve-Path "$ScriptDir\..").Path
+$CloudflaredExe = Join-Path $ScriptDir "cloudflared.exe"
 
 if (-not (Test-Path $CloudflaredExe)) {
-    $CloudflaredExe = Join-Path $ScriptDir "cloudflared.exe"
+    $RootCandidate = Join-Path $ProjectRoot "cloudflared.exe"
+    if (Test-Path $RootCandidate) {
+        $CloudflaredExe = $RootCandidate
+    } elseif (Get-Command cloudflared -ErrorAction SilentlyContinue) {
+        $CloudflaredExe = (Get-Command cloudflared).Source
+    }
 }
 
 if (-not (Test-Path $CloudflaredExe)) {
-    Write-Host "[*] Downloading cloudflared.exe..." -ForegroundColor Yellow
+    Write-Host "[*] cloudflared.exe not found. Downloading to $CloudflaredExe..." -ForegroundColor Yellow
     Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $CloudflaredExe
 }
 
-Write-Host "[1/3] Launching Family Portal Tunnel (Port 5173)..." -ForegroundColor Green
-Start-Process cmd.exe -ArgumentList "/k", "title Tunnel :5173 [Family Portal] && `"$CloudflaredExe`" tunnel --url http://localhost:5173"
-
-Write-Host "[2/3] Launching Caregiver PWA Tunnel (Port 5174)..." -ForegroundColor Green
-Start-Process cmd.exe -ArgumentList "/k", "title Tunnel :5174 [Caregiver PWA] && `"$CloudflaredExe`" tunnel --url http://localhost:5174"
-
-Write-Host "[3/3] Launching FastAPI Backend Tunnel (Port 8000)..." -ForegroundColor Green
-Start-Process cmd.exe -ArgumentList "/k", "title Tunnel :8000 [FastAPI Backend] && `"$CloudflaredExe`" tunnel --url http://localhost:8000"
-
+Write-Host "[*] Using binary: $CloudflaredExe" -ForegroundColor Gray
+Write-Host "[*] Tunneling target: http://localhost:$TargetPort" -ForegroundColor Green
+if ($TargetPort -eq 3000) {
+    Write-Host "    (Unified Reverse Proxy exposing Family, Caregiver, Admin & Backend)" -ForegroundColor DarkCyan
+}
 Write-Host ""
-Write-Host "Tunnels have been launched in separate console windows." -ForegroundColor Cyan
-Write-Host "Check each window for its respective https://*.trycloudflare.com URL." -ForegroundColor Cyan
+Write-Host "Starting Cloudflare quick tunnel..." -ForegroundColor Yellow
+Write-Host "Look for the public URL ending with '.trycloudflare.com' below:" -ForegroundColor Yellow
+Write-Host "---------------------------------------------------" -ForegroundColor Gray
 
+& "$CloudflaredExe" tunnel --url "http://localhost:$TargetPort"
