@@ -5,6 +5,10 @@ import type {
   AdminCaregiverItem,
   AdminSosAlert,
   AdminMetrics,
+  OpsRole,
+  OperatingSectorScope,
+  NearbyHospital,
+  CareseekerOffer,
 } from './types';
 import {
   initialAdminElders,
@@ -12,14 +16,16 @@ import {
   initialAdminSosAlerts,
   calculateAdminMetrics,
 } from './mockData';
-import { AdminSidebar } from './components/AdminSidebar';
-import { AdminHeader } from './components/AdminHeader';
-import { ElderDetailDrawer } from './components/ElderDetailDrawer';
+import { CareseekerDetailDrawer } from './components/CareseekerDetailDrawer';
 import { CaregiverDetailDrawer } from './components/CaregiverDetailDrawer';
+import { AdminLayout } from './AdminLayout';
 import { AdminOverviewView } from './views/AdminOverviewView';
 import { AdminEldersView } from './views/AdminEldersView';
 import { AdminCaregiversView } from './views/AdminCaregiversView';
-import { AdminCarePlansView } from './views/AdminCarePlansView';
+import { AdminAttendanceView } from './views/AdminAttendanceView';
+import { AdminServicesPricingView } from './views/AdminServicesPricingView';
+import { AdminReportsView } from './views/AdminReportsView';
+import { AdminSettingsView } from './views/AdminSettingsView';
 import { AdminLiveMapView } from './views/AdminLiveMapView';
 import { AdminSosPanel } from './views/AdminSosPanel';
 import { AdminLogin, ADMIN_AUTH_KEY } from './AdminLogin';
@@ -37,14 +43,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 }) => {
   // Sync tab with URL hash if present
   const getTabFromHash = (): AdminTab => {
-    if (typeof window === 'undefined') return 'OVERVIEW';
+    if (typeof window === 'undefined') return 'MAP';
     const hash = window.location.hash.toLowerCase();
-    if (hash.includes('elders')) return 'ELDERS';
-    if (hash.includes('caregivers')) return 'CAREGIVERS';
-    if (hash.includes('care-plans') || hash.includes('careplans')) return 'CARE_PLANS';
     if (hash.includes('map')) return 'MAP';
     if (hash.includes('sos')) return 'SOS';
-    return 'OVERVIEW';
+    if (hash.includes('elders') || hash.includes('careseekers')) return 'ELDERS';
+    if (hash.includes('caregivers')) return 'CAREGIVERS';
+    if (hash.includes('attendance')) return 'ATTENDANCE';
+    if (hash.includes('services-pricing') || hash.includes('services') || hash.includes('pricing') || hash.includes('catalog'))
+      return 'SERVICES_PRICING';
+    if (hash.includes('reports') || hash.includes('analytics')) return 'REPORTS';
+    if (hash.includes('access') || hash.includes('settings') || hash.includes('governance')) return 'SETTINGS';
+    if (hash.includes('care-plans') || hash.includes('careplans')) return 'SERVICES_PRICING';
+    if (hash.includes('overview') || hash.includes('dashboard')) return 'OVERVIEW';
+    return 'MAP';
   };
 
   // Authentication Guard State
@@ -72,6 +84,10 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const [activeTab, setActiveTab] = useState<AdminTab>(getTabFromHash);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // RBAC & Location Tenancy Scoping
+  const [activeRole, setActiveRole] = useState<OpsRole>('SUPER_ADMIN');
+  const [activeSectorScope, setActiveSectorScope] = useState<OperatingSectorScope>('ALL');
 
   // Core Data States
   const [elders, setElders] = useState<AdminElderItem[]>(initialAdminElders);
@@ -121,259 +137,278 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   const loadLiveData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const results = await Promise.allSettled([
-        api.listElders(),
-        api.getAllCaregivers(),
-        api.getIncidentDesk(),
-      ]);
-
-      // 1. Elders
-      if (results[0].status === 'fulfilled' && Array.isArray(results[0].value) && results[0].value.length > 0) {
-        const liveElders = results[0].value;
-        setElders((prev) => {
-          // Merge live elders with existing mock elders
-          const mappedLive: AdminElderItem[] = liveElders.map((e: any, idx: number) => ({
-            id: e.id,
-            name: e.name,
-            age: e.age || 70,
-            gender: e.gender || 'FEMALE',
-            dateOfBirth: e.dateOfBirth || '1954-05-15',
-            sponsorName: 'Verified Family Contact',
-            sponsorPhone: '+91 98400 99881',
-            sponsorRelation: 'Primary Sponsor',
-            addressLine1: e.location?.addressLine1 || 'Verified Chennai Residence',
-            locality: e.location?.locality || 'Adyar',
-            city: e.location?.city || 'Chennai',
-            postalCode: e.location?.postalCode || '600020',
-            latitude: e.location?.latitude || (13.0067 + idx * 0.01),
-            longitude: e.location?.longitude || (80.2575 + idx * 0.01),
-            assignedCaregiverName: 'Priya Sundaram',
-            assignedCaregiverRating: 4.9,
-            status: e.personaStatus === 'SAVED' ? 'ACTIVE' : 'PENDING',
-            mobilityLevel: e.mobilityLevel || 'CANE_WALKER',
-            medicalConditions: e.medicalConditions || ['Hypertension'],
-            medicalDevices: e.medicalDevices || [],
-            dietaryPreferences: e.dietaryPreferences || ['Vegetarian'],
-            languages: e.languages || ['Tamil', 'English'],
-            primaryLanguage: e.primaryLanguage || 'Tamil',
-            shiftPreference: e.shiftPreference || 'TWELVE_HOUR_DAY_NIGHT',
-            dailyRoutine: e.dailyRoutine || { wakeTime: '06:30', bedTime: '21:30' },
-            additionalNotes: e.additionalNotes || 'Directly loaded from CareConnect backend.',
-            activeShiftStatus: 'ON_DUTY',
-            lastVitals: { bp: '126/82', pulse: 76, recordedAt: 'Today, 08:30 AM' },
-          }));
-
-          // Deduplicate by ID
-          const existingIds = new Set(mappedLive.map((m) => m.id));
-          const rest = prev.filter((p) => !existingIds.has(p.id));
-          return [...mappedLive, ...rest];
-        });
-      }
-
-      // 2. Caregivers
-      if (results[1].status === 'fulfilled' && Array.isArray(results[1].value) && results[1].value.length > 0) {
-        const liveCgs = results[1].value;
-        const mappedCgs: AdminCaregiverItem[] = liveCgs.map((cg: any) => ({
-          id: String(cg.id),
-          fullName: cg.fullName || cg.full_name || 'Caregiver',
-          phone: cg.phone || '+91 98402 11223',
-          gender: cg.gender || 'Female',
-          rating: cg.rating || 4.8,
-          experienceYears: cg.experienceYears || cg.experience_years || 4,
-          locality: cg.locality || 'Adyar',
-          primaryLanguage: cg.primary_language || 'Tamil',
-          languages: Array.isArray(cg.languages) ? cg.languages : [cg.languages || 'Tamil'],
-          skills: Array.isArray(cg.skills) ? cg.skills : ['Elder Care', 'Patient Care Assistance'],
-          specializations: Array.isArray(cg.specializations) ? cg.specializations : ['Geriatric Care'],
-          isBufferPool: Boolean(cg.isBufferPool),
-          isPoliceVerified: Boolean(cg.is_police_verified ?? true),
-          isClinicalCertified: Boolean(cg.is_clinical_certified ?? true),
-          isIdentityVerified: Boolean(cg.is_identity_verified ?? true),
-          status: cg.status || 'AVAILABLE',
-          hourlyRate: cg.hourly_rate || 150,
-          dailyRate: cg.daily_rate || 1400,
+      const eldersRes = await api.listElders().catch(() => null);
+      if (eldersRes && Array.isArray(eldersRes) && eldersRes.length > 0) {
+        const mappedElders: AdminElderItem[] = eldersRes.map((e: any, idx: number) => ({
+          id: e.id || `eld_live_${idx}`,
+          name: e.name || 'Elder Beneficiary',
+          age: e.age || 75,
+          gender: e.gender || 'FEMALE',
+          sponsorName: e.sponsor_name || e.emergency_contact_name || 'Family Sponsor',
+          sponsorPhone: e.sponsor_phone || e.emergency_contact_phone || '+91 98400 00000',
+          sponsorRelation: 'Family Sponsor',
+          addressLine1: e.address || 'Chennai Address',
+          locality: e.locality || 'South Chennai Corridor (Adyar)',
+          city: 'Chennai',
+          postalCode: e.postal_code || '600020',
+          latitude: e.latitude || 13.0067,
+          longitude: e.longitude || 80.2575,
+          assignedCaregiverName: e.assigned_caregiver_name || 'Priya Sundaram',
+          status: e.status === 'ACTIVE' ? 'ACTIVE' : 'ACTIVE',
+          mobilityLevel: e.mobility_level || 'CANE_WALKER',
+          medicalConditions: e.medical_conditions || ['Hypertension'],
+          medicalDevices: e.medical_devices || [],
+          dietaryPreferences: e.dietary_preferences || ['Vegetarian'],
+          languages: ['Tamil', 'English'],
+          primaryLanguage: 'Tamil',
+          shiftPreference: 'TWELVE_HOUR_DAY_NIGHT',
+          activeShiftStatus: 'ON_DUTY',
+          lastVitals: {
+            bp: '128/82',
+            pulse: 74,
+            recordedAt: 'Today, 08:30 AM',
+          },
         }));
-        if (mappedCgs.length > 0) {
-          setCaregivers(mappedCgs);
-        }
+        setElders(mappedElders);
       }
 
-      // 3. Incidents / SOS
-      if (results[2].status === 'fulfilled' && Array.isArray(results[2].value) && results[2].value.length > 0) {
-        const liveIncidents = results[2].value;
-        setAlerts((currentAlerts) => {
-          const resolvedSet = new Set(
-            currentAlerts.filter((a) => a.status === 'RESOLVED').map((a) => a.id)
-          );
-          const mappedAlerts: AdminSosAlert[] = liveIncidents.map((inc: any) => ({
-            id: inc.id,
-            elderId: inc.elderId || 'eld_unknown',
-            elderName: inc.elderName || 'CareConnect Beneficiary',
-            elderAge: 75,
-            locality: inc.locality || 'Central Chennai',
-            postalCode: '600020',
-            latitude: inc.locationCoordinates?.latitude || 13.0067,
-            longitude: inc.locationCoordinates?.longitude || 80.2575,
-            emergencyContact: 'Family Primary Contact',
-            emergencyPhone: '+91 98401 23456',
-            assignedCaregiver: inc.reportedBy || 'Corridor Care Attendant',
-            priority: inc.priority || 'P1',
-            status: resolvedSet.has(inc.id)
-              ? 'RESOLVED'
-              : inc.status === 'RESOLVED'
-              ? 'RESOLVED'
-              : inc.status === 'ACKNOWLEDGED'
-              ? 'DISPATCHED'
-              : 'OPEN',
-            title: inc.title || 'Emergency Care Alert',
-            description: inc.description || 'Emergency notification logged by attendant.',
-            triggeredAt: new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            resolutionNotes: inc.resolutionNotes,
-          }));
-
-          const liveIds = new Set(mappedAlerts.map((m) => m.id));
-          const unrepresented = currentAlerts.filter((c) => !liveIds.has(c.id));
-          const merged = [...mappedAlerts, ...unrepresented];
-          try {
-            localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(merged));
-          } catch (e) {
-            console.warn('Error saving merged SOS alerts:', e);
-          }
-          return merged;
-        });
+      const caregiversRes = await api.getAllCaregivers().catch(() => null);
+      if (caregiversRes && Array.isArray(caregiversRes) && caregiversRes.length > 0) {
+        const mappedCg: AdminCaregiverItem[] = caregiversRes.map((c: any, idx: number) => ({
+          id: c.id || `cg_live_${idx}`,
+          fullName: c.full_name || c.name || 'Care Attendant',
+          phone: c.phone || '+91 98400 11111',
+          gender: c.gender || 'Female',
+          rating: c.rating || 4.8,
+          experienceYears: c.experience_years || 5,
+          locality: c.locality || 'South Chennai Corridor (Adyar)',
+          primaryLanguage: 'Tamil',
+          languages: Array.isArray(c.languages)
+            ? c.languages
+            : typeof c.languages === 'string'
+            ? c.languages.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : ['Tamil', 'English'],
+          skills: Array.isArray(c.skills)
+            ? c.skills
+            : typeof c.skills === 'string'
+            ? c.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : ['Assisted Daily Living (ADL)', 'Vitals Triage'],
+          specializations: Array.isArray(c.specializations)
+            ? c.specializations
+            : typeof c.specializations === 'string'
+            ? c.specializations.split(',').map((s: string) => s.trim()).filter(Boolean)
+            : ['Assisted Daily Living (ADL) Support'],
+          isBufferPool: Boolean(c.is_buffer_pool),
+          isStandbyReserve: Boolean(c.is_buffer_pool),
+          isPoliceVerified: true,
+          isClinicalCertified: true,
+          isIdentityVerified: true,
+          status: c.status === 'ON_DUTY' ? 'ON_DUTY' : 'AVAILABLE',
+          rosterStatus: c.status === 'ON_DUTY' ? 'ACTIVE_SHIFT' : 'STANDBY_RESERVE',
+        }));
+        setCaregivers(mappedCg);
       }
-    } catch (err) {
-      console.warn('Backend telemetries unavailable, using mock dataset:', err);
+    } catch (e) {
+      console.warn('Backend live sync failed, continuing with cached operational state:', e);
     } finally {
       setIsRefreshing(false);
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadLiveData();
   }, [loadLiveData]);
 
-  // Derived metrics
+  // Persist alerts to localStorage
+  const persistAlerts = useCallback((updatedAlerts: AdminSosAlert[]) => {
+    setAlerts(updatedAlerts);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(updatedAlerts));
+      } catch (e) {
+        console.warn('Could not persist alerts to localStorage:', e);
+      }
+    }
+  }, []);
+
+  // Multi-Zone Tenancy Scoping Filters
+  const matchesSectorScope = useCallback(
+    (locality: string, scope: OperatingSectorScope) => {
+      if (scope === 'ALL') return true;
+      const loc = locality.toLowerCase();
+      switch (scope) {
+        case 'SOUTH_CHENNAI':
+          return loc.includes('south chennai') || loc.includes('adyar') || loc.includes('thiruvanmiyur');
+        case 'ANNA_NAGAR':
+          return loc.includes('anna nagar') || loc.includes('shenoy');
+        case 'MYLAPORE':
+          return loc.includes('mylapore') || loc.includes('mandaveli') || loc.includes('alwarpet');
+        case 'ADYAR_BESANT':
+          return loc.includes('besant') || loc.includes('adyar');
+        case 'VELACHERY':
+          return loc.includes('velachery') || loc.includes('guindy');
+        case 'T_NAGAR':
+          return loc.includes('t. nagar') || loc.includes('t nagar') || loc.includes('kodambakkam');
+        case 'OMR':
+          return loc.includes('omr') || loc.includes('thoraipakkam') || loc.includes('perungudi');
+        default:
+          return true;
+      }
+    },
+    []
+  );
+
+  const displayedElders = useMemo(() => {
+    return elders.filter((e) => matchesSectorScope(e.locality, activeSectorScope));
+  }, [elders, activeSectorScope, matchesSectorScope]);
+
+  const displayedCaregivers = useMemo(() => {
+    return caregivers.filter((c) => matchesSectorScope(c.locality, activeSectorScope));
+  }, [caregivers, activeSectorScope, matchesSectorScope]);
+
+  const displayedAlerts = useMemo(() => {
+    return alerts.filter((a) => matchesSectorScope(a.locality, activeSectorScope));
+  }, [alerts, activeSectorScope, matchesSectorScope]);
+
+  // Metrics calculation
   const metrics: AdminMetrics = useMemo(() => {
-    return calculateAdminMetrics(elders, caregivers, alerts);
-  }, [elders, caregivers, alerts]);
+    return calculateAdminMetrics(displayedElders, displayedCaregivers, displayedAlerts);
+  }, [displayedElders, displayedCaregivers, displayedAlerts]);
 
-  // Status changer for an elder
-  const handleStatusChange = (elderId: string, newStatus: 'ACTIVE' | 'PENDING' | 'INACTIVE') => {
-    setElders((prev) =>
-      prev.map((e) => (e.id === elderId ? { ...e, status: newStatus } : e))
-    );
-    if (selectedElderForDrawer && selectedElderForDrawer.id === elderId) {
-      setSelectedElderForDrawer((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-  };
+  // Status Change Handlers
+  const handleStatusChange = useCallback(
+    (elderId: string, newStatus: 'ACTIVE' | 'PENDING' | 'INACTIVE') => {
+      setElders((prev) =>
+        prev.map((e) => (e.id === elderId ? { ...e, status: newStatus } : e))
+      );
+    },
+    []
+  );
 
-  // Status changer for a caregiver
-  const handleCaregiverStatusChange = (
-    caregiverId: string,
-    newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE'
-  ) => {
-    setCaregivers((prev) =>
-      prev.map((c) => (c.id === caregiverId ? { ...c, status: newStatus } : c))
-    );
-    if (selectedCaregiverForDrawer && selectedCaregiverForDrawer.id === caregiverId) {
-      setSelectedCaregiverForDrawer((prev) => (prev ? { ...prev, status: newStatus } : null));
-    }
-  };
+  const handleCaregiverStatusChange = useCallback(
+    (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => {
+      setCaregivers((prev) =>
+        prev.map((c) =>
+          c.id === caregiverId
+            ? {
+                ...c,
+                status: newStatus,
+                rosterStatus:
+                  newStatus === 'ON_DUTY'
+                    ? 'ACTIVE_SHIFT'
+                    : newStatus === 'ON_HANDOFF'
+                    ? 'ON_HANDOFF'
+                    : newStatus === 'AVAILABLE'
+                    ? 'STANDBY_RESERVE'
+                    : 'OFF_DUTY',
+              }
+            : c
+        )
+      );
+    },
+    []
+  );
 
-  // Reassign caregiver corridor
-  const handleReassignCaregiverCorridor = (
-    caregiverId: string,
-    newCorridor: string
-  ) => {
+  const handleReassignCorridor = useCallback((caregiverId: string, newCorridor: string) => {
     setCaregivers((prev) =>
       prev.map((c) => (c.id === caregiverId ? { ...c, locality: newCorridor } : c))
     );
-    if (selectedCaregiverForDrawer && selectedCaregiverForDrawer.id === caregiverId) {
-      setSelectedCaregiverForDrawer((prev) => (prev ? { ...prev, locality: newCorridor } : null));
-    }
-  };
+  }, []);
 
-  // View elder profile from caregiver drawer
-  const handleViewElderFromCaregiver = (elderName: string, elderId?: string) => {
-    setSelectedCaregiverForDrawer(null);
-    const targetElder = elders.find((e) => (elderId && e.id === elderId) || e.name === elderName);
-    if (targetElder) {
-      setSelectedElderForDrawer(targetElder);
-    }
-  };
-
-  // Dispatch caregiver to SOS
-  const handleDispatchCaregiverToSos = (_caregiver: AdminCaregiverItem) => {
-    setSelectedCaregiverForDrawer(null);
-    handleSelectTab('SOS');
-  };
-
-  // SOS Resolution
-  const handleResolveAlert = async (alertId: string, resolutionNotes: string) => {
-    setAlerts((prev) => {
-      const updated = prev.map((a) =>
+  const handleResolveAlert = useCallback(
+    (alertId: string, resolutionNotes: string) => {
+      const updated = alerts.map((a) =>
         a.id === alertId
-          ? { ...a, status: 'RESOLVED' as const, resolutionNotes }
+          ? {
+              ...a,
+              status: 'RESOLVED' as const,
+              resolutionNotes,
+            }
           : a
       );
-      try {
-        localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Error saving resolved SOS alerts:', e);
-      }
-      return updated;
-    });
-    try {
-      await api.resolveIncident(alertId, resolutionNotes);
-    } catch {
-      // Handled locally
-    }
-  };
+      persistAlerts(updated);
+    },
+    [alerts, persistAlerts]
+  );
 
-  // Supervisor Dispatch
-  const handleDispatchSupervisor = async (
-    alertId: string,
-    supervisorName: string,
-    notes: string
-  ) => {
-    setAlerts((prev) => {
-      const updated = prev.map((a) =>
+  const handleDispatchSupervisor = useCallback(
+    (alertId: string, supervisorName: string, notes: string) => {
+      const updated = alerts.map((a) =>
         a.id === alertId
           ? {
               ...a,
               status: 'DISPATCHED' as const,
               dispatchedSupervisor: supervisorName,
-              description: `${a.description} | Directive: ${notes}`,
+              resolutionNotes: notes,
             }
           : a
       );
-      try {
-        localStorage.setItem(SOS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Error saving dispatched SOS alerts:', e);
-      }
-      return updated;
-    });
-    try {
-      await api.escalateIncident(alertId, `Dispatched: ${supervisorName}. Directive: ${notes}`);
-    } catch {
-      // Handled locally
-    }
-  };
+      persistAlerts(updated);
+    },
+    [alerts, persistAlerts]
+  );
 
-  // Jump to Map from an Elder or SOS Alert
-  const handleViewElderOnMap = (elder: AdminElderItem) => {
-    setSelectedElderForDrawer(null);
-    setFocusedCoordinates([elder.latitude, elder.longitude]);
-    handleSelectTab('MAP');
-  };
-
-  const handleViewAlertOnMap = (lat: number, lng: number) => {
+  const handleViewAlertOnMap = useCallback((lat: number, lng: number) => {
     setFocusedCoordinates([lat, lng]);
     handleSelectTab('MAP');
-  };
+  }, [handleSelectTab]);
+
+  const handleViewElderFromCaregiver = useCallback(
+    (elderName: string, elderId?: string) => {
+      setSelectedCaregiverForDrawer(null);
+      const targetElder = elders.find(
+        (e) => (elderId && e.id === elderId) || e.name.toLowerCase() === elderName.toLowerCase()
+      );
+      if (targetElder) {
+        setSelectedElderForDrawer(targetElder);
+      } else {
+        handleSelectTab('ELDERS');
+      }
+    },
+    [elders, handleSelectTab]
+  );
+
+  const handleDispatchCaregiverToSos = useCallback(
+    (cg: AdminCaregiverItem) => {
+      const openAlert = alerts.find((a) => a.status === 'OPEN');
+      if (openAlert) {
+        handleDispatchSupervisor(
+          openAlert.id,
+          `${cg.fullName} (Standby Attendant - ${cg.locality})`,
+          'Direct SLA rapid replacement dispatched from Standby Reserve Hub.'
+        );
+      }
+      setSelectedCaregiverForDrawer(null);
+      handleSelectTab('SOS');
+    },
+    [alerts, handleDispatchSupervisor, handleSelectTab]
+  );
+
+  const handleUpdatePreferredHospital = useCallback(
+    (elderId: string, hospital: NearbyHospital) => {
+      setElders((prev) =>
+        prev.map((e) => (e.id === elderId ? { ...e, preferredHospital: hospital } : e))
+      );
+      if (selectedElderForDrawer && selectedElderForDrawer.id === elderId) {
+        setSelectedElderForDrawer((prev) => (prev ? { ...prev, preferredHospital: hospital } : null));
+      }
+    },
+    [selectedElderForDrawer]
+  );
+
+  const handleUpdateElderOffer = useCallback(
+    (elderId: string, offer: CareseekerOffer | null) => {
+      setElders((prev) =>
+        prev.map((e) => (e.id === elderId ? { ...e, appliedOffer: offer || undefined } : e))
+      );
+      if (selectedElderForDrawer && selectedElderForDrawer.id === elderId) {
+        setSelectedElderForDrawer((prev) =>
+          prev ? { ...prev, appliedOffer: offer || undefined } : null
+        );
+      }
+    },
+    [selectedElderForDrawer]
+  );
 
   if (!isAdminAuthenticated) {
     return (
@@ -386,40 +421,26 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/90 text-slate-900 flex antialiased">
-      {/* 1. Left Sidebar Navigation */}
-      <AdminSidebar
+    <div className="relative h-screen w-screen overflow-hidden bg-slate-50 text-slate-800">
+      <AdminLayout
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
-        openSosCount={metrics.openSosTickets}
-        isCollapsed={isSidebarCollapsed}
+        metrics={metrics}
+        isSidebarCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-
-      {/* 2. Main Content Canvas */}
-      <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'ml-20' : 'ml-64'
-        }`}
+        isRefreshing={isRefreshing}
+        onRefresh={loadLiveData}
+        onLogout={handleLogout}
+        activeSectorScope={activeSectorScope}
+        onSectorScopeChange={setActiveSectorScope}
+        activeRole={activeRole}
       >
-        {/* Top Header */}
-        <AdminHeader
-          activeTab={activeTab}
-          metrics={metrics}
-          isRefreshing={isRefreshing}
-          onRefresh={loadLiveData}
-          onLogout={handleLogout}
-          onNavigateTab={handleSelectTab}
-        />
-
-        {/* Viewport Content */}
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto">
-          {activeTab === 'OVERVIEW' && (
+        {activeTab === 'OVERVIEW' && (
             <AdminOverviewView
               metrics={metrics}
-              elders={elders}
-              caregivers={caregivers}
-              alerts={alerts}
+              elders={displayedElders}
+              caregivers={displayedCaregivers}
+              alerts={displayedAlerts}
               onNavigateTab={handleSelectTab}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
             />
@@ -427,7 +448,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {activeTab === 'ELDERS' && (
             <AdminEldersView
-              elders={elders}
+              elders={displayedElders}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
               onStatusChange={handleStatusChange}
               onAddElder={onAddElderFromAdmin}
@@ -437,24 +458,59 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {activeTab === 'CAREGIVERS' && (
             <AdminCaregiversView
-              caregivers={caregivers}
+              caregivers={displayedCaregivers}
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
               onStatusChange={handleCaregiverStatusChange}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
-          {activeTab === 'CARE_PLANS' && (
-            <AdminCarePlansView
+          {activeTab === 'ATTENDANCE' && (
+            <AdminAttendanceView
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onSelectCaregiverByName={(cgName) => {
+                const found = caregivers.find(
+                  (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
+                );
+                if (found) setSelectedCaregiverForDrawer(found);
+              }}
+              onSelectElderByName={(eName) => {
+                const found = elders.find(
+                  (e) => e.name.toLowerCase() === eName.toLowerCase()
+                );
+                if (found) setSelectedElderForDrawer(found);
+              }}
+            />
+          )}
+
+          {(activeTab === 'SERVICES_PRICING' || activeTab === 'SERVICES' || activeTab === 'PRICING' || activeTab === 'CARE_PLANS') && (
+            <AdminServicesPricingView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              defaultSubTab={activeTab === 'PRICING' ? 'PRICING' : 'SERVICES'}
+            />
+          )}
+
+          {activeTab === 'REPORTS' && (
+            <AdminReportsView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+            />
+          )}
+
+          {(activeTab === 'SETTINGS' || activeTab === 'SETTINGS_ACCESS') && (
+            <AdminSettingsView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              activeRole={activeRole}
+              onRoleChange={setActiveRole}
+              activeSectorScope={activeSectorScope}
+              onSectorScopeChange={setActiveSectorScope}
             />
           )}
 
           {activeTab === 'MAP' && (
             <AdminLiveMapView
-              elders={elders}
-              caregivers={caregivers}
-              alerts={alerts}
+              elders={displayedElders}
+              caregivers={displayedCaregivers}
+              alerts={displayedAlerts}
               focusedCoordinates={focusedCoordinates}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
@@ -464,33 +520,39 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           {activeTab === 'SOS' && (
             <AdminSosPanel
-              alerts={alerts}
+              alerts={displayedAlerts}
               onResolveAlert={handleResolveAlert}
               onDispatchSupervisor={handleDispatchSupervisor}
               onViewOnMap={handleViewAlertOnMap}
               onBackToDashboard={() => handleSelectTab('OVERVIEW')}
             />
           )}
-        </main>
-      </div>
+      </AdminLayout>
 
-      {/* Slide-over Profile Drawer (Elder) */}
-      <ElderDetailDrawer
-        elder={selectedElderForDrawer}
-        onClose={() => setSelectedElderForDrawer(null)}
-        onStatusChange={handleStatusChange}
-        onViewOnMap={handleViewElderOnMap}
-      />
+      {/* Slide-over Profile Drawer (Careseeker) */}
+      {selectedElderForDrawer && (
+        <CareseekerDetailDrawer
+          elder={selectedElderForDrawer}
+          isOpen={Boolean(selectedElderForDrawer)}
+          onClose={() => setSelectedElderForDrawer(null)}
+          onStatusChange={handleStatusChange}
+          onUpdatePreferredHospital={handleUpdatePreferredHospital}
+          onUpdateOffer={handleUpdateElderOffer}
+        />
+      )}
 
       {/* Slide-over Profile Drawer (Caregiver) */}
-      <CaregiverDetailDrawer
-        caregiver={selectedCaregiverForDrawer}
-        onClose={() => setSelectedCaregiverForDrawer(null)}
-        onStatusChange={handleCaregiverStatusChange}
-        onReassignCorridor={handleReassignCaregiverCorridor}
-        onViewElder={handleViewElderFromCaregiver}
-        onDispatchToSos={handleDispatchCaregiverToSos}
-      />
+      {selectedCaregiverForDrawer && (
+        <CaregiverDetailDrawer
+          caregiver={selectedCaregiverForDrawer}
+          isOpen={Boolean(selectedCaregiverForDrawer)}
+          onClose={() => setSelectedCaregiverForDrawer(null)}
+          onStatusChange={handleCaregiverStatusChange}
+          onReassignCorridor={handleReassignCorridor}
+          onViewElder={handleViewElderFromCaregiver}
+          onDispatchToSos={handleDispatchCaregiverToSos}
+        />
+      )}
     </div>
   );
 };

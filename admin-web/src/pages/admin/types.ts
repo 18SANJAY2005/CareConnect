@@ -1,10 +1,40 @@
 export type AdminTab =
   | 'OVERVIEW'
+  | 'MAP'
   | 'ELDERS'
   | 'CAREGIVERS'
-  | 'CARE_PLANS'
-  | 'MAP'
-  | 'SOS';
+  | 'ATTENDANCE'
+  | 'SOS'
+  | 'SERVICES_PRICING'
+  | 'SERVICES'
+  | 'PRICING'
+  | 'REPORTS'
+  | 'SETTINGS'
+  | 'SETTINGS_ACCESS'
+  | 'CARE_PLANS';
+
+export interface NearbyHospital {
+  id: string;
+  name: string;
+  locality?: string;
+  distanceKm: number;
+  etaMins?: number;
+  emergencyPhone: string;
+  contact?: string;
+  address: string;
+  traumaLevel?: string;
+}
+
+export interface ClinicalTaskItem {
+  id: string;
+  title: string;
+  category?: 'VITALS' | 'MEDICATION' | 'HYGIENE' | 'MOBILITY' | 'NUTRITION';
+  scheduledTime: string;
+  completedAt?: string;
+  status: 'COMPLETED' | 'PENDING' | 'MISSED_FLAGGED' | 'Completed' | 'Pending' | 'Flagged';
+  notes?: string;
+  performedBy?: string;
+}
 
 export interface AdminElderItem {
   id: string;
@@ -40,6 +70,21 @@ export interface AdminElderItem {
     pulse?: number;
     recordedAt?: string;
   };
+  preferredHospital?: NearbyHospital;
+  nearbyHospitals?: NearbyHospital[];
+  dailyTasks?: ClinicalTaskItem[];
+  appliedOffer?: CareseekerOffer;
+  careRequirements?: string[];
+}
+
+export interface CareseekerOffer {
+  id: string;
+  code: string;
+  title: string;
+  discountLabel: string; // e.g., "15% OFF", "₹2,500 OFF"
+  description: string;
+  eligibility: string;
+  validUntil?: string;
 }
 
 export interface CaregiverCertification {
@@ -60,12 +105,57 @@ export interface CaregiverPersonalInfo {
   residentialArea: string;
 }
 
+export interface ShiftAttendanceLog {
+  id: string;
+  caregiverId: string;
+  caregiverName: string;
+  elderId?: string;
+  elderName?: string;
+  locality: string;
+  zone?: string;
+  shiftDate: string;
+  shiftType: string;
+  scheduledCheckIn: string;
+  actualCheckIn: string;
+  scheduledIn?: string;
+  scheduledOut?: string;
+  actualIn?: string;
+  actualOut?: string;
+  isCheckInGeofenceVerified: boolean;
+  scheduledCheckOut: string;
+  actualCheckOut?: string;
+  isCheckOutGeofenceVerified?: boolean;
+  totalHoursLogged: string;
+  status:
+    | 'ON_TIME_CHECK_IN'
+    | 'LATE_CHECK_IN'
+    | 'ACTIVE_ON_DUTY'
+    | 'CLOCKED_OUT'
+    | 'OVERTIME'
+    | 'ON_DUTY_WITHIN_SHIFT'
+    | 'COMPLETED'
+    | 'On Time'
+    | 'Late'
+    | 'Active'
+    | 'Completed'
+    | 'Flagged';
+  geofenceStatus: 'VERIFIED' | 'OFF_SITE_FLAG';
+  handoffNotes?: string;
+  vitalsHandedOver?: boolean;
+  supervisorSignoff?: string;
+  tasksCompletedCount?: number;
+  tasksTotalCount?: number;
+  tasks?: ClinicalTaskItem[];
+}
+
 export interface CaregiverShiftSchedule {
   shiftType: string;
   workingDays: string;
   lastCheckIn?: string;
   hoursLoggedThisMonth: number;
   nextShiftTime?: string;
+  currentShiftAttendance?: ShiftAttendanceLog;
+  recentAttendanceLogs?: ShiftAttendanceLog[];
 }
 
 export interface CaregiverPerformanceMetrics {
@@ -90,27 +180,36 @@ export interface AdminCaregiverItem {
   rating: number;
   experienceYears: number;
   locality: string;
+  assignedCorridor?: string;
   primaryLanguage: string;
   languages: string[];
   skills: string[];
   specializations: string[];
   isBufferPool: boolean;
+  isStandbyReserve?: boolean;
   isPoliceVerified: boolean;
   isClinicalCertified: boolean;
   isIdentityVerified: boolean;
-  status: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE';
+  status: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF';
+  rosterStatus?: 'STANDBY_RESERVE' | 'ACTIVE_SHIFT' | 'OFF_DUTY' | 'ON_HANDOFF';
   activeElderName?: string;
   activeElderId?: string;
-  hourlyRate?: number;
-  dailyRate?: number;
   personalInfo?: CaregiverPersonalInfo;
   certifications?: CaregiverCertification[];
   clinicalCompetencies?: string[];
   shiftSchedule?: CaregiverShiftSchedule;
+  shiftAttendance?: ShiftAttendanceLog;
+  attendance?: ShiftAttendanceLog;
+  attendanceHistory7Days?: ShiftAttendanceLog[];
   performanceMetrics?: CaregiverPerformanceMetrics;
   emergencyContact?: CaregiverEmergencyContact;
   bio?: string;
+  currentTasks?: ClinicalTaskItem[];
 }
+
+export type Careseeker = AdminElderItem;
+export type Caregiver = AdminCaregiverItem;
+export type ShiftTask = ClinicalTaskItem;
 
 export interface AdminSosAlert {
   id: string;
@@ -152,6 +251,109 @@ export interface AdminCarePlanItem {
   keyTasks: string[];
   notes: string;
 }
+
+export interface PlatformService {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  icon: 'mobility' | 'medical' | 'medication' | 'monitoring';
+  status: 'Active';
+}
+
+export interface ClinicalServiceItem {
+  id: string;
+  serviceCode: string;
+  title: string;
+  category: 'DAILY_LIVING' | 'POST_OPERATIVE' | 'DEMENTIA_PALLIATIVE' | 'NIGHT_WATCH' | 'RESPITE' | 'CRITICAL_CARE';
+  careProtocol: string;
+  scopeOfWork: string[];
+  caregiverQualification: string;
+  qualificationBadge: 'ANM' | 'GDA' | 'CGA' | 'GNM' | 'SPECIALIST';
+  standardDuration: string;
+  recommendedFor: string[];
+  minimumCommitment: string;
+  status: 'ACTIVE' | 'ARCHIVED';
+  activeSubscribers: number;
+}
+
+export interface PricingTariffItem {
+  id: string;
+  serviceCode: string;
+  serviceName: string;
+  duration: string;
+  careseekerShiftPrice: number;
+  careseekerMonthlyPrice: number;
+  caregiverPayoutPerShift: number;
+  caregiverMonthlyPayout: number;
+  platformMarginPct: number;
+  emergencySurchargeRate: number;
+  locationMultipliers: Record<string, number>;
+  notes: string;
+  status: 'ACTIVE' | 'PENDING_REVISION';
+}
+
+export type OpsRole =
+  | 'SUPER_ADMIN'
+  | 'REGIONAL_SUPERVISOR'
+  | 'CLINICAL_AUDITOR'
+  | 'BILLING_SPECIALIST';
+
+export interface OpsStaffMember {
+  id: string;
+  name: string;
+  email: string;
+  role: OpsRole;
+  roleTitle: string;
+  assignedSector: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  lastLogin: string;
+  phone: string;
+}
+
+export type AdminRole =
+  | 'Super Admin'
+  | 'Operations Dispatcher'
+  | 'Triage & Support Desk'
+  | 'Auditor / Compliance';
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: AdminRole;
+  assignedLocations: string[]; // e.g., ["All Corridors"] or ["Anna Nagar Central", "Mylapore"]
+  status: 'Active' | 'Invited' | 'Suspended';
+  lastActive?: string;
+  createdAt: string;
+}
+
+export interface RolePermissionDefinition {
+  role: OpsRole;
+  title: string;
+  description: string;
+  permissions: {
+    canViewClinicalCharts: boolean;
+    canEditCarePlans: boolean;
+    canDispatchStandby: boolean;
+    canReassignRoster: boolean;
+    canViewPricingAndTariffs: boolean;
+    canEditPricingAndTariffs: boolean;
+    canApprovePayouts: boolean;
+    canManageOpsStaff: boolean;
+  };
+}
+
+export type OperatingSectorScope =
+  | 'ALL'
+  | 'SOUTH_CHENNAI'
+  | 'ANNA_NAGAR'
+  | 'MYLAPORE'
+  | 'ADYAR_BESANT'
+  | 'VELACHERY'
+  | 'T_NAGAR'
+  | 'OMR';
 
 export interface AdminMetrics {
   totalElders: number;

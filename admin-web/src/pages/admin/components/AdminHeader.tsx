@@ -6,8 +6,9 @@ import {
   Shield,
   LogOut,
   ArrowLeft,
+  MapPin,
 } from 'lucide-react';
-import type { AdminTab, AdminMetrics } from '../types';
+import type { AdminTab, AdminMetrics, OperatingSectorScope, OpsRole } from '../types';
 
 interface AdminHeaderProps {
   activeTab: AdminTab;
@@ -16,6 +17,9 @@ interface AdminHeaderProps {
   onRefresh: () => void;
   onLogout: () => void;
   onNavigateTab: (tab: AdminTab) => void;
+  activeSectorScope?: OperatingSectorScope;
+  onSectorScopeChange?: (scope: OperatingSectorScope) => void;
+  activeRole?: OpsRole;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -25,23 +29,49 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onRefresh,
   onLogout,
   onNavigateTab,
+  activeSectorScope = 'ALL',
+  onSectorScopeChange,
+  activeRole = 'SUPER_ADMIN',
 }) => {
   const getTabTitle = () => {
     switch (activeTab) {
       case 'OVERVIEW':
-        return 'Operations Dashboard';
+        return 'Operations Command Desk';
       case 'ELDERS':
         return 'Careseekers Directory';
       case 'CAREGIVERS':
-        return 'Caregiver Network & Buffer Pool';
+        return 'Caregiver Network & Standby Reserve';
+      case 'ATTENDANCE':
+        return 'Shift Attendance & Task Monitoring';
+      case 'SERVICES_PRICING':
+      case 'SERVICES':
+      case 'PRICING':
       case 'CARE_PLANS':
-        return 'Care Plans & Daily Routines';
+        return 'Services Catalog';
+      case 'REPORTS':
+        return 'Operational & Clinical Reports';
       case 'MAP':
-        return 'Live Geographic Serviceability Map';
+        return 'Corridor Serviceability & Live Map';
       case 'SOS':
-        return 'Emergency SOS & Escalations';
+        return 'Emergency SOS Incident Desk';
+      case 'SETTINGS':
+      case 'SETTINGS_ACCESS':
+        return 'Access Control & Governance Settings';
       default:
         return 'Admin Portal';
+    }
+  };
+
+  const getRoleDisplayName = (role: OpsRole) => {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return 'Super Admin';
+      case 'REGIONAL_SUPERVISOR':
+        return 'Ops Supervisor';
+      case 'CLINICAL_AUDITOR':
+        return 'Clinical Auditor';
+      case 'BILLING_SPECIALIST':
+        return 'Billing Specialist';
     }
   };
 
@@ -52,7 +82,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {activeTab !== 'OVERVIEW' && (
           <button
             onClick={() => onNavigateTab('OVERVIEW')}
-            className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 group shadow-2xs"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 group shadow-2xs cursor-pointer"
             title="Back to Dashboard"
             aria-label="Back to Dashboard"
           >
@@ -60,34 +90,40 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           </button>
         )}
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-slate-400 truncate">
-            {activeTab !== 'OVERVIEW' ? (
-              <button
-                onClick={() => onNavigateTab('OVERVIEW')}
-                className="shrink-0 hover:text-teal-700 transition cursor-pointer"
-              >
-                CareConnect HQ
-              </button>
-            ) : (
-              <span className="shrink-0">CareConnect HQ</span>
-            )}
-            <span>/</span>
-            <span className="text-teal-700 font-extrabold truncate">
-              {activeTab === 'ELDERS' ? 'CARESEEKERS' : getTabTitle()}
-            </span>
-          </div>
           <h1 className="text-base md:text-lg font-heading font-extrabold text-slate-900 leading-tight truncate">
             {getTabTitle()}
           </h1>
         </div>
       </div>
 
+      {/* Center: Geographic Location Scoping Selector */}
+      {onSectorScopeChange && (
+        <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sector:</span>
+          <select
+            value={activeSectorScope}
+            onChange={(e) => onSectorScopeChange(e.target.value as OperatingSectorScope)}
+            className="bg-transparent font-bold text-slate-800 text-xs focus:outline-hidden cursor-pointer"
+          >
+            <option value="ALL">All Chennai Sectors (Global)</option>
+            <option value="SOUTH_CHENNAI">South Chennai Corridor (Adyar, Besant Nagar)</option>
+            <option value="ANNA_NAGAR">Anna Nagar Central Zone</option>
+            <option value="MYLAPORE">Mylapore Heritage Ward</option>
+            <option value="ADYAR_BESANT">Adyar-Besant Nagar Sector</option>
+            <option value="VELACHERY">Velachery Tech Corridor</option>
+            <option value="T_NAGAR">T. Nagar Commercial Ward</option>
+            <option value="OMR">OMR Expressway Sector</option>
+          </select>
+        </div>
+      )}
+
       {/* Quick Operations Telemetry Badges */}
       <div className="hidden lg:flex items-center gap-2.5 shrink-0">
         {/* Active Shifts Indicator */}
         <button
           onClick={() => onNavigateTab('CAREGIVERS')}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200/80 text-xs font-bold text-teal-800 hover:bg-teal-100/70 transition"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-50 border border-teal-200/80 text-xs font-bold text-teal-800 hover:bg-teal-100/70 transition cursor-pointer"
           title="View active shifts"
         >
           <span className="relative flex h-2 w-2">
@@ -100,7 +136,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {/* SOS Alert Indicator */}
         <button
           onClick={() => onNavigateTab('SOS')}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
             metrics.openSosTickets > 0
               ? 'bg-rose-50 border border-rose-300 text-rose-700 animate-pulse hover:bg-rose-100'
               : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200/70'
@@ -115,14 +151,14 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <span>
             {metrics.openSosTickets > 0
               ? `${metrics.openSosTickets} Open SOS Tickets`
-              : 'SOS Desk All Clear'}
+              : 'SOS Desk Clear'}
           </span>
         </button>
 
         {/* Chennai Corridors Coverage */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs font-medium text-slate-600">
           <Radio className="w-3 h-3 text-emerald-600" />
-          <span>{metrics.serviceableCorridors} Corridors Monitored</span>
+          <span>{metrics.serviceableCorridors} Corridors</span>
         </div>
       </div>
 
@@ -132,7 +168,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
+          className="p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
           title="Refresh Telemetry Data"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-teal-600' : ''}`} />
@@ -141,7 +177,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         {/* Notification Bell */}
         <button
           onClick={() => onNavigateTab('SOS')}
-          className="relative p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition"
+          className="relative p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
           title="Alerts and Notifications"
         >
           <Bell className="w-4 h-4" />
@@ -152,24 +188,28 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           )}
         </button>
 
-        {/* Admin Profile Badge */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+        {/* Admin Profile & Role Badge */}
+        <button
+          onClick={() => onNavigateTab('SETTINGS_ACCESS')}
+          className="flex items-center gap-2 pl-2 border-l border-slate-200 hover:bg-slate-50 p-1.5 rounded-xl transition cursor-pointer"
+          title="Manage Role & Authorization Settings"
+        >
           <div className="w-8 h-8 rounded-full bg-teal-700 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-            OP
+            {activeRole === 'SUPER_ADMIN' ? 'SA' : activeRole === 'REGIONAL_SUPERVISOR' ? 'RS' : activeRole === 'CLINICAL_AUDITOR' ? 'CA' : 'BS'}
           </div>
           <div className="hidden sm:block text-left">
             <div className="text-xs font-bold text-slate-900 flex items-center gap-1">
-              <span>Ops Admin</span>
+              <span>{getRoleDisplayName(activeRole)}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             </div>
             <div className="text-[10px] text-slate-400 font-medium">Chennai HQ</div>
           </div>
-        </div>
+        </button>
 
         {/* Admin Logout */}
         <button
           onClick={onLogout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-xs font-bold text-slate-700 transition shadow-2xs"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 border border-slate-200 text-xs font-bold text-slate-700 transition shadow-2xs cursor-pointer"
           title="Sign Out of Operations Console"
         >
           <LogOut className="w-3.5 h-3.5" />

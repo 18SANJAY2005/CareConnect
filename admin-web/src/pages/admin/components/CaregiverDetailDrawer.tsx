@@ -14,14 +14,21 @@ import {
   BadgeCheck,
   Stethoscope,
   Compass,
+  Clock,
+  Timer,
+  Navigation,
+  FileText,
+  Calendar,
+  ListChecks,
 } from 'lucide-react';
-import type { AdminCaregiverItem } from '../types';
-import { serviceableCorridors } from '../mockData';
+import type { AdminCaregiverItem, ClinicalTaskItem } from '../types';
+import { serviceableCorridors, sample7DayHistoryPriya } from '../mockData';
 
 interface CaregiverDetailDrawerProps {
   caregiver: AdminCaregiverItem | null;
+  isOpen?: boolean;
   onClose: () => void;
-  onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE') => void;
+  onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => void;
   onReassignCorridor?: (caregiverId: string, newCorridor: string) => void;
   onViewElder?: (elderName: string, elderId?: string) => void;
   onDispatchToSos?: (caregiver: AdminCaregiverItem) => void;
@@ -29,6 +36,7 @@ interface CaregiverDetailDrawerProps {
 
 export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   caregiver,
+  isOpen,
   onClose,
   onStatusChange,
   onReassignCorridor,
@@ -36,15 +44,17 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   onDispatchToSos,
 }) => {
   const [isReassigningCorridor, setIsReassigningCorridor] = useState(false);
-  const [selectedCorridor, setSelectedCorridor] = useState(caregiver?.locality || 'Adyar');
+  const [selectedCorridor, setSelectedCorridor] = useState(caregiver?.locality || 'South Chennai Corridor (Adyar)');
   const [isFlagged, setIsFlagged] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [taskList, setTaskList] = useState<ClinicalTaskItem[]>(() => caregiver?.currentTasks || []);
 
-  // Sync corridor selection when caregiver changes
+  // Sync corridor selection and task list when caregiver changes
   useEffect(() => {
     if (caregiver) {
       setSelectedCorridor(caregiver.locality);
       setIsFlagged(false);
+      setTaskList(caregiver.currentTasks || []);
     }
   }, [caregiver]);
 
@@ -57,14 +67,15 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  if (!caregiver) return null;
+  // Null safety & open guard (all hooks called above)
+  if (!caregiver || (isOpen !== undefined && !isOpen)) return null;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleStatusClick = (newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE') => {
+  const handleStatusClick = (newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => {
     onStatusChange?.(caregiver.id, newStatus);
     showToast(`Status updated to ${newStatus.replace('_', ' ')}`);
   };
@@ -72,7 +83,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   const handleSaveCorridor = () => {
     onReassignCorridor?.(caregiver.id, selectedCorridor);
     setIsReassigningCorridor(false);
-    showToast(`Care attendant reassigned to ${selectedCorridor} Corridor`);
+    showToast(`Care attendant reassigned to ${selectedCorridor}`);
   };
 
   const handleToggleFlag = () => {
@@ -86,93 +97,197 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
     showToast(`Rapid emergency dispatch alert sent to ${caregiver.fullName}.`);
   };
 
-  // Clinical competencies fallback
-  const competencies = caregiver.clinicalCompetencies || caregiver.skills || [
-    'Vital Signs Monitoring',
-    'Bedside Assistance',
-    'Medication Reminders',
-    'Fall Prevention',
+  // Safe Array Destructuring with nullish coalescing
+  const certifications = caregiver?.certifications ?? [
+    {
+      name: 'BLS / CPR Certified',
+      issuer: 'American Heart Association',
+      issueDate: '2024-03-12',
+      verified: true,
+      credentialId: 'BLS-AHA-2024-88',
+    },
+    {
+      name: 'Geriatric Care Aide Level 2',
+      issuer: 'NSDC Healthcare Council',
+      issueDate: '2022-06-15',
+      verified: true,
+      credentialId: 'GCA-NSDC-TN-41',
+    },
+    {
+      name: 'Police Clearance Certificate',
+      issuer: 'Greater Chennai Police',
+      issueDate: '2026-01-10',
+      verified: true,
+      credentialId: 'PCC-CHN-2026-11',
+    },
+    {
+      name: 'Aadhaar Identity KYC',
+      issuer: 'UIDAI Verified',
+      issueDate: '2021-11-04',
+      verified: true,
+      credentialId: 'UID-BIOMETRIC-OK',
+    },
   ];
+
+  const skills = Array.isArray(caregiver?.skills)
+    ? caregiver.skills
+    : typeof caregiver?.skills === 'string'
+    ? (caregiver.skills as string).split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const attendanceLogs = caregiver?.attendanceHistory7Days ?? sample7DayHistoryPriya;
+
+  const rawComp = caregiver?.clinicalCompetencies || skills;
+  const competencies = Array.isArray(rawComp) && rawComp.length > 0
+    ? rawComp
+    : [
+        'Vital Signs Monitoring',
+        'Assisted Daily Living (ADL)',
+        'Bedside Assistance',
+        'Medication Reminders',
+        'Fall Prevention Protocol',
+      ];
+
+  const nameInitials = (caregiver?.fullName || 'CA')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'CA';
+
+  const attendance = caregiver.shiftAttendance || caregiver.shiftSchedule?.currentShiftAttendance || caregiver.attendance || {
+    id: `att_${caregiver.id}`,
+    caregiverId: caregiver.id,
+    caregiverName: caregiver.fullName,
+    locality: caregiver.locality,
+    shiftDate: 'Today',
+    shiftType: caregiver.shiftSchedule?.shiftType || '12-Hour Day Shift',
+    scheduledCheckIn: '08:00 AM',
+    actualCheckIn: caregiver.status === 'ON_DUTY' ? '07:54 AM' : 'Pending',
+    isCheckInGeofenceVerified: caregiver.status === 'ON_DUTY',
+    scheduledCheckOut: '08:00 PM',
+    actualCheckOut: undefined,
+    isCheckOutGeofenceVerified: false,
+    totalHoursLogged: caregiver.status === 'ON_DUTY' ? '9 hrs 18 mins' : '0 hrs',
+    status: caregiver.status === 'ON_DUTY' ? 'ON_DUTY_WITHIN_SHIFT' : 'PENDING_CHECK_IN',
+    handoffNotes: 'Morning vitals recorded and verified. Assisted daily mobility routine and medication protocol adherence.',
+    vitalsHandedOver: true,
+    supervisorSignoff: 'Supervisory Corridor Lead Verified',
+  };
+
+  const handleToggleTask = (taskId: string) => {
+    setTaskList((prev) =>
+      prev.map((t) => {
+        if (t.id !== taskId) return t;
+        const isDone = t.status === 'COMPLETED';
+        const nextStatus: ClinicalTaskItem['status'] = isDone ? 'PENDING' : 'COMPLETED';
+        const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        showToast(
+          isDone ? `Marked "${t.title}" as pending.` : `Marked "${t.title}" as completed at ${nowStr}.`
+        );
+        return {
+          ...t,
+          status: nextStatus,
+          completedAt: isDone ? undefined : nowStr,
+        };
+      })
+    );
+  };
+
+  const completedTasks = taskList.filter((t) => t.status === 'COMPLETED').length;
+  const completionPercentage = taskList.length > 0 ? Math.round((completedTasks / taskList.length) * 100) : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs transition-opacity animate-fadeIn">
       {/* Click backdrop to close */}
       <div className="flex-1" onClick={onClose} />
 
-      {/* Drawer Canvas */}
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 overflow-hidden animate-slideInRight">
-        {/* Floating Toast Notification */}
+      {/* Slide-over Drawer Panel */}
+      <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col z-10 border-l border-slate-200 animate-slideInRight">
+        {/* Toast Notification */}
         {toastMessage && (
-          <div className="absolute top-4 left-4 right-4 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center justify-between border border-teal-500/40 animate-slideDown">
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{toastMessage}</span>
-            </span>
+          <div className="absolute top-4 left-6 right-6 z-50 p-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-xl flex items-center justify-between animate-fadeIn border border-slate-700">
+            <span>{toastMessage}</span>
             <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white">
               ✕
             </button>
           </div>
         )}
 
-        {/* Top Header Card */}
-        <div className="p-6 bg-slate-900 text-white flex items-start justify-between relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-40 h-40 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="flex items-start gap-4 z-10">
-            {/* Avatar */}
-            <div className="w-16 h-16 rounded-2xl bg-teal-600/30 border-2 border-teal-400/40 flex items-center justify-center text-teal-200 font-heading font-black text-2xl shadow-inner shrink-0">
-              {caregiver.fullName.substring(0, 2).toUpperCase()}
+        {/* Header */}
+        <div className="p-6 bg-slate-900 text-white flex items-start justify-between border-b border-slate-800">
+          <div className="flex items-start gap-4">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-600 to-teal-400 text-white font-extrabold text-xl flex items-center justify-center shadow-lg border-2 border-white/20">
+                {nameInitials}
+              </div>
+              <span
+                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-900 ${
+                  caregiver.status === 'ON_DUTY'
+                    ? 'bg-emerald-500 ring-2 ring-emerald-400/30'
+                    : caregiver.status === 'ON_HANDOFF'
+                    ? 'bg-amber-500 ring-2 ring-amber-400/30'
+                    : caregiver.status === 'AVAILABLE'
+                    ? 'bg-teal-500'
+                    : 'bg-slate-500'
+                }`}
+              />
             </div>
 
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl font-heading font-extrabold text-white">
+                <h2 className="text-lg font-heading font-extrabold text-white">
                   {caregiver.fullName}
                 </h2>
                 <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                     caregiver.status === 'ON_DUTY'
                       ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : caregiver.status === 'ON_HANDOFF'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                       : caregiver.status === 'AVAILABLE'
                       ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
-                      : 'bg-slate-800 text-slate-300 border border-slate-700'
+                      : 'bg-slate-700 text-slate-300'
                   }`}
                 >
-                  {caregiver.status.replace('_', ' ')}
+                  {caregiver.status === 'ON_DUTY'
+                    ? 'Active Shift'
+                    : caregiver.status === 'ON_HANDOFF'
+                    ? 'On Handoff'
+                    : caregiver.status === 'AVAILABLE'
+                    ? 'Standby Reserve'
+                    : 'Off-Duty'}
                 </span>
-                {isFlagged && (
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                    Flagged for Review
+                {caregiver.isStandbyReserve && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                    Standby Reserve Hub
                   </span>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
-                <span>{caregiver.experienceYears} Years Exp • {caregiver.gender}</span>
-                <span>•</span>
-                <span className="flex items-center gap-1 text-amber-400 font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span>{caregiver.rating.toFixed(2)}</span>
-                  <span className="text-slate-400 text-[11px] font-normal">
-                    ({caregiver.performanceMetrics?.reviewCount || 48} reviews)
-                  </span>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium">
+                <span className="flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  <strong className="text-white">{caregiver.rating}</strong>
+                  <span className="text-slate-400">({caregiver.performanceMetrics?.reviewCount || 42} reviews)</span>
                 </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-teal-300 font-medium">
-                <MapPin className="w-3.5 h-3.5 shrink-0 text-teal-400" />
-                <span>{caregiver.locality} Corridor, Chennai</span>
-                <span className="text-slate-500">•</span>
-                <span className="text-slate-300">ID: {caregiver.id}</span>
+                <span>•</span>
+                <span>{caregiver.experienceYears} Years Exp</span>
+                <span>•</span>
+                <span className="flex items-center gap-1 text-teal-300">
+                  <MapPin className="w-3 h-3 text-teal-400" />
+                  <span>{caregiver.locality}</span>
+                </span>
               </div>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition z-10"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition"
             title="Close Drawer"
-            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -184,44 +299,328 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
           <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px]">
-                Shift & Duty Status Override
+                Shift & Roster Status Override
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">Click to transition live shift</span>
+              <span className="text-[11px] text-slate-400 font-medium">Click to transition live duty state</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <button
                 onClick={() => handleStatusClick('ON_DUTY')}
-                className={`py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
                   caregiver.status === 'ON_DUTY'
                     ? 'bg-emerald-600 text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200/80'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>On Duty</span>
+                <span className="truncate">Active Shift</span>
               </button>
               <button
                 onClick={() => handleStatusClick('AVAILABLE')}
-                className={`py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
                   caregiver.status === 'AVAILABLE'
                     ? 'bg-teal-600 text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-200/80'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-teal-400" />
-                <span>Available / Standby</span>
+                <span className="truncate">Standby Reserve</span>
+              </button>
+              <button
+                onClick={() => handleStatusClick('ON_HANDOFF')}
+                className={`py-2 px-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  caregiver.status === 'ON_HANDOFF'
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200/80'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="truncate">On Handoff</span>
               </button>
               <button
                 onClick={() => handleStatusClick('ON_LEAVE')}
-                className={`py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                className={`py-2 px-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
                   caregiver.status === 'ON_LEAVE'
                     ? 'bg-slate-800 text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-slate-400" />
-                <span>Off-Duty / Leave</span>
+                <span className="truncate">Off-Duty</span>
               </button>
+            </div>
+          </div>
+
+          {/* Section: Live Shift Attendance & Time Tracking */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-teal-600" />
+                <span>Shift Attendance & Geofenced Time Tracking</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[10px]">
+                {attendance.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+
+            {/* In / Out Punch Console */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Check-In Card */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Shift Check-In (Entry)
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500">
+                    Sched: {attendance.scheduledCheckIn}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-heading font-black text-slate-900">
+                    {attendance.actualCheckIn}
+                  </span>
+                  {attendance.isCheckInGeofenceVerified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Geofence Verified
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <Navigation className="w-3 h-3 text-teal-600" />
+                  <span>GPS Radius: 22m from designated residence</span>
+                </div>
+              </div>
+
+              {/* Check-Out Card */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Shift Check-Out (Departure)
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-500">
+                    Sched: {attendance.scheduledCheckOut}
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-heading font-black text-slate-900">
+                    {attendance.actualCheckOut || 'In Progress'}
+                  </span>
+                  {attendance.actualCheckOut && attendance.isCheckOutGeofenceVerified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Verified Exit
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] text-teal-800 font-bold flex items-center gap-1">
+                  <Timer className="w-3 h-3 text-teal-600" />
+                  <span>Logged: {attendance.totalHoursLogged}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Shift Handoff & Signoff */}
+            {attendance.handoffNotes && (
+              <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-200/80 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between font-bold text-teal-950 text-[11px]">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-teal-700" />
+                    <span>Clinical Shift Handoff Notes:</span>
+                  </span>
+                  {attendance.vitalsHandedOver && (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200">
+                      ✓ Vitals Handover Signed
+                    </span>
+                  )}
+                </div>
+                <p className="text-slate-700 text-[11px] leading-relaxed">
+                  {attendance.handoffNotes}
+                </p>
+                {attendance.supervisorSignoff && (
+                  <div className="text-[10px] text-teal-800 font-medium pt-1 border-t border-teal-200/60">
+                    Supervisor Approval: {attendance.supervisorSignoff}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Section: 7-Day Shift Attendance & Timing History */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-teal-600" />
+                <span>Attendance & Timing History (Past 7 Days)</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-900 font-bold text-[10px]">
+                {attendanceLogs.length} Shifts Recorded
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-200">
+                    <th className="py-2.5 px-3">Date & Shift</th>
+                    <th className="py-2.5 px-3">Assigned Beneficiary</th>
+                    <th className="py-2.5 px-3">Punch In / Out</th>
+                    <th className="py-2.5 px-3">Logged</th>
+                    <th className="py-2.5 px-3">Geofence</th>
+                    <th className="py-2.5 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {attendanceLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <div className="font-bold text-slate-900">{log.shiftDate}</div>
+                        <div className="text-[10px] text-slate-500">{log.shiftType.split('(')[0]}</div>
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <div className="font-semibold text-slate-800">{log.elderName || 'Standby Corridor'}</div>
+                        <div className="text-[10px] text-slate-400">{log.locality}</div>
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <div className="font-bold text-slate-900">
+                          {log.actualCheckIn} – {log.actualCheckOut || 'Now'}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          Sched: {log.scheduledCheckIn} – {log.scheduledCheckOut}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className="font-bold text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
+                          {log.totalHoursLogged}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        {log.isCheckInGeofenceVerified ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold text-[10px] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-amber-700 font-bold text-[10px] bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            <AlertCircle className="w-3 h-3 text-amber-600" />
+                            Off-site Flag
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            log.status === 'COMPLETED'
+                              ? 'bg-slate-100 text-slate-700'
+                              : log.status === 'ACTIVE_ON_DUTY' || log.status === 'ON_DUTY_WITHIN_SHIFT'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {log.status.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section: Shift Clinical Protocol & Task Checklist */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <ListChecks className="w-4 h-4 text-teal-600" />
+                <span>Shift Clinical Protocol & Task Monitoring</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-900 font-bold text-[10px]">
+                {completedTasks}/{taskList.length} Completed ({completionPercentage}%)
+              </span>
+            </div>
+
+            {/* Task Completion Progress */}
+            <div className="space-y-1">
+              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+                <span>Caregiver Protocol Execution</span>
+                <span className="text-emerald-700 font-bold">{completionPercentage}% Completed</span>
+              </div>
+            </div>
+
+            {/* Tasks Checklist */}
+            <div className="space-y-2">
+              {taskList.map((task) => {
+                const isDone = task.status === 'COMPLETED';
+                return (
+                  <div
+                    key={task.id}
+                    onClick={() => handleToggleTask(task.id)}
+                    className={`p-3 rounded-2xl border flex items-start gap-3 text-xs transition cursor-pointer select-none ${
+                      isDone
+                        ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50'
+                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isDone}
+                      onChange={() => {}} // handled by onClick
+                      className="mt-0.5 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer accent-teal-600 shrink-0"
+                    />
+
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`font-extrabold ${
+                            isDone ? 'text-emerald-950 line-through opacity-80' : 'text-slate-900'
+                          }`}
+                        >
+                          {task.title}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                            isDone
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : task.status === 'MISSED_FLAGGED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {task.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+                        <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                          {task.scheduledTime}
+                        </span>
+                        <span>•</span>
+                        <span className="font-bold text-teal-800">{task.category}</span>
+                        {task.completedAt && (
+                          <>
+                            <span>•</span>
+                            <span className="text-emerald-700 font-semibold">
+                              Executed at {task.completedAt}
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      {task.notes && (
+                        <p className="text-[11px] text-slate-600 bg-white p-2 rounded-xl border border-slate-100 mt-1 italic">
+                          "{task.notes}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -232,9 +631,9 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                 <Compass className="w-4 h-4 text-teal-600" />
                 <span>Current Deployment & Patient Assignment</span>
               </h3>
-              {caregiver.isBufferPool && (
+              {caregiver.isStandbyReserve && (
                 <span className="px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-[10px] font-bold">
-                  SLA Buffer Attendant
+                  Standby Reserve Pool
                 </span>
               )}
             </div>
@@ -250,7 +649,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                   </div>
                   <div className="text-xs text-slate-600 flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5 text-teal-700" />
-                    <span>{caregiver.locality} Corridor Residence</span>
+                    <span>{caregiver.locality}</span>
                   </div>
                   <div className="text-[11px] text-teal-800 font-medium">
                     Shift Protocol: {caregiver.shiftSchedule?.shiftType || '12-hr Day Care'}
@@ -270,7 +669,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                 <div className="space-y-1">
                   <div className="text-sm font-extrabold text-sky-950 flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-                    <span>Standby Buffer Pool in {caregiver.locality}</span>
+                    <span>Standby Reserve Hub in {caregiver.locality}</span>
                   </div>
                   <p className="text-xs text-slate-600">
                     Stationed at Corridor Hub for instant SLA dispatch within 15 minutes.
@@ -320,36 +719,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                 Official Certifications & Background Checks:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(caregiver.certifications || [
-                  {
-                    name: 'BLS / CPR Certified',
-                    issuer: 'American Heart Association',
-                    issueDate: '2024-03-12',
-                    verified: true,
-                    credentialId: 'BLS-AHA-2024-88',
-                  },
-                  {
-                    name: 'Geriatric Care Aide Level 2',
-                    issuer: 'NSDC Healthcare Council',
-                    issueDate: '2022-06-15',
-                    verified: true,
-                    credentialId: 'GCA-NSDC-TN-41',
-                  },
-                  {
-                    name: 'Police Clearance Certificate',
-                    issuer: 'Greater Chennai Police',
-                    issueDate: '2026-01-10',
-                    verified: true,
-                    credentialId: 'PCC-CHN-2026-11',
-                  },
-                  {
-                    name: 'Aadhaar Identity KYC',
-                    issuer: 'UIDAI Verified',
-                    issueDate: '2021-11-04',
-                    verified: true,
-                    credentialId: 'UID-BIOMETRIC-OK',
-                  },
-                ]).map((cert, idx) => (
+                {certifications.map((cert, idx) => (
                   <div
                     key={idx}
                     className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5 text-xs"
@@ -378,7 +748,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                     key={idx}
                     className="px-2.5 py-1 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-900 font-bold text-[11px] flex items-center gap-1.5 shadow-2xs"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-600" />
+                    <CheckCircle2 className="w-3 h-3 text-teal-600" />
                     <span>{skill}</span>
                   </span>
                 ))}
@@ -387,110 +757,105 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
           </div>
 
           {/* Section 3: Performance & Operational Reliability */}
-          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3.5">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Activity className="w-4 h-4 text-teal-600" />
-              <span>Operational Reliability & Metrics</span>
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">On-Time Arrival</span>
-                <span className="text-lg font-heading font-extrabold text-emerald-700 block mt-0.5">
-                  {caregiver.performanceMetrics?.onTimeArrivalRate || 98.4}%
-                </span>
-                <span className="text-[9px] text-slate-400 font-medium">GPS Geo-Fenced</span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Completed Shifts</span>
-                <span className="text-lg font-heading font-extrabold text-slate-900 block mt-0.5">
-                  {caregiver.performanceMetrics?.totalCompletedVisits || 240}
-                </span>
-                <span className="text-[9px] text-slate-400 font-medium">Verified logs</span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Avg SOS Response</span>
-                <span className="text-lg font-heading font-extrabold text-teal-700 block mt-0.5">
-                  {caregiver.performanceMetrics?.sosDrillResponseAvgMins || 7.2}m
-                </span>
-                <span className="text-[9px] text-slate-400 font-medium">Under 10m target</span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Client NPS Score</span>
-                <span className="text-lg font-heading font-extrabold text-sky-700 block mt-0.5">
-                  {caregiver.performanceMetrics?.clientNpsRating || 97}/100
-                </span>
-                <span className="text-[9px] text-slate-400 font-medium">Family reviews</span>
-              </div>
-            </div>
-
-            {caregiver.bio && (
-              <p className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 leading-relaxed italic">
-                "{caregiver.bio}"
-              </p>
-            )}
-          </div>
-
-          {/* Section 4: Contact, Payout & Logistics */}
           <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Activity className="w-4 h-4 text-teal-600" />
+              <span>Performance Reliability & Operational Metrics</span>
+            </h3>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                  On-Time Arrival
+                </span>
+                <span className="text-lg font-black font-heading text-slate-900 mt-0.5 block">
+                  {caregiver.performanceMetrics?.onTimeArrivalRate || 98.4}%
+                </span>
+                <span className="text-[10px] text-emerald-600 font-bold">Industry Benchmark</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                  SOS Drill SLA
+                </span>
+                <span className="text-lg font-black font-heading text-teal-800 mt-0.5 block">
+                  {caregiver.performanceMetrics?.sosDrillResponseAvgMins || 7.2}m
+                </span>
+                <span className="text-[10px] text-teal-600 font-bold">&lt; 10 min Target</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                  Completed Shifts
+                </span>
+                <span className="text-lg font-black font-heading text-slate-900 mt-0.5 block">
+                  {caregiver.performanceMetrics?.totalCompletedVisits || 240}
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">Lifetime Visits</span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                  Client NPS
+                </span>
+                <span className="text-lg font-black font-heading text-amber-600 mt-0.5 block">
+                  {caregiver.performanceMetrics?.clientNpsRating || 96}%
+                </span>
+                <span className="text-[10px] text-amber-700 font-bold">Exceptional</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Contact & Operational Logistics */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-3.5">
+            <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Phone className="w-4 h-4 text-teal-600" />
-              <span>Contact, Payout & Personal Logistics</span>
+              <span>Contact & Operational Logistics Information</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 block">Direct Contact Channels</span>
-                <div className="flex items-center gap-2">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                  Primary Mobile Phone:
+                </span>
+                <div className="flex items-center justify-between">
                   <a
                     href={`tel:${caregiver.phone}`}
-                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 font-bold flex items-center justify-center gap-1.5 transition"
+                    className="font-bold text-teal-800 hover:underline flex items-center gap-1.5 text-sm"
                   >
-                    <Phone className="w-3.5 h-3.5 text-teal-700" />
-                    <span>Call: {caregiver.phone}</span>
+                    <Phone className="w-3.5 h-3.5 text-teal-600" />
+                    <span>{caregiver.phone}</span>
                   </a>
                   <a
                     href={`https://wa.me/${caregiver.phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold flex items-center justify-center transition"
-                    title="Open WhatsApp"
+                    className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
+                    title="Message on WhatsApp"
                   >
-                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <MessageCircle className="w-4 h-4" />
                   </a>
                 </div>
                 {caregiver.personalInfo?.secondaryPhone && (
-                  <div className="text-[11px] text-slate-500">
-                    Alt Phone: <strong>{caregiver.personalInfo.secondaryPhone}</strong>
+                  <div className="text-[10px] text-slate-500 pt-1">
+                    Secondary: {caregiver.personalInfo.secondaryPhone}
                   </div>
                 )}
-                <div className="text-[11px] text-slate-500">
-                  Residential Area: <strong>{caregiver.personalInfo?.residentialArea || 'Chennai'}</strong>
-                </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                <span className="text-[10px] font-black uppercase text-slate-400 block">Payout & Demographics</span>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Remuneration Rate:</span>
-                  <span className="font-extrabold text-teal-900">
-                    ₹{caregiver.dailyRate || 1400} / day (₹{caregiver.hourlyRate || 150}/hr)
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Blood Group:</span>
-                  <span className="font-bold text-slate-800">
-                    {caregiver.personalInfo?.bloodGroup || 'O+'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Spoken Languages:</span>
-                  <span className="font-bold text-slate-800 truncate max-w-[140px]">
-                    {(caregiver.personalInfo?.languagesSpoken || caregiver.languages).join(', ')}
-                  </span>
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                  KYC & Background Verification:
+                </span>
+                <div className="space-y-1 pt-0.5">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-bold text-xs">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Aadhaar Biometric KYC: Verified</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-teal-800 font-medium text-[11px]">
+                    <BadgeCheck className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Police Clearance: Validated</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -532,7 +897,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                 <select
                   value={selectedCorridor}
                   onChange={(e) => setSelectedCorridor(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-teal-300 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full p-2.5 rounded-xl border border-teal-300 bg-white font-semibold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
                 >
                   {serviceableCorridors.map((c) => (
                     <option key={c.name} value={c.name}>
@@ -596,7 +961,7 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold transition"
           >
-            Close Dossier
+            Close Profile
           </button>
         </div>
       </div>

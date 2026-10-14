@@ -338,7 +338,7 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                         {cg.locality} Corridor • Rating: ⭐ {cg.rating}
                       </div>
                       <div className="mt-1 text-[11px] font-bold text-emerald-700">
-                        Status: ON DUTY
+                        Status: {cg.status === 'ON_DUTY' ? 'ACTIVE SHIFT' : cg.status === 'ON_HANDOFF' ? 'ON HANDOFF' : cg.status === 'AVAILABLE' ? 'STANDBY RESERVE' : 'OFF-DUTY'}
                       </div>
                       {cg.activeElderName && (
                         <div className="mt-1 text-[10px] text-slate-500">
@@ -351,7 +351,7 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                           onClick={() => onSelectCaregiver(cg)}
                           className="mt-2.5 w-full py-1 px-2 bg-sky-900 hover:bg-sky-800 text-white rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 shadow-2xs"
                         >
-                          <span>Inspect Dossier</span>
+                          <span>View Profile</span>
                           <span aria-hidden="true">&rarr;</span>
                         </button>
                       )}

@@ -71,17 +71,17 @@ export const AdminCarePlansView: React.FC<AdminCarePlansViewProps> = ({ onBackTo
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-slate-600">
-          <span className="font-bold">Care Tier:</span>
+          <span className="font-bold">Service:</span>
           <select
             value={selectedTier}
             onChange={(e) => setSelectedTier(e.target.value)}
             className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:bg-white"
           >
-            <option value="ALL">All Care Tiers</option>
-            <option value="Assisted Living">Assisted Living</option>
-            <option value="Live-in">24x7 Live-in</option>
-            <option value="Care Specialist">Care Specialist</option>
-            <option value="Cardiac">Cardiac Watch</option>
+            <option value="ALL">All Support Services</option>
+            <option value="Mobility Assistance">Mobility Assistance</option>
+            <option value="Medical Support">Medical Support</option>
+            <option value="Medication Reminders">Medication Reminders</option>
+            <option value="Continuous Monitoring">Continuous Monitoring</option>
           </select>
         </div>
       </div>

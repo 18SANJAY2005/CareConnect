@@ -35,7 +35,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
   onNavigateTab,
   onSelectElder,
 }) => {
-  const activeElders = elders.filter((e) => e.status === 'ACTIVE');
   const openAlerts = alerts.filter((a) => a.status === 'OPEN' || a.status === 'DISPATCHED');
   const bufferCaregivers = caregivers.filter((c) => c.isBufferPool && c.status === 'AVAILABLE');
 
@@ -51,9 +50,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
           <h2 className="text-2xl md:text-3xl font-heading font-black tracking-tight text-white drop-shadow-xs">
             Elder Care Operations Overview
           </h2>
-          <p className="mt-2 text-xs md:text-sm text-slate-200 leading-relaxed max-w-xl font-medium">
-            Real-time monitoring across 6 urban corridors in Chennai. Track live care attendant shifts, geofenced attendances, and automated emergency escalations.
-          </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
@@ -101,9 +97,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
               +100% active
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
-            {activeElders.length} active in continuous care
-          </p>
         </div>
 
         {/* Card 2: Active Care Shifts */}
@@ -128,9 +121,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
               Checked-in
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
-            {metrics.bufferPoolAvailable} buffer attendants ready
-          </p>
         </div>
 
         {/* Card 3: Serviceable Locations */}
@@ -152,7 +142,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
             </span>
             <span className="text-xs font-bold text-teal-700">Corridors Live</span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">Chennai South & Central micro-clusters</p>
         </div>
 
         {/* Card 4: Open SOS Alerts */}
@@ -194,9 +183,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
               {metrics.openSosTickets > 0 ? 'Action Required' : 'All Clear'}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">
-            {openAlerts.length > 0 ? `${openAlerts[0].title}` : 'No critical emergencies active'}
-          </p>
         </div>
       </div>
 
@@ -210,9 +196,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
                 <h3 className="font-heading font-extrabold text-base text-slate-900">
                   Active Careseeker Profiles
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Currently monitored in home care corridors
-                </p>
               </div>
               <button
                 onClick={() => onNavigateTab('ELDERS')}
@@ -277,9 +260,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
                 <h3 className="font-heading font-extrabold text-base text-slate-900">
                   Chennai Corridor Coverage Status
                 </h3>
-                <p className="text-xs text-slate-500">
-                  Geofence boundaries & Attendant availability
-                </p>
               </div>
               <button
                 onClick={() => onNavigateTab('MAP')}
@@ -384,24 +364,21 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
             )}
           </div>
 
-          {/* Buffer Pool Attendants Card */}
+          {/* Standby Reserve Attendants Card */}
           <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="font-heading font-extrabold text-sm text-slate-900">
-                Buffer Pool Standby
+                Standby Reserve Pool
               </span>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
                 {bufferCaregivers.length} Available
               </span>
             </div>
-            <p className="text-xs text-slate-500">
-              Pre-vetted buffer caregivers ready for immediate SLA replacement or urgent shift cover within 45 mins.
-            </p>
             <button
               onClick={() => onNavigateTab('CAREGIVERS')}
-              className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer"
             >
-              View Buffer Pool Roster
+              View Standby Reserve Roster
             </button>
           </div>
         </div>

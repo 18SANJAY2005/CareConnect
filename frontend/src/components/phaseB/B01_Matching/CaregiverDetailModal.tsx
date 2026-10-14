@@ -89,7 +89,7 @@ export const CaregiverDetailModal: React.FC<CaregiverDetailModalProps> = ({
 
           <div className="bg-surface rounded-xl p-4 border border-outline-light/50">
             <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3">
-              CareConnect Trust & Verification Dossier
+              Caregiver Trust & Verification Profile
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
