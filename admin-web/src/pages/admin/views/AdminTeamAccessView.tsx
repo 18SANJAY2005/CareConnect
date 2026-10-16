@@ -810,7 +810,7 @@ export const AdminTeamAccessView: React.FC<AdminTeamAccessViewProps> = () => {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition active:scale-95"
                 >
-                  {editingUser ? 'Save Permissions' : 'Send Invitation'}
+                  {editingUser ? 'Save Permissions & Update Access' : 'Send Invitation & Grant Access'}
                 </button>
               </div>
             </form>

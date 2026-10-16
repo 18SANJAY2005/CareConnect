@@ -17,9 +17,9 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import type { AdminSosAlert, NearbyHospital } from '../types';
+import type { AdminSosAlert, NearbyHospital, AdminElderItem } from '../types';
 import { SupervisorDispatchModal } from '../components/SupervisorDispatchModal';
-import { standardChennaiHospitals } from '../mockData';
+import { standardChennaiHospitals, initialAdminElders } from '../mockData';
 
 interface AdminSosPanelProps {
   alerts: AdminSosAlert[];
@@ -27,6 +27,7 @@ interface AdminSosPanelProps {
   onDispatchSupervisor: (alertId: string, supervisorName: string, notes: string) => void;
   onViewOnMap: (lat: number, lng: number) => void;
   onBackToDashboard?: () => void;
+  elders?: AdminElderItem[];
 }
 
 export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
@@ -35,6 +36,7 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
   onDispatchSupervisor,
   onViewOnMap,
   onBackToDashboard,
+  elders = initialAdminElders,
 }) => {
   const [localAlerts, setLocalAlerts] = useState<AdminSosAlert[]>(alerts);
   const [selectedAlertId, setSelectedAlertId] = useState<string>(alerts[0]?.id || '');
@@ -88,15 +90,44 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
   const dispatchedCount = localAlerts.filter((a) => a.status === 'DISPATCHED').length;
   const resolvedCount = localAlerts.filter((a) => a.status === 'RESOLVED').length;
 
-  const getEmergencyFacilityForAlert = (locality: string): NearbyHospital => {
+  const getEmergencyFacilitiesForAlert = (locality: string): NearbyHospital[] => {
     const loc = locality.toUpperCase();
-    if (loc.includes('ADYAR')) return standardChennaiHospitals.ADYAR[0];
-    if (loc.includes('BESANT')) return standardChennaiHospitals.BESANT_NAGAR[0];
-    if (loc.includes('ANNA')) return standardChennaiHospitals.ANNA_NAGAR[0];
-    if (loc.includes('MYLAPORE')) return standardChennaiHospitals.MYLAPORE[0];
-    if (loc.includes('VELACHERY')) return standardChennaiHospitals.VELACHERY[0];
-    if (loc.includes('T. NAGAR') || loc.includes('T NAGAR')) return standardChennaiHospitals.T_NAGAR[0];
-    return standardChennaiHospitals.ADYAR[0];
+    if (loc.includes('ADYAR')) return standardChennaiHospitals.ADYAR;
+    if (loc.includes('BESANT')) return standardChennaiHospitals.BESANT_NAGAR;
+    if (loc.includes('ANNA')) return standardChennaiHospitals.ANNA_NAGAR;
+    if (loc.includes('MYLAPORE')) return standardChennaiHospitals.MYLAPORE;
+    if (loc.includes('VELACHERY')) return standardChennaiHospitals.VELACHERY;
+    if (loc.includes('T. NAGAR') || loc.includes('T NAGAR')) return standardChennaiHospitals.T_NAGAR;
+    return standardChennaiHospitals.ADYAR;
+  };
+
+  const handleCopyErDossier = (alert: AdminSosAlert) => {
+    const matchedElder = (elders || initialAdminElders).find(
+      (e) => e.id === alert.elderId || e.name.toLowerCase() === alert.elderName.toLowerCase()
+    );
+    const conditions = matchedElder?.medicalConditions?.join(', ') || 'Hypertension, Cardiac Arrhythmia';
+    const address = matchedElder?.addressLine1
+      ? `${matchedElder.addressLine1}, ${alert.locality}, Chennai - ${alert.postalCode}`
+      : `${alert.locality}, Chennai - ${alert.postalCode}`;
+    const bloodGroup = (matchedElder as any)?.bloodGroup || 'O+ Positive';
+    const preferredHosp = matchedElder?.preferredHospital?.name || 'Fortis Malar Hospital';
+    const preferredHospPhone = matchedElder?.preferredHospital?.emergencyPhone || '+91 44 4289 2200';
+
+    const dossierText = `--- CARECONNECT ER PATIENT DOSSIER ---
+Patient Name: ${alert.elderName}
+Age: ${alert.elderAge} Years | Blood Group: ${bloodGroup}
+Exact Residential Address: ${address}
+Known Medical Conditions: ${conditions}
+Current Emergency Incident: ${alert.title}
+Clinical Telemetry & Synopsis: ${alert.description}
+Attendant on Duty: ${alert.assignedCaregiver || 'Corridor Rapid Care Attendant'}
+Primary Family Contact: ${alert.emergencyContact} (${alert.emergencyPhone})
+Chosen Preferred Hospital: ${preferredHosp} (Emergency Desk: ${preferredHospPhone})
+Triggered Timestamp: ${alert.triggeredAt}
+--------------------------------------`;
+
+    navigator.clipboard.writeText(dossierText);
+    showToast('ER Patient Dossier copied to clipboard for emergency triage.');
   };
 
   const handleAcknowledge = (alertId: string) => {
@@ -329,6 +360,15 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => handleCopyErDossier(activeAlert)}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
+                    title="Copy patient emergency dossier"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Copy ER Patient Dossier</span>
+                  </button>
+
+                  <button
                     onClick={() => onViewOnMap(activeAlert.latitude, activeAlert.longitude)}
                     className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-teal-200"
                   >
@@ -383,7 +423,13 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
 
               {/* Emergency Hospital Ambulance Triage & Routing */}
               {(() => {
-                const hospital = getEmergencyFacilityForAlert(activeAlert.locality);
+                const matchedElder = (elders || initialAdminElders).find(
+                  (e) => e.id === activeAlert.elderId || e.name.toLowerCase() === activeAlert.elderName.toLowerCase()
+                );
+                const allNearby = getEmergencyFacilitiesForAlert(activeAlert.locality);
+                const preferredHospital = matchedElder?.preferredHospital || allNearby[0];
+                const closestNearby = allNearby.slice(0, 3);
+
                 return (
                   <div className="p-5 rounded-3xl bg-rose-50/90 border border-rose-200 space-y-4 text-xs">
                     <div className="flex items-center justify-between">
@@ -392,46 +438,93 @@ export const AdminSosPanel: React.FC<AdminSosPanelProps> = ({
                         <span>Platform Emergency Triage & Hospital Routing</span>
                       </div>
                       <span className="text-[11px] font-bold text-rose-800 bg-white px-3 py-1 rounded-full border border-rose-200 shadow-2xs">
-                        {hospital.distanceKm} km • {hospital.etaMins}m ETA
+                        Active Hospital Ambulance Desk Link
                       </span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-white border border-rose-100 space-y-2">
+                    {/* Section 1: Careseeker's Chosen Preferred Hospital */}
+                    <div className="p-4 rounded-2xl bg-white border-2 border-rose-300 shadow-sm space-y-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                            Designated Primary Emergency Destination
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200 inline-block mb-1">
+                            Careseeker's Chosen Preferred Hospital
                           </span>
                           <div className="font-extrabold text-slate-900 text-base flex items-center gap-1.5 mt-0.5">
                             <Building2 className="w-4 h-4 text-rose-600 shrink-0" />
-                            <span>{hospital.name}</span>
+                            <span>{preferredHospital.name}</span>
                           </div>
-                          <p className="text-xs text-slate-600">{hospital.address}</p>
+                          <p className="text-xs text-slate-600">{preferredHospital.address}</p>
+                          <div className="text-[11px] text-rose-700 font-semibold pt-1">
+                            {preferredHospital.traumaLevel || '24/7 Advanced Cardiac & Emergency Care'}
+                          </div>
                         </div>
+
+                        {preferredHospital.distanceKm !== undefined && (
+                          <span className="text-[11px] font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl">
+                            {preferredHospital.distanceKm} km • {preferredHospital.etaMins || 6}m ETA
+                          </span>
+                        )}
                       </div>
 
-                      <div className="text-[11px] text-rose-700 font-semibold pt-1 border-t border-rose-100">
-                        {hospital.traumaLevel}
+                      {/* Direct Click-to-Call Link for Emergency Desk */}
+                      <div className="pt-2 border-t border-rose-100 flex flex-wrap items-center gap-2">
+                        <a
+                          href={`tel:${preferredHospital.emergencyPhone}`}
+                          className="flex-1 py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
+                        >
+                          <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
+                          <span>Call 24/7 Emergency Desk ({preferredHospital.emergencyPhone})</span>
+                        </a>
+
+                        <button
+                          onClick={() => onViewOnMap(activeAlert.latitude, activeAlert.longitude)}
+                          className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Navigation className="w-3.5 h-3.5 text-teal-400" />
+                          <span>Route Map</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Interactive Hotline & Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <button
-                        onClick={() => setSelectedHospitalForHotline(hospital)}
-                        className="flex-1 py-2.5 px-4 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                      >
-                        <PhoneCall className="w-4 h-4" />
-                        <span>Dial Hospital Hotline</span>
-                      </button>
+                    {/* Section 2: 2–3 Closest Nearby Network Hospitals */}
+                    <div className="space-y-2 pt-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 block">
+                        2–3 Closest Network Hospitals & Emergency Desks (Live Distance):
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                        {closestNearby.map((hosp, idx) => (
+                          <div
+                            key={hosp.id || idx}
+                            className="p-3 rounded-2xl bg-white border border-rose-100 flex flex-col justify-between gap-2 shadow-2xs"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-bold text-slate-900 text-xs truncate">
+                                  {hosp.name}
+                                </span>
+                                <span className="text-[10px] font-extrabold text-rose-800 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200 shrink-0">
+                                  {hosp.distanceKm} km
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                {hosp.locality || hosp.address}
+                              </p>
+                              <div className="text-[10px] text-teal-800 font-semibold mt-1">
+                                ETA ~{hosp.etaMins} mins
+                              </div>
+                            </div>
 
-                      <button
-                        onClick={() => onViewOnMap(activeAlert.latitude, activeAlert.longitude)}
-                        className="py-2.5 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm cursor-pointer"
-                      >
-                        <Navigation className="w-4 h-4 text-teal-400" />
-                        <span>Route to Facility</span>
-                      </button>
+                            {/* Direct Click-to-Call Emergency Desk Phone */}
+                            <a
+                              href={`tel:${hosp.emergencyPhone}`}
+                              className="w-full py-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-rose-800 border border-slate-200 hover:border-rose-300 font-mono font-bold text-[11px] transition flex items-center justify-center gap-1.5"
+                            >
+                              <Phone className="w-3 h-3 text-rose-600" />
+                              <span>{hosp.emergencyPhone}</span>
+                            </a>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 );

@@ -211,7 +211,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
           }`}
         >
           <Users className="w-4 h-4 text-teal-600" />
-          <span>User Access & Team</span>
+          <span>User Access & Roles</span>
         </button>
 
         <button

@@ -17,6 +17,7 @@ import type {
   AdminMetrics,
 } from '../types';
 import { serviceableCorridors } from '../mockData';
+import { AdminKpiRibbon } from '../components/AdminKpiRibbon';
 
 interface AdminOverviewViewProps {
   metrics: AdminMetrics;
@@ -72,6 +73,9 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
         {/* Subtle decorative background glow */}
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-teal-500/10 blur-3xl pointer-events-none" />
       </div>
+
+      {/* Active Attendants Statistic Banner */}
+      <AdminKpiRibbon caregivers={caregivers} onNavigateTab={onNavigateTab} />
 
       {/* Metrics Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

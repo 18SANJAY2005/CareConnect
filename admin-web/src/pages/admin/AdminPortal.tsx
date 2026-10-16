@@ -28,6 +28,8 @@ import { AdminReportsView } from './views/AdminReportsView';
 import { AdminSettingsView } from './views/AdminSettingsView';
 import { AdminLiveMapView } from './views/AdminLiveMapView';
 import { AdminSosPanel } from './views/AdminSosPanel';
+import { AdminPayoutsView } from './views/AdminPayoutsView';
+import { AdminHospitalCatalogView } from './views/AdminHospitalCatalogView';
 import { AdminLogin, ADMIN_AUTH_KEY } from './AdminLogin';
 import { api } from '../../services/api';
 
@@ -52,6 +54,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     if (hash.includes('attendance')) return 'ATTENDANCE';
     if (hash.includes('services-pricing') || hash.includes('services') || hash.includes('pricing') || hash.includes('catalog'))
       return 'SERVICES_PRICING';
+    if (hash.includes('hospital')) return 'HOSPITALS';
+    if (hash.includes('payout')) return 'PAYOUTS';
     if (hash.includes('reports') || hash.includes('analytics')) return 'REPORTS';
     if (hash.includes('access') || hash.includes('settings') || hash.includes('governance')) return 'SETTINGS';
     if (hash.includes('care-plans') || hash.includes('careplans')) return 'SERVICES_PRICING';
@@ -624,6 +628,28 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             />
           )}
 
+          {activeTab === 'HOSPITALS' && (
+            <AdminHospitalCatalogView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onViewOnMap={(lat, lng) => {
+                setFocusedCoordinates([lat, lng]);
+                handleSelectTab('MAP');
+              }}
+            />
+          )}
+
+          {activeTab === 'PAYOUTS' && (
+            <AdminPayoutsView
+              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onSelectCaregiverByName={(cgName) => {
+                const found = caregivers.find(
+                  (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
+                );
+                if (found) setSelectedCaregiverForDrawer(found);
+              }}
+            />
+          )}
+
           {activeTab === 'MAP' && (
             <AdminLiveMapView
               elders={displayedElders}
@@ -639,6 +665,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           {activeTab === 'SOS' && (
             <AdminSosPanel
               alerts={displayedAlerts}
+              elders={displayedElders}
               onResolveAlert={handleResolveAlert}
               onDispatchSupervisor={handleDispatchSupervisor}
               onViewOnMap={handleViewAlertOnMap}

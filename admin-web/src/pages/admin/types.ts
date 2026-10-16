@@ -8,6 +8,8 @@ export type AdminTab =
   | 'SERVICES_PRICING'
   | 'SERVICES'
   | 'PRICING'
+  | 'HOSPITALS'
+  | 'PAYOUTS'
   | 'REPORTS'
   | 'SETTINGS'
   | 'SETTINGS_ACCESS'
@@ -23,6 +25,21 @@ export interface NearbyHospital {
   contact?: string;
   address: string;
   traumaLevel?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface HospitalFacility {
+  id: string;
+  name: string;
+  address: string;
+  area: string; // Area / Corridor
+  latitude: number;
+  longitude: number;
+  standardPhone: string;
+  emergencyPhone: string; // 24/7 Emergency / Ambulance Desk Contact
+  traumaLevel?: string;
+  ambulanceAvailable?: boolean;
 }
 
 export interface ClinicalTaskItem {
@@ -134,18 +151,49 @@ export interface ShiftAttendanceLog {
     | 'OVERTIME'
     | 'ON_DUTY_WITHIN_SHIFT'
     | 'COMPLETED'
+    | 'EN_ROUTE'
+    | 'DELAYED_UNACKNOWLEDGED'
+    | 'NOT_YET_REACHED'
+    | 'DELAYED'
     | 'On Time'
     | 'Late'
     | 'Active'
     | 'Completed'
     | 'Flagged';
   geofenceStatus: 'VERIFIED' | 'OFF_SITE_FLAG';
+  arrivalStatus?: 'ARRIVED' | 'NOT_YET_REACHED' | 'EN_ROUTE' | 'DELAYED_UNACKNOWLEDGED';
+  caregiverPhone?: string;
+  expectedArrivalTime?: string;
+  distanceToSiteMeters?: number;
   handoffNotes?: string;
   vitalsHandedOver?: boolean;
   supervisorSignoff?: string;
   tasksCompletedCount?: number;
   tasksTotalCount?: number;
   tasks?: ClinicalTaskItem[];
+}
+
+export interface AdminPayoutRecord {
+  id: string; // e.g. "PAY-2026-8812"
+  caregiverId: string;
+  caregiverName: string;
+  caregiverPhone: string;
+  caregiverCorridor: string;
+  careseekerId: string;
+  careseekerName: string;
+  careseekerLocality: string;
+  shiftDate: string;
+  shiftDuration: string;
+  shiftHours: number;
+  payoutAmount: number;
+  status: 'Processed' | 'Pending' | 'Disputed';
+  disputeReason?: string;
+  processedAt?: string;
+  bankReference?: string;
+  receiptNumber?: string;
+  serviceType: string;
+  hourlyRateEquivalent?: number;
+  allowance?: number;
 }
 
 export interface CaregiverShiftSchedule {
