@@ -19,7 +19,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import type { AdminElderItem, AdminCaregiverItem, AdminSosAlert } from '../types';
-import { serviceableCorridors } from '../mockData';
+import { serviceableCorridors, initialHospitalCatalog } from '../mockData';
 
 // Fix Leaflet's default icon path issues with Vite bundler
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -96,6 +96,28 @@ const createSosIcon = () =>
     popupAnchor: [0, -19],
   });
 
+const createHospitalIcon = () =>
+  L.divIcon({
+    className: 'custom-hospital-marker',
+    html: `<div style="
+      background-color: #dc2626;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 2px solid white;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+    ">🏥</div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  });
+
 // Map controller to fly to selected coordinates
 interface MapFlyToControllerProps {
   center: [number, number] | null;
@@ -130,7 +152,7 @@ interface AdminLiveMapViewProps {
   focusedCoordinates?: [number, number] | null;
   onSelectElder: (elder: AdminElderItem) => void;
   onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
 }
 
 export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
@@ -140,10 +162,11 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
   focusedCoordinates,
   onSelectElder,
   onSelectCaregiver,
-  onBackToDashboard,
+  onBack,
 }) => {
-  const [filterType, setFilterType] = useState<'ALL' | 'ELDERS' | 'CAREGIVERS' | 'SOS'>('ALL');
+  const [filterType, setFilterType] = useState<'ALL' | 'ELDERS' | 'CAREGIVERS' | 'SOS' | 'HOSPITALS'>('ALL');
   const [showGeofences, setShowGeofences] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState<'ELDERS' | 'HOSPITALS'>('ELDERS');
   const [mapCenter, setMapCenter] = useState<[number, number]>(
     focusedCoordinates || [13.0418, 80.24]
   );
@@ -157,20 +180,21 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
   const visibleElders = filterType === 'ALL' || filterType === 'ELDERS' ? elders : [];
   const visibleCaregivers = filterType === 'ALL' || filterType === 'CAREGIVERS' ? caregivers.filter((c) => c.status === 'ON_DUTY') : [];
   const visibleAlerts = filterType === 'ALL' || filterType === 'SOS' ? alerts : [];
+  const visibleHospitals = filterType === 'ALL' || filterType === 'HOSPITALS' ? initialHospitalCatalog : [];
 
   return (
     <div className="space-y-4 animate-fadeIn pb-12">
       {/* Top Controls Bar */}
       <div className="p-4 md:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -224,6 +248,16 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
             }`}
           >
             <span>🚨 SOS Alerts ({alerts.length})</span>
+          </button>
+          <button
+            onClick={() => setFilterType('HOSPITALS')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              filterType === 'HOSPITALS'
+                ? 'bg-red-700 text-white shadow-2xs'
+                : 'bg-red-50 text-red-800 hover:bg-red-100'
+            }`}
+          >
+            <span>🏥 Hospitals ({initialHospitalCatalog.length})</span>
           </button>
           <button
             onClick={() => setShowGeofences(!showGeofences)}
@@ -388,42 +422,121 @@ export const AdminLiveMapView: React.FC<AdminLiveMapViewProps> = ({
                 </Popup>
               </Marker>
             ))}
+            {/* Hospital Markers (Red Cross Pin) */}
+            {visibleHospitals.map((hosp) => {
+              if (!hosp.latitude || !hosp.longitude) return null;
+              return (
+                <Marker
+                  key={hosp.id}
+                  position={[hosp.latitude, hosp.longitude]}
+                  icon={createHospitalIcon()}
+                >
+                  <Popup>
+                    <div className="p-1 min-w-[220px] text-xs">
+                      <div className="flex items-center gap-1.5 text-rose-700 font-extrabold mb-1">
+                        <span className="text-base">🏥</span>
+                        <span className="text-sm">{hosp.name}</span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] mb-1">{hosp.address}</p>
+                      <div className="text-[10px] text-emerald-800 font-semibold mb-1">
+                        GPS: {hosp.latitude.toFixed(4)}° N, {hosp.longitude.toFixed(4)}° E
+                      </div>
+                      <div className="text-[10px] text-slate-500 mb-1">
+                        Emergency: <span className="font-bold text-rose-600">{hosp.emergencyContact || hosp.emergencyPhone}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-700 bg-rose-50 p-1.5 rounded-lg border border-rose-100 font-medium">
+                        {hosp.traumaLevel || '24/7 Emergency & Acute Care'}
+                      </div>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
           </MapContainer>
 
         </div>
 
-        {/* Corridor & Elder List Sidebar */}
+        {/* Corridor, Elder & Hospital List Sidebar */}
         <div className="space-y-4">
           <div className="p-4 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
             <h3 className="font-heading font-extrabold text-sm text-slate-900">
               Quick Focus Coordinates
             </h3>
-            <p className="text-xs text-slate-500">
-              Click to jump and zoom directly to elder coordinates on the map.
+
+            {/* Tab switch between Elders and Hospitals */}
+            <div className="flex p-1 bg-slate-100 rounded-xl text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setSidebarTab('ELDERS')}
+                className={`flex-1 py-1 px-2 rounded-lg transition ${
+                  sidebarTab === 'ELDERS' ? 'bg-white text-teal-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                🧓 Elders ({elders.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarTab('HOSPITALS')}
+                className={`flex-1 py-1 px-2 rounded-lg transition ${
+                  sidebarTab === 'HOSPITALS' ? 'bg-white text-rose-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                🏥 Hospitals ({initialHospitalCatalog.length})
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              {sidebarTab === 'ELDERS' 
+                ? 'Click to jump directly to careseeker residence coordinates.' 
+                : 'Click to jump directly to verified hospital GPS coordinates.'}
             </p>
 
             <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-              {elders.map((elder) => (
-                <div
-                  key={elder.id}
-                  onClick={() => handleCenterOn(elder.latitude, elder.longitude)}
-                  className="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-teal-50/70 border border-slate-200/80 hover:border-teal-300 transition-all flex items-center justify-between text-xs"
-                >
-                  <div>
-                    <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-teal-700" />
-                      <span>{elder.name}</span>
+              {sidebarTab === 'ELDERS' ? (
+                elders.map((elder) => (
+                  <div
+                    key={elder.id}
+                    onClick={() => handleCenterOn(elder.latitude, elder.longitude)}
+                    className="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-teal-50/70 border border-slate-200/80 hover:border-teal-300 transition-all flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-teal-700" />
+                        <span>{elder.name}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        {elder.locality} • {elder.latitude.toFixed(4)}° N, {elder.longitude.toFixed(4)}° E
+                      </p>
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5">
-                      {elder.locality} • PIN: {elder.postalCode}
-                    </p>
-                  </div>
 
-                  <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-lg">
-                    Focus
-                  </span>
-                </div>
-              ))}
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-lg">
+                      Focus
+                    </span>
+                  </div>
+                ))
+              ) : (
+                initialHospitalCatalog.map((hosp) => (
+                  <div
+                    key={hosp.id}
+                    onClick={() => hosp.latitude && hosp.longitude && handleCenterOn(hosp.latitude, hosp.longitude)}
+                    className="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-rose-50/70 border border-slate-200/80 hover:border-rose-300 transition-all flex items-center justify-between text-xs"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="font-extrabold text-slate-900 flex items-center gap-1.5 truncate">
+                        <span className="text-xs">🏥</span>
+                        <span className="truncate">{hosp.name}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                        {hosp.locality || hosp.city} • {hosp.latitude?.toFixed(4)}° N, {hosp.longitude?.toFixed(4)}° E
+                      </p>
+                    </div>
+
+                    <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-lg shrink-0">
+                      Focus
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

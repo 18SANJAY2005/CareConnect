@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   MapPin,
   AlertTriangle,
   ShieldCheck,
-  Activity,
   TrendingUp,
   ChevronRight,
   Radio,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  UserCheck,
+  Building2,
+  Navigation,
+  Wallet,
 } from 'lucide-react';
 import type {
   AdminTab,
@@ -15,17 +21,19 @@ import type {
   AdminCaregiverItem,
   AdminSosAlert,
   AdminMetrics,
+  ShiftAttendanceLog,
 } from '../types';
-import { serviceableCorridors } from '../mockData';
-import { AdminKpiRibbon } from '../components/AdminKpiRibbon';
+import { serviceableCorridors, initialShiftAttendanceLogs } from '../mockData';
 
 interface AdminOverviewViewProps {
   metrics: AdminMetrics;
   elders: AdminElderItem[];
   caregivers: AdminCaregiverItem[];
   alerts: AdminSosAlert[];
+  attendanceLogs?: ShiftAttendanceLog[];
   onNavigateTab: (tab: AdminTab) => void;
   onSelectElder: (elder: AdminElderItem) => void;
+  onSelectCaregiverByName?: (caregiverName: string) => void;
 }
 
 export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
@@ -33,11 +41,22 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
   elders,
   caregivers,
   alerts,
+  attendanceLogs,
   onNavigateTab,
   onSelectElder,
+  onSelectCaregiverByName,
 }) => {
+  const [attendanceFilter, setAttendanceFilter] = useState<'ALL' | 'ARRIVED' | 'PENDING'>('ALL');
   const openAlerts = alerts.filter((a) => a.status === 'OPEN' || a.status === 'DISPATCHED');
   const bufferCaregivers = caregivers.filter((c) => c.isBufferPool && c.status === 'AVAILABLE');
+
+  const logsToDisplay = attendanceLogs && attendanceLogs.length > 0 ? attendanceLogs : initialShiftAttendanceLogs;
+  const arrivedCaregivers = logsToDisplay.filter(
+    (l) => Boolean(l.actualCheckIn && l.actualCheckIn.trim()) && l.isCheckInGeofenceVerified
+  );
+  const pendingCaregivers = logsToDisplay.filter(
+    (l) => !l.actualCheckIn || !l.actualCheckIn.trim() || !l.isCheckInGeofenceVerified
+  );
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -55,14 +74,28 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               onClick={() => onNavigateTab('MAP')}
-              className="px-4 py-2 bg-white text-teal-900 hover:bg-teal-50 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2 bg-white text-teal-900 hover:bg-teal-50 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
             >
               <MapPin className="w-3.5 h-3.5 text-teal-700" />
               <span>Launch Live Geographic Map</span>
             </button>
             <button
+              onClick={() => onNavigateTab('HOSPITALS')}
+              className="px-4 py-2 bg-teal-800/80 hover:bg-teal-700 text-teal-200 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95 border border-teal-500/30 cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5 text-teal-300" />
+              <span>Hospital Catalog</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab('PAYOUTS')}
+              className="px-4 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-200 text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95 border border-emerald-500/30 cursor-pointer"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Attendant Payouts</span>
+            </button>
+            <button
               onClick={() => onNavigateTab('SOS')}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95"
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
             >
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>{openAlerts.length} Active SOS Alerts</span>
@@ -73,9 +106,6 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
         {/* Subtle decorative background glow */}
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-teal-500/10 blur-3xl pointer-events-none" />
       </div>
-
-      {/* Active Attendants Statistic Banner */}
-      <AdminKpiRibbon caregivers={caregivers} onNavigateTab={onNavigateTab} />
 
       {/* Metrics Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -103,26 +133,40 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
           </div>
         </div>
 
-        {/* Card 2: Active Care Shifts */}
+        {/* Card 2: Active Attendant Statistics */}
         <div
           onClick={() => onNavigateTab('CAREGIVERS')}
           className="cursor-pointer group p-5 bg-white rounded-3xl border border-slate-200 shadow-xs hover:shadow-md hover:border-teal-300 transition-all"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Live Shifts
+              Active Attendants
             </span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition-colors flex items-center justify-center">
-              <Activity className="w-5 h-5" />
+              <UserCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-heading font-black text-slate-900">
-              {metrics.activeCareShifts}
+              {metrics.activeAttendants ?? metrics.activeCareShifts}
             </span>
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+            <span className="text-lg font-heading font-extrabold text-slate-400">
+              / {metrics.totalAttendants ?? caregivers.length}
+            </span>
+            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 ml-auto">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              Checked-in
+              Active
+            </span>
+          </div>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+            <span className="text-slate-500">
+              Total: <strong className="text-slate-800">{metrics.totalAttendants ?? caregivers.length}</strong>
+            </span>
+            <span className="text-emerald-700 font-semibold">
+              {metrics.activeAttendants ?? metrics.activeCareShifts} Active
+            </span>
+            <span className="text-slate-400">
+              {metrics.inactiveAttendants ?? Math.max(0, (metrics.totalAttendants ?? caregivers.length) - (metrics.activeAttendants ?? metrics.activeCareShifts))} Inactive
             </span>
           </div>
         </div>
@@ -194,6 +238,185 @@ export const AdminOverviewView: React.FC<AdminOverviewViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Active Elders Ticker & Quick Management */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Section 1.1: Dashboard - Caregiver Attendance Tracking */}
+          <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-teal-700" />
+                  <h3 className="font-heading font-extrabold text-base text-slate-900">
+                    Caregiver Attendance & Location Tracking (Today)
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Real-time status of whether caregivers have reached their careseekers' locations today
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onNavigateTab('ATTENDANCE')}
+                  className="text-xs font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Attendance Ledger</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Status Filter Bar */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
+              <button
+                onClick={() => setAttendanceFilter('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  attendanceFilter === 'ALL'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                }`}
+              >
+                <span>All Attendants ({logsToDisplay.length})</span>
+              </button>
+              <button
+                onClick={() => setAttendanceFilter('ARRIVED')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  attendanceFilter === 'ARRIVED'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Have Arrived ({arrivedCaregivers.length})</span>
+              </button>
+              <button
+                onClick={() => setAttendanceFilter('PENDING')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  attendanceFilter === 'PENDING'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200'
+                }`}
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>Not Yet Reached ({pendingCaregivers.length})</span>
+              </button>
+            </div>
+
+            {/* Attendance Ledger Separating Arrived vs Not Yet Reached */}
+            <div className="space-y-3 pt-1">
+              {/* Group 1: Caregivers Who Have Arrived */}
+              {(attendanceFilter === 'ALL' || attendanceFilter === 'ARRIVED') && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-800 bg-emerald-50/80 px-3.5 py-2 rounded-2xl border border-emerald-200">
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Caregivers Who Have Arrived at Location ({arrivedCaregivers.length})</span>
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-700 hidden sm:inline">
+                      Geofence Verified On-Site
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {arrivedCaregivers.map((log) => (
+                      <div
+                        key={log.id}
+                        onClick={() => onSelectCaregiverByName?.(log.caregiverName)}
+                        className="p-3.5 rounded-2xl bg-white border border-emerald-100 hover:border-emerald-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs cursor-pointer"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center shrink-0">
+                            {log.caregiverName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-xs text-slate-900">
+                                {log.caregiverName}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                ✓ Arrived at {log.actualCheckIn}
+                              </span>
+                              <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-0.5">
+                                <Navigation className="w-3 h-3 text-emerald-600" />
+                                Reached Client Location
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-0.5">
+                              Careseeker: <strong className="text-slate-800">{log.elderName || 'Assigned Elder'}</strong> • {log.locality}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 sm:self-center">
+                          <span className="text-[10px] font-mono font-semibold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                            Shift: {log.scheduledCheckIn} – {log.scheduledCheckOut}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                            Active On-Duty
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Group 2: Caregivers Who Have Not Yet Reached */}
+              {(attendanceFilter === 'ALL' || attendanceFilter === 'PENDING') && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-800 bg-amber-50/80 px-3.5 py-2 rounded-2xl border border-amber-200">
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Caregivers Who Have Not Yet Reached Location ({pendingCaregivers.length})</span>
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-700 hidden sm:inline">
+                      Check-In Pending / En Route
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {pendingCaregivers.map((log) => (
+                      <div
+                        key={log.id}
+                        onClick={() => onSelectCaregiverByName?.(log.caregiverName)}
+                        className="p-3.5 rounded-2xl bg-white border border-amber-200/70 hover:border-amber-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs cursor-pointer"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center shrink-0">
+                            {log.caregiverName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-extrabold text-xs text-slate-900">
+                                {log.caregiverName}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                ⏳ Not Yet Reached
+                              </span>
+                              <span className="text-[10px] text-amber-700 font-medium">
+                                Awaiting Client Arrival
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-0.5">
+                              Careseeker: <strong className="text-slate-800">{log.elderName || 'Assigned Elder'}</strong> • {log.locality}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 sm:self-center">
+                          <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+                            Scheduled Check-In: {log.scheduledCheckIn}
+                          </span>
+                          <span className="text-[10px] text-slate-400 italic">
+                            Pending Geofence Verification
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div>

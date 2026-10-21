@@ -15,12 +15,15 @@ import {
   Layers,
   MapPin,
   Check,
+  Wallet,
+  Banknote,
+  Tag,
 } from 'lucide-react';
 import { PLATFORM_SERVICES } from '../mockData';
 import type { PlatformService } from '../types';
 
 interface AdminServicesViewProps {
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
 }
 
 // Detailed everyday tasks and specifications for the 4 Daily Life Support Options
@@ -96,7 +99,7 @@ const SERVICE_DETAILS: Record<
 };
 
 export const AdminServicesView: React.FC<AdminServicesViewProps> = ({
-  onBackToDashboard,
+  onBack,
 }) => {
   const [services] = useState<PlatformService[]>(PLATFORM_SERVICES);
   const [searchQuery, setSearchQuery] = useState('');
@@ -184,14 +187,14 @@ export const AdminServicesView: React.FC<AdminServicesViewProps> = ({
       {/* Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -284,7 +287,7 @@ export const AdminServicesView: React.FC<AdminServicesViewProps> = ({
         </div>
 
         {/* Option Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             { id: 'ALL', label: 'All Services' },
             { id: 'mobility', label: 'Mobility' },
@@ -368,6 +371,64 @@ export const AdminServicesView: React.FC<AdminServicesViewProps> = ({
                 </ul>
               </div>
 
+              {/* Service Pricing & Attendant Payout Economics */}
+              {svc.pricing && (
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Standard Tariff & Payout</span>
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200">
+                      {svc.pricing.platformMarginPct}% platform retainage
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Careseeker Billing */}
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="text-[10px] font-medium text-slate-500">Careseeker Price</div>
+                      <div className="text-base font-extrabold text-slate-900 font-heading mt-0.5">
+                        ₹{svc.pricing.careseekerPricePerShift.toLocaleString('en-IN')}
+                        <span className="text-[11px] font-normal text-slate-500"> / shift</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        ₹{svc.pricing.careseekerMonthlyPrice.toLocaleString('en-IN')}/mo (30 days)
+                      </div>
+                    </div>
+
+                    {/* Attendant Direct Payout */}
+                    <div className="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-200 shadow-2xs">
+                      <div className="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
+                        <Wallet className="w-3 h-3 text-emerald-700" />
+                        <span>Attendant Payout</span>
+                      </div>
+                      <div className="text-base font-extrabold text-emerald-900 font-heading mt-0.5">
+                        ₹{svc.pricing.attendantPayoutPerShift.toLocaleString('en-IN')}
+                        <span className="text-[11px] font-normal text-emerald-700"> / shift</span>
+                      </div>
+                      <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                        ₹{svc.pricing.attendantMonthlyPayout.toLocaleString('en-IN')}/mo net take-home
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Shift Tier Options */}
+                  <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-1">
+                    {svc.pricing.tiers.map((tier, idx) => (
+                      <div
+                        key={idx}
+                        className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-medium text-slate-700 whitespace-nowrap flex items-center gap-1.5"
+                      >
+                        <span className="font-bold text-slate-900">{tier.hours}h:</span>
+                        <span>₹{tier.careseekerPrice}</span>
+                        <span className="text-emerald-700 font-bold">(Pay: ₹{tier.attendantPayout})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Footer: Careseeker Alignment & Details Trigger */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
@@ -443,6 +504,72 @@ export const AdminServicesView: React.FC<AdminServicesViewProps> = ({
                   {selectedServiceForModal.description}
                 </p>
               </div>
+
+              {/* Pricing & Attendant Payout Schedule */}
+              {selectedServiceForModal.pricing && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold uppercase tracking-wider text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <Banknote className="w-4 h-4 text-teal-600" />
+                      <span>Audited Pricing & Attendant Payout Rates</span>
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                      Standard INR Tariff
+                    </span>
+                  </div>
+
+                  <div className="w-full max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                          <th className="py-2.5 px-3">Shift Duration</th>
+                          <th className="py-2.5 px-3">Careseeker Tariff</th>
+                          <th className="py-2.5 px-3 text-emerald-800">Attendant Take-Home</th>
+                          <th className="py-2.5 px-3 text-slate-600">Platform Share</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700">
+                        {selectedServiceForModal.pricing.tiers.map((tier, i) => {
+                          const platformTake = tier.careseekerPrice - tier.attendantPayout;
+                          return (
+                            <tr key={i} className="hover:bg-slate-50/60 transition">
+                              <td className="py-2.5 px-3 font-bold text-slate-900">
+                                <div>{tier.label}</div>
+                                <div className="text-[10px] font-normal text-slate-400">{tier.duration} ({tier.hours} hrs)</div>
+                              </td>
+                              <td className="py-2.5 px-3 font-extrabold text-slate-900 font-heading">
+                                ₹{tier.careseekerPrice.toLocaleString('en-IN')}
+                                <span className="text-[10px] font-normal text-slate-400 block">
+                                  ₹{(tier.careseekerPrice * 30).toLocaleString('en-IN')}/mo
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-extrabold text-emerald-700 font-heading">
+                                ₹{tier.attendantPayout.toLocaleString('en-IN')}
+                                <span className="text-[10px] font-semibold text-emerald-600 block">
+                                  ₹{(tier.attendantPayout * 30).toLocaleString('en-IN')}/mo
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-medium text-slate-600">
+                                ₹{platformTake.toLocaleString('en-IN')}
+                                <span className="text-[10px] text-slate-400 block">
+                                  {((platformTake / tier.careseekerPrice) * 100).toFixed(1)}% margin
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-teal-50/60 border border-teal-200/60 text-[11px] text-teal-900 flex items-center justify-between gap-2">
+                    <span className="font-medium">
+                      Direct Payout Guarantee: Attendants receive <strong>78% - 80%</strong> of shift billing directly via instant UPI or IMPS.
+                    </span>
+                    <span className="font-bold text-teal-800 shrink-0">TDS 1% compliant</span>
+                  </div>
+                </div>
+              )}
 
               {/* Tasks checklist */}
               {SERVICE_DETAILS[selectedServiceForModal.code] && (

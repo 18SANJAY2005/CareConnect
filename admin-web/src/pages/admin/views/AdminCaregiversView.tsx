@@ -21,17 +21,17 @@ export type CaregiverStatusFilter = 'ALL' | 'KYC_PENDING' | 'AVAILABLE' | 'ON_DU
 interface AdminCaregiversViewProps {
   caregivers: AdminCaregiverItem[];
   onSelectCaregiver?: (caregiver: AdminCaregiverItem) => void;
-  onBackToDashboard?: () => void;
   onStatusChange?: (caregiverId: string, newStatus: 'AVAILABLE' | 'ON_DUTY' | 'ON_LEAVE' | 'ON_HANDOFF') => void;
   onKycStatusChange?: (caregiverId: string, newStatus: 'VERIFIED' | 'REJECTED', rejectionReason?: string) => Promise<any>;
+  onBack?: () => void;
 }
 
 export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
   caregivers,
   onSelectCaregiver,
-  onBackToDashboard,
   onStatusChange,
   onKycStatusChange,
+  onBack,
 }) => {
   const [localSelectedCaregiver, setLocalSelectedCaregiver] = useState<AdminCaregiverItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,14 +81,14 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
       {/* Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -161,7 +161,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           {[
             { id: 'ALL', label: 'All Status' },
             { id: 'KYC_PENDING', label: `KYC Pending (${kycPendingCount})` },
@@ -372,7 +372,7 @@ export const AdminCaregiversView: React.FC<AdminCaregiversViewProps> = ({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="w-full max-w-full overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">

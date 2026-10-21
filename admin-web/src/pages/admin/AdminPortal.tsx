@@ -28,8 +28,8 @@ import { AdminReportsView } from './views/AdminReportsView';
 import { AdminSettingsView } from './views/AdminSettingsView';
 import { AdminLiveMapView } from './views/AdminLiveMapView';
 import { AdminSosPanel } from './views/AdminSosPanel';
-import { AdminPayoutsView } from './views/AdminPayoutsView';
 import { AdminHospitalCatalogView } from './views/AdminHospitalCatalogView';
+import { AdminPayoutHistoryView } from './views/AdminPayoutHistoryView';
 import { AdminLogin, ADMIN_AUTH_KEY } from './AdminLogin';
 import { api } from '../../services/api';
 
@@ -49,13 +49,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     const hash = window.location.hash.toLowerCase();
     if (hash.includes('map')) return 'MAP';
     if (hash.includes('sos')) return 'SOS';
+    if (hash.includes('hospitals') || hash.includes('hospital')) return 'HOSPITALS';
     if (hash.includes('elders') || hash.includes('careseekers')) return 'ELDERS';
     if (hash.includes('caregivers')) return 'CAREGIVERS';
     if (hash.includes('attendance')) return 'ATTENDANCE';
+    if (hash.includes('payouts') || hash.includes('payout')) return 'PAYOUTS';
     if (hash.includes('services-pricing') || hash.includes('services') || hash.includes('pricing') || hash.includes('catalog'))
       return 'SERVICES_PRICING';
-    if (hash.includes('hospital')) return 'HOSPITALS';
-    if (hash.includes('payout')) return 'PAYOUTS';
     if (hash.includes('reports') || hash.includes('analytics')) return 'REPORTS';
     if (hash.includes('access') || hash.includes('settings') || hash.includes('governance')) return 'SETTINGS';
     if (hash.includes('care-plans') || hash.includes('careplans')) return 'SERVICES_PRICING';
@@ -542,7 +542,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-50 text-slate-800">
+    <div className="relative h-screen w-full max-w-full overflow-hidden bg-slate-50 text-slate-800">
       <AdminLayout
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
@@ -564,6 +564,12 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               alerts={displayedAlerts}
               onNavigateTab={handleSelectTab}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
+              onSelectCaregiverByName={(cgName) => {
+                const found = caregivers.find(
+                  (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
+                );
+                if (found) setSelectedCaregiverForDrawer(found);
+              }}
             />
           )}
 
@@ -573,7 +579,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
               onStatusChange={handleStatusChange}
               onAddElder={onAddElderFromAdmin}
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
@@ -583,13 +589,13 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
               onStatusChange={handleCaregiverStatusChange}
               onKycStatusChange={handleKycStatusChange}
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
           {activeTab === 'ATTENDANCE' && (
             <AdminAttendanceView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
               onSelectCaregiverByName={(cgName) => {
                 const found = caregivers.find(
                   (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
@@ -605,32 +611,27 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             />
           )}
 
-          {(activeTab === 'SERVICES_PRICING' || activeTab === 'SERVICES' || activeTab === 'PRICING' || activeTab === 'CARE_PLANS') && (
-            <AdminServicesPricingView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
-              defaultSubTab={activeTab === 'PRICING' ? 'PRICING' : 'SERVICES'}
-            />
-          )}
-
-          {activeTab === 'REPORTS' && (
-            <AdminReportsView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
-            />
-          )}
-
-          {(activeTab === 'SETTINGS' || activeTab === 'SETTINGS_ACCESS') && (
-            <AdminSettingsView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
-              activeRole={activeRole}
-              onRoleChange={setActiveRole}
-              activeSectorScope={activeSectorScope}
-              onSectorScopeChange={setActiveSectorScope}
+          {activeTab === 'PAYOUTS' && (
+            <AdminPayoutHistoryView
+              onBack={() => handleSelectTab('OVERVIEW')}
+              onSelectCaregiverByName={(cgName) => {
+                const found = caregivers.find(
+                  (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
+                );
+                if (found) setSelectedCaregiverForDrawer(found);
+              }}
+              onSelectElderByName={(eName) => {
+                const found = elders.find(
+                  (e) => e.name.toLowerCase() === eName.toLowerCase()
+                );
+                if (found) setSelectedElderForDrawer(found);
+              }}
             />
           )}
 
           {activeTab === 'HOSPITALS' && (
             <AdminHospitalCatalogView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
               onViewOnMap={(lat, lng) => {
                 setFocusedCoordinates([lat, lng]);
                 handleSelectTab('MAP');
@@ -638,15 +639,26 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             />
           )}
 
-          {activeTab === 'PAYOUTS' && (
-            <AdminPayoutsView
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
-              onSelectCaregiverByName={(cgName) => {
-                const found = caregivers.find(
-                  (c) => c.fullName.toLowerCase() === cgName.toLowerCase()
-                );
-                if (found) setSelectedCaregiverForDrawer(found);
-              }}
+          {(activeTab === 'SERVICES_PRICING' || activeTab === 'SERVICES' || activeTab === 'PRICING' || activeTab === 'CARE_PLANS') && (
+            <AdminServicesPricingView
+              onBack={() => handleSelectTab('OVERVIEW')}
+              defaultSubTab={activeTab === 'PRICING' ? 'PRICING' : 'SERVICES'}
+            />
+          )}
+
+          {activeTab === 'REPORTS' && (
+            <AdminReportsView
+              onBack={() => handleSelectTab('OVERVIEW')}
+            />
+          )}
+
+          {(activeTab === 'SETTINGS' || activeTab === 'SETTINGS_ACCESS') && (
+            <AdminSettingsView
+              onBack={() => handleSelectTab('OVERVIEW')}
+              activeRole={activeRole}
+              onRoleChange={setActiveRole}
+              activeSectorScope={activeSectorScope}
+              onSectorScopeChange={setActiveSectorScope}
             />
           )}
 
@@ -658,7 +670,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               focusedCoordinates={focusedCoordinates}
               onSelectElder={(e) => setSelectedElderForDrawer(e)}
               onSelectCaregiver={(cg) => setSelectedCaregiverForDrawer(cg)}
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
             />
           )}
 
@@ -669,7 +681,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               onResolveAlert={handleResolveAlert}
               onDispatchSupervisor={handleDispatchSupervisor}
               onViewOnMap={handleViewAlertOnMap}
-              onBackToDashboard={() => handleSelectTab('OVERVIEW')}
+              onBack={() => handleSelectTab('OVERVIEW')}
             />
           )}
       </AdminLayout>

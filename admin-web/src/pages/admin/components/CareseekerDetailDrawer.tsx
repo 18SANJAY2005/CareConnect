@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   MapPin,
@@ -19,9 +19,15 @@ import {
   HeartPulse,
   Pill,
   Eye,
+  Star,
 } from 'lucide-react';
 import type { AdminElderItem, NearbyHospital, CareseekerOffer } from '../types';
-import { standardChennaiHospitals, sampleClinicalTasksElder1 } from '../mockData';
+import {
+  standardChennaiHospitals,
+  sampleClinicalTasksElder1,
+  initialHospitalCatalog,
+  getHospitalsForLocality,
+} from '../mockData';
 
 export const CARESEEKER_OFFERS: CareseekerOffer[] = [
   {
@@ -81,26 +87,22 @@ export const CareseekerDetailDrawer: React.FC<CareseekerDetailDrawerProps> = ({
   onUpdatePreferredHospital,
   onUpdateOffer,
 }) => {
-  const nearbyHospitalsList: NearbyHospital[] =
-    elder?.nearbyHospitals && elder.nearbyHospitals.length > 0
-      ? elder.nearbyHospitals
-      : standardChennaiHospitals.ADYAR;
+  const nearbyHospitalsList: NearbyHospital[] = useMemo(() => {
+    if (!elder) return standardChennaiHospitals.ADYAR;
+    return getHospitalsForLocality(elder.locality || elder.addressLine1, elder.latitude, elder.longitude);
+  }, [elder]);
 
-  const [selectedHospital, setSelectedHospital] = useState<NearbyHospital>(
-    elder?.preferredHospital || nearbyHospitalsList[0]
-  );
+  const [selectedHospital, setSelectedHospital] = useState<NearbyHospital>(() => {
+    return elder?.preferredHospital || nearbyHospitalsList[0] || initialHospitalCatalog[0];
+  });
   const [hospitalSavedToast, setHospitalSavedToast] = useState(false);
   const [offerToast, setOfferToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (elder) {
-      const list =
-        elder.nearbyHospitals && elder.nearbyHospitals.length > 0
-          ? elder.nearbyHospitals
-          : standardChennaiHospitals.ADYAR;
-      setSelectedHospital(elder.preferredHospital || list[0]);
+      setSelectedHospital(elder.preferredHospital || nearbyHospitalsList[0] || initialHospitalCatalog[0]);
     }
-  }, [elder]);
+  }, [elder, nearbyHospitalsList]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -222,12 +224,12 @@ export const CareseekerDetailDrawer: React.FC<CareseekerDetailDrawerProps> = ({
             </div>
           </div>
 
-          {/* EMERGENCY HEALTHCARE FACILITY & NEAREST HOSPITAL ALLOCATION */}
+          {/* EMERGENCY HEALTHCARE FACILITY & LOCALITY-BASED HOSPITAL ALLOCATION */}
           <div className="p-5 rounded-3xl bg-white border border-rose-200 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs uppercase tracking-wider">
                 <Building2 className="w-4 h-4 text-rose-600" />
-                <span>Medical Facilities & Emergency Routing</span>
+                <span>Medical Facilities & Locality Hospitals</span>
               </div>
               <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 flex items-center gap-1">
                 <Ambulance className="w-3 h-3" />
@@ -235,20 +237,125 @@ export const CareseekerDetailDrawer: React.FC<CareseekerDetailDrawerProps> = ({
               </span>
             </div>
 
-            {/* Currently Selected Primary Hospital Box */}
-            <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-2.5">
-              <div className="flex items-start justify-between gap-2">
+            {/* STEP 1: Specific Set of Hospitals in Careseeker's Location */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-rose-800 block">
-                    Preferred Emergency Facility
+                  <span className="text-xs font-heading font-extrabold text-slate-900 block">
+                    1. Specific Hospitals in Location ({elder.locality || elder.city})
                   </span>
-                  <div className="text-sm font-extrabold text-rose-950 mt-0.5 flex items-center gap-1.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Hospitals geocoded near {elder.name}'s address from Google Maps. Choose one below to designate as their preferred hospital:
+                  </p>
+                </div>
+                {hospitalSavedToast && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 animate-fadeIn shrink-0">
+                    ✓ Preferred hospital updated!
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {nearbyHospitalsList.map((hosp) => {
+                  const isSelected = selectedHospital.id === hosp.id || selectedHospital.name === hosp.name;
+                  return (
+                    <div
+                      key={hosp.id}
+                      onClick={() => handleSelectHospital(hosp)}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-rose-50/80 border-rose-300 ring-2 ring-rose-400/20 shadow-2xs'
+                          : 'bg-slate-50 border-slate-200 hover:bg-rose-50/40 hover:border-rose-200'
+                      }`}
+                    >
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-xs text-slate-900">
+                            {hosp.name}
+                          </span>
+                          {isSelected && (
+                            <span className="px-2 py-0.5 bg-rose-600 text-white text-[9px] font-black rounded-md tracking-wider uppercase flex items-center gap-1">
+                              <Star className="w-2.5 h-2.5 fill-white" />
+                              Designated Preferred
+                            </span>
+                          )}
+                        </div>
+                        {/* Exact Address from Google Maps */}
+                        <p className="text-[11px] text-slate-600 flex items-start gap-1 leading-snug">
+                          <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                          <span>{hosp.address}</span>
+                        </p>
+                        <div className="text-[10px] text-rose-800 font-semibold flex items-center gap-2 flex-wrap pt-0.5">
+                          <span className="bg-white px-2 py-0.5 rounded-md border border-rose-200 text-rose-900 font-bold">
+                            {hosp.distanceKm} km • ~{hosp.etaMins}m ambulance ETA
+                          </span>
+                          <span className="text-slate-500 font-normal">
+                            ER: {hosp.emergencyPhone}
+                          </span>
+                          <a
+                            href={hosp.latitude && hosp.longitude
+                              ? `https://www.google.com/maps/dir/?api=1&origin=${elder.latitude},${elder.longitude}&destination=${hosp.latitude},${hosp.longitude}&travelmode=driving`
+                              : hosp.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(hosp.name + ' Chennai')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded border border-teal-200 transition"
+                            title="Open Google Maps Driving Directions"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5 text-teal-600" />
+                            <span>Google Maps</span>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-2">
+                        {isSelected ? (
+                          <span className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>Designated</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSelectHospital(hosp)}
+                            className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-600 text-slate-700 hover:text-white border border-slate-300 hover:border-rose-600 font-bold text-[11px] transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <span>Set as Preferred Hospital</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* STEP 2: Preferred Hospital Designated by Careseeker (After displaying location hospitals) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 to-white border-2 border-rose-300 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Star className="w-4 h-4 fill-rose-600 text-rose-600" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-rose-900">
+                    2. Careseeker's Designated Preferred Hospital
+                  </span>
+                </div>
+                <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Selected for SOS & Emergency Dispatch
+                </span>
+              </div>
+
+              <div className="flex items-start justify-between gap-2 pt-1">
+                <div>
+                  <div className="text-base font-heading font-black text-rose-950 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-rose-700 shrink-0" />
                     <span>{selectedHospital.name}</span>
-                    <span className="text-emerald-700 text-[10px] bg-emerald-100 px-1.5 py-0.2 rounded-md font-bold">
-                      Designated
-                    </span>
                   </div>
-                  <p className="text-xs text-rose-900/80 mt-0.5">{selectedHospital.address}</p>
+                  {/* Exact Google Maps address */}
+                  <p className="text-xs text-rose-900/80 mt-1 flex items-start gap-1 leading-snug">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{selectedHospital.address}</span>
+                  </p>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="inline-block px-2.5 py-1 bg-white border border-rose-200 text-rose-800 font-extrabold text-xs rounded-xl shadow-2xs">
@@ -257,82 +364,31 @@ export const CareseekerDetailDrawer: React.FC<CareseekerDetailDrawerProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-rose-200/70 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-rose-200 text-xs">
                 <div className="text-[11px] font-semibold text-rose-900">
-                  {selectedHospital.traumaLevel}
+                  {selectedHospital.traumaLevel || '24/7 Comprehensive Emergency Center'}
                 </div>
-                <a
-                  href={`tel:${selectedHospital.emergencyPhone}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs"
-                >
-                  <PhoneCall className="w-3 h-3" />
-                  <span>Call Emergency: {selectedHospital.emergencyPhone}</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Auto-detected 3 Nearest Hospitals Selector */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-700">
-                  Select or Switch Nearest Facility (Top 3 Auto-Detected):
-                </span>
-                {hospitalSavedToast && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md animate-fadeIn">
-                    ✓ Preferred hospital saved
-                  </span>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                {nearbyHospitalsList.map((hosp) => {
-                  const isSelected = selectedHospital.id === hosp.id;
-                  return (
-                    <div
-                      key={hosp.id}
-                      onClick={() => handleSelectHospital(hosp)}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                        isSelected
-                          ? 'bg-rose-50/80 border-rose-300 ring-1 ring-rose-300 shadow-2xs'
-                          : 'bg-slate-50 border-slate-200 hover:bg-rose-50/40 hover:border-rose-200'
-                      }`}
-                    >
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-900 truncate">
-                            {hosp.name}
-                          </span>
-                          {isSelected && (
-                            <span className="px-1.5 py-0.2 bg-rose-600 text-white text-[9px] font-black rounded-md tracking-wider uppercase">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 truncate">{hosp.locality || hosp.address}</p>
-                        <div className="text-[10px] text-rose-800 font-semibold">
-                          {hosp.distanceKm} km away • approx. {hosp.etaMins} mins via ambulance
-                        </div>
-                      </div>
-
-                      <div className="shrink-0">
-                        {isSelected ? (
-                          <span className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-[11px] flex items-center gap-1 shadow-2xs">
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            <span>Primary ER Facility</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSelectHospital(hosp)}
-                            className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-600 text-slate-700 hover:text-white border border-slate-300 hover:border-rose-600 font-bold text-[11px] transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <span>Set as Primary ER Facility</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="flex items-center gap-2">
+                  <a
+                    href={selectedHospital.latitude && selectedHospital.longitude
+                      ? `https://www.google.com/maps/dir/?api=1&origin=${elder.latitude},${elder.longitude}&destination=${selectedHospital.latitude},${selectedHospital.longitude}&travelmode=driving`
+                      : selectedHospital.googleMapsUrl || `https://maps.google.com/?q=${encodeURIComponent(selectedHospital.name + ' Chennai')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-800 font-bold text-xs border border-rose-300 transition shadow-2xs"
+                    title="Open Driving Navigation on Google Maps"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Google Maps Route</span>
+                  </a>
+                  <a
+                    href={`tel:${selectedHospital.emergencyPhone.replace(/\s+/g, '')}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs"
+                  >
+                    <PhoneCall className="w-3.5 h-3.5" />
+                    <span>Call Emergency: {selectedHospital.emergencyPhone}</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

@@ -5,7 +5,6 @@ import {
   Radio,
   Shield,
   LogOut,
-  ArrowLeft,
   MapPin,
 } from 'lucide-react';
 import type { AdminTab, AdminMetrics, OperatingSectorScope, OpsRole } from '../types';
@@ -43,6 +42,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         return 'Caregiver Network & Standby Reserve';
       case 'ATTENDANCE':
         return 'Shift Attendance & Task Monitoring';
+      case 'PAYOUTS':
+        return 'Attendant Payout History & Disbursals';
       case 'SERVICES_PRICING':
       case 'SERVICES':
       case 'PRICING':
@@ -54,6 +55,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
         return 'Corridor Serviceability & Live Map';
       case 'SOS':
         return 'Emergency SOS Incident Desk';
+      case 'HOSPITALS':
+        return 'Hospital & Emergency Facilities Catalog';
       case 'SETTINGS':
       case 'SETTINGS_ACCESS':
         return 'Access Control & Governance Settings';
@@ -76,21 +79,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-20 h-16 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 flex items-center justify-between gap-3 shadow-xs">
+    <header className="sticky top-0 z-20 h-16 w-full max-w-full bg-white/95 backdrop-blur border-b border-slate-200 px-3 md:px-6 flex items-center justify-between gap-2 md:gap-3 shadow-xs overflow-hidden shrink-0">
       {/* View Title & Breadcrumb */}
-      <div className="flex items-center gap-3 min-w-0 shrink-0">
-        {activeTab !== 'OVERVIEW' && (
-          <button
-            onClick={() => onNavigateTab('OVERVIEW')}
-            className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 group shadow-2xs cursor-pointer"
-            title="Back to Dashboard"
-            aria-label="Back to Dashboard"
-          >
-            <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:text-teal-700 transition group-hover:-translate-x-0.5" />
-          </button>
-        )}
+      <div className="flex items-center gap-2.5 min-w-0 shrink-0">
         <div className="min-w-0">
-          <h1 className="text-base md:text-lg font-heading font-extrabold text-slate-900 leading-tight truncate">
+          <h1 className="text-sm md:text-base lg:text-lg font-heading font-extrabold text-slate-900 leading-tight truncate">
             {getTabTitle()}
           </h1>
         </div>
@@ -98,7 +91,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
       {/* Center: Geographic Location Scoping Selector */}
       {onSectorScopeChange && (
-        <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+        <div className="hidden 2xl:flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs">
           <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sector:</span>
           <select
@@ -119,7 +112,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       )}
 
       {/* Quick Operations Telemetry Badges */}
-      <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+      <div className="hidden xl:flex items-center gap-2 shrink-0">
         {/* Active Shifts Indicator */}
         <button
           onClick={() => onNavigateTab('CAREGIVERS')}

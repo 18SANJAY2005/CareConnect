@@ -3,27 +3,22 @@ import {
   Clock,
   Search,
   CheckCircle2,
+  AlertCircle,
   MapPin,
   ArrowLeft,
+  Navigation,
   ListChecks,
   Activity,
+  UserCheck,
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  Phone,
-  PhoneCall,
-  MessageSquare,
-  Send,
-  Calendar,
-  AlertTriangle,
-  X,
-  Check,
 } from 'lucide-react';
 import type { ShiftAttendanceLog, ClinicalTaskItem } from '../types';
 import { initialShiftAttendanceLogs, serviceableCorridors } from '../mockData';
 
 interface AdminAttendanceViewProps {
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
   onSelectCaregiverByName?: (caregiverName: string) => void;
   onSelectElderByName?: (elderName: string) => void;
 }
@@ -84,16 +79,13 @@ const defaultShiftTasks: ClinicalTaskItem[] = [
 ];
 
 export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
-  onBackToDashboard,
+  onBack,
   onSelectCaregiverByName,
   onSelectElderByName,
 }) => {
   const [logs, setLogs] = useState<ShiftAttendanceLog[]>(() =>
     initialShiftAttendanceLogs.map((l) => {
-      const tasks =
-        l.tasks && l.tasks.length > 0
-          ? l.tasks
-          : defaultShiftTasks.map((t) => ({ ...t, id: `${l.id}_${t.id}` }));
+      const tasks = l.tasks && l.tasks.length > 0 ? l.tasks : defaultShiftTasks.map((t) => ({ ...t, id: `${l.id}_${t.id}` }));
       return {
         ...l,
         tasks,
@@ -102,22 +94,15 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
       };
     })
   );
-
-  // Split View Tab: Arrived vs Not Yet Reached vs All
-  const [arrivalTab, setArrivalTab] = useState<'ARRIVED' | 'NOT_YET_REACHED' | 'ALL'>('ARRIVED');
-  const [selectedDate, setSelectedDate] = useState<'TODAY' | 'YESTERDAY' | 'ALL'>('TODAY');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [zoneFilter, setZoneFilter] = useState<string>('ALL');
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-
-  // Contact Caregiver Modal State
-  const [contactModalLog, setContactModalLog] = useState<ShiftAttendanceLog | null>(null);
-  const [customSmsText, setCustomSmsText] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleToggleTaskStatus = (logId: string, taskId: string) => {
@@ -171,19 +156,11 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
     );
   };
 
-  // Helper check for arrived status
-  const isLogArrived = (l: ShiftAttendanceLog) => {
-    if (l.arrivalStatus === 'ARRIVED') return true;
-    if (l.arrivalStatus === 'NOT_YET_REACHED') return false;
-    if (l.status === 'EN_ROUTE' || l.status === 'DELAYED_UNACKNOWLEDGED' || l.status === 'NOT_YET_REACHED') return false;
-    if (l.actualCheckIn && (l.actualCheckIn.includes('Pending') || l.actualCheckIn.includes('Not Checked'))) return false;
-    return Boolean(l.isCheckInGeofenceVerified || l.actualCheckIn);
-  };
-
   // Metrics Calculations
   const totalLogs = logs.length;
-  const arrivedLogsList = logs.filter(isLogArrived);
-  const notReachedLogsList = logs.filter((l) => !isLogArrived(l));
+  const activeOnDutyCount = logs.filter(
+    (l) => l.status === 'ACTIVE_ON_DUTY' || l.status === 'ON_DUTY_WITHIN_SHIFT'
+  ).length;
 
   const totalTasksAll = logs.reduce((acc, l) => acc + (l.tasksTotalCount || 6), 0);
   const completedTasksAll = logs.reduce((acc, l) => acc + (l.tasksCompletedCount || 4), 0);
@@ -199,50 +176,83 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
   // Filtered Logs
   const filteredLogs = useMemo(() => {
     return logs.filter((l) => {
-      // 1. Arrival Split Filter
-      const arrived = isLogArrived(l);
-      if (arrivalTab === 'ARRIVED' && !arrived) return false;
-      if (arrivalTab === 'NOT_YET_REACHED' && arrived) return false;
-
-      // 2. Date Filter
-      if (selectedDate === 'TODAY') {
-        const isToday = l.shiftDate.toLowerCase().includes('today') || l.shiftDate.includes('16 Oct');
-        if (!isToday && !l.shiftDate.includes('Today')) return false;
-      } else if (selectedDate === 'YESTERDAY') {
-        const isYest = l.shiftDate.toLowerCase().includes('yesterday') || l.shiftDate.includes('15 Oct');
-        if (!isYest) return false;
-      }
-
-      // 3. Search Filter
-      const q = searchQuery.toLowerCase();
       const matchesSearch =
         searchQuery === '' ||
-        l.caregiverName.toLowerCase().includes(q) ||
-        (l.elderName && l.elderName.toLowerCase().includes(q)) ||
-        l.locality.toLowerCase().includes(q) ||
-        (l.caregiverPhone && l.caregiverPhone.includes(q));
+        l.caregiverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (l.elderName && l.elderName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        l.locality.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // 4. Zone Filter
+      let matchesStatus = true;
+      if (statusFilter === 'ACTIVE_ON_DUTY' || statusFilter === 'ON_DUTY') {
+        matchesStatus = l.status === 'ACTIVE_ON_DUTY' || l.status === 'ON_DUTY_WITHIN_SHIFT';
+      } else if (statusFilter === 'CLOCKED_OUT') {
+        matchesStatus = l.status === 'COMPLETED' || l.status === 'CLOCKED_OUT';
+      } else if (statusFilter === 'LATE_FLAGGED') {
+        matchesStatus =
+          l.status === 'LATE_CHECK_IN' ||
+          l.geofenceStatus === 'OFF_SITE_FLAG' ||
+          !l.isCheckInGeofenceVerified;
+      } else if (statusFilter === 'ON_TIME') {
+        matchesStatus = l.status === 'ON_TIME_CHECK_IN';
+      } else if (statusFilter === 'LATE') {
+        matchesStatus = l.status === 'LATE_CHECK_IN';
+      } else if (statusFilter === 'OVERTIME') {
+        matchesStatus = l.status === 'OVERTIME';
+      } else if (statusFilter === 'OFF_SITE_FLAG') {
+        matchesStatus = l.geofenceStatus === 'OFF_SITE_FLAG' || !l.isCheckInGeofenceVerified;
+      }
+
       let matchesZone = true;
       if (zoneFilter !== 'ALL') {
         matchesZone = l.locality.toLowerCase().includes(zoneFilter.toLowerCase());
       }
 
-      return matchesSearch && matchesZone;
+      return matchesSearch && matchesStatus && matchesZone;
     });
-  }, [logs, arrivalTab, selectedDate, searchQuery, zoneFilter]);
+  }, [logs, searchQuery, statusFilter, zoneFilter]);
 
-  const handleOpenContactModal = (log: ShiftAttendanceLog) => {
-    setContactModalLog(log);
-    setCustomSmsText(
-      `Hello ${log.caregiverName}, this is CareConnect Operations. Your scheduled shift for ${log.elderName || 'Careseeker'} in ${log.locality} started at ${log.scheduledCheckIn}. Please check in via the app or reply with your current ETA.`
-    );
-  };
-
-  const handleSendUrgentPing = () => {
-    if (!contactModalLog) return;
-    showToast(`Urgent check-in escalation sent to ${contactModalLog.caregiverName} (+SMS & App Push).`);
-    setContactModalLog(null);
+  const getStatusBadge = (status: ShiftAttendanceLog['status']) => {
+    switch (status) {
+      case 'ON_TIME_CHECK_IN':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            On Time Check-In
+          </span>
+        );
+      case 'LATE_CHECK_IN':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+            Late Check-In
+          </span>
+        );
+      case 'ACTIVE_ON_DUTY':
+      case 'ON_DUTY_WITHIN_SHIFT':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200 flex items-center gap-1 w-fit">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+            Active On Duty
+          </span>
+        );
+      case 'CLOCKED_OUT':
+      case 'COMPLETED':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+            Clocked Out
+          </span>
+        );
+      case 'OVERTIME':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+            Overtime
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+            {String(status).replace(/_/g, ' ')}
+          </span>
+        );
+    }
   };
 
   return (
@@ -258,14 +268,14 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
       {/* Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0 cursor-pointer"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -273,106 +283,67 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
               <Clock className="w-6 h-6 text-teal-700" />
               <span>Shift Attendance & Task Monitoring</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Live biometric arrival ledger, physical geofence verification, and clinical task execution.
-            </p>
           </div>
         </div>
 
-        {/* Selected Date Selector & Quick Indicators */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
-            <span className="px-2.5 py-1 text-slate-500 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-teal-700" />
-              <span>Shift Date:</span>
-            </span>
-            <button
-              onClick={() => setSelectedDate('TODAY')}
-              className={`px-3 py-1 rounded-xl transition cursor-pointer ${
-                selectedDate === 'TODAY'
-                  ? 'bg-white text-teal-950 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setSelectedDate('YESTERDAY')}
-              className={`px-3 py-1 rounded-xl transition cursor-pointer ${
-                selectedDate === 'YESTERDAY'
-                  ? 'bg-white text-teal-950 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Yesterday
-            </button>
-            <button
-              onClick={() => setSelectedDate('ALL')}
-              className={`px-3 py-1 rounded-xl transition cursor-pointer ${
-                selectedDate === 'ALL'
-                  ? 'bg-white text-teal-950 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              All Records
-            </button>
-          </div>
+          <span className="px-3 py-1.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{activeOnDutyCount} Currently Active on Duty</span>
+          </span>
+          <span className="px-3 py-1.5 rounded-2xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
+            <Navigation className="w-3.5 h-3.5 text-teal-600" />
+            <span>{geofenceComplianceRate}% Geofence Compliance</span>
+          </span>
         </div>
       </div>
 
       {/* 4 Summary Telemetry Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Arrived / On Site */}
-        <div
-          onClick={() => setArrivalTab('ARRIVED')}
-          className={`cursor-pointer p-5 rounded-3xl bg-white border transition-all shadow-xs space-y-2.5 ${
-            arrivalTab === 'ARRIVED' ? 'ring-2 ring-emerald-500 border-emerald-300' : 'border-slate-200'
-          }`}
-        >
+        {/* KPI 1: Overall Task Completion Rate */}
+        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800">
-              Arrived / On Site
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Shift Tasks Compliance
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" />
+              <ListChecks className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="text-2xl font-black font-heading text-slate-900">
-              {arrivedLogsList.length} Attendants
+              {overallTaskPercentage}%
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Physically verified at beneficiary homes
+              {completedTasksAll} of {totalTasksAll} Daily Shift Tasks Done
             </p>
+          </div>
+          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+              style={{ width: `${overallTaskPercentage}%` }}
+            />
           </div>
         </div>
 
-        {/* KPI 2: Not Yet Reached / Pending */}
-        <div
-          onClick={() => setArrivalTab('NOT_YET_REACHED')}
-          className={`cursor-pointer p-5 rounded-3xl bg-white border transition-all shadow-xs space-y-2.5 ${
-            arrivalTab === 'NOT_YET_REACHED' ? 'ring-2 ring-amber-500 border-amber-300' : 'border-slate-200'
-          }`}
-        >
+        {/* KPI 2: Active On-Duty Personnel */}
+        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
-              Not Yet Reached
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+              Active Attendants
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
-              <Clock className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
+              <UserCheck className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="text-2xl font-black font-heading text-slate-900">
-              {notReachedLogsList.length} Pending
+              {activeOnDutyCount} Staff
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              En route or delayed check-in
-            </p>
           </div>
         </div>
 
-        {/* KPI 3: Geofence Verification Rate */}
+        {/* KPI 3: Geofence Verification */}
         <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
@@ -386,79 +357,25 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
             <div className="text-2xl font-black font-heading text-slate-900">
               {geofenceComplianceRate}% Verified
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Within 35m beneficiary geofence
-            </p>
           </div>
         </div>
 
-        {/* KPI 4: Clinical Tasks Progress */}
+        {/* KPI 4: Clinical Vitals Handover */}
         <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-              Clinical Tasks
+              Clinical Handoff Desk
             </span>
-            <div className="w-8 h-8 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
-              <ListChecks className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+              <Activity className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="text-2xl font-black font-heading text-slate-900">
-              {overallTaskPercentage}% Done
+              {logs.filter((l) => l.vitalsHandedOver).length} / {totalLogs} Signed
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {completedTasksAll} of {totalTasksAll} shift tasks logged
-            </p>
           </div>
         </div>
-      </div>
-
-      {/* Split Tabs: Arrived vs Not Yet Reached */}
-      <div className="p-1.5 bg-slate-100 rounded-2xl flex flex-wrap items-center gap-1.5 border border-slate-200 text-xs font-bold">
-        <button
-          onClick={() => setArrivalTab('ARRIVED')}
-          className={`flex-1 min-w-[200px] py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
-            arrivalTab === 'ARRIVED'
-              ? 'bg-white text-emerald-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>Arrived / On Site Tab</span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] border border-emerald-200">
-            {arrivedLogsList.length} Attendants
-          </span>
-        </button>
-
-        <button
-          onClick={() => setArrivalTab('NOT_YET_REACHED')}
-          className={`flex-1 min-w-[200px] py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
-            arrivalTab === 'NOT_YET_REACHED'
-              ? 'bg-white text-amber-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4 text-amber-600" />
-          <span>Not Yet Reached / Pending Tab</span>
-          <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] border border-amber-200">
-            {notReachedLogsList.length} Pending
-          </span>
-        </button>
-
-        <button
-          onClick={() => setArrivalTab('ALL')}
-          className={`py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
-            arrivalTab === 'ALL'
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-          }`}
-        >
-          <Activity className="w-4 h-4 text-teal-600" />
-          <span>All Attendance & Tasks</span>
-          <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px]">
-            {logs.length}
-          </span>
-        </button>
       </div>
 
       {/* Search and Filters Toolbar */}
@@ -468,7 +385,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search caregiver, beneficiary, phone or locality..."
+            placeholder="Search caregiver, beneficiary, or locality..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-teal-500 font-medium text-slate-800"
@@ -484,7 +401,7 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
             onChange={(e) => setZoneFilter(e.target.value)}
             className="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-800 focus:bg-white"
           >
-            <option value="ALL">All Chennai Corridors</option>
+            <option value="ALL">All Hubs & Corridors</option>
             {serviceableCorridors.map((c) => (
               <option key={c.name} value={c.name.split(' ')[0]}>
                 {c.name}
@@ -492,188 +409,78 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
             ))}
           </select>
         </div>
+
+        {/* Status Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            { id: 'ALL', label: 'All Shifts' },
+            { id: 'ACTIVE_ON_DUTY', label: 'On Duty' },
+            { id: 'CLOCKED_OUT', label: 'Clocked Out' },
+            { id: 'LATE_FLAGGED', label: 'Late / Flagged' },
+            { id: 'ON_TIME', label: 'On Time Check-In' },
+            { id: 'OVERTIME', label: 'Overtime' },
+          ].map((pill) => (
+            <button
+              key={pill.id}
+              onClick={() => setStatusFilter(pill.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                statusFilter === pill.id
+                  ? 'bg-teal-700 text-white shadow-2xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ========================================================
-          TAB 1: ARRIVED / ON SITE
-         ======================================================== */}
-      {arrivalTab === 'ARRIVED' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="font-heading font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Arrived Caregivers – Physically Verified On-Site</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Caregivers currently on site at registered beneficiary residence with confirmed geofence check-in.
-              </p>
-            </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-              {filteredLogs.length} Verified On-Site
-            </span>
+      {/* Main Attendance Ledger Table */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="font-heading font-extrabold text-sm text-slate-900">
+              Live Attendance & Clinical Tasks Ledger
+            </h3>
           </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                  <th className="py-3.5 px-4">Caregiver</th>
-                  <th className="py-3.5 px-4">Assigned Careseeker</th>
-                  <th className="py-3.5 px-4">Scheduled Shift Time</th>
-                  <th className="py-3.5 px-4">Verified Check-In</th>
-                  <th className="py-3.5 px-4">Geofence Status</th>
-                  <th className="py-3.5 px-4">Active Shift Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                      No arrived caregivers found matching current filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Caregiver Name */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div
-                          onClick={() => onSelectCaregiverByName?.(log.caregiverName)}
-                          className="font-bold text-slate-900 text-xs hover:text-teal-700 cursor-pointer transition"
-                        >
-                          {log.caregiverName}
-                        </div>
-                        <div className="text-[10px] text-teal-700 font-mono">
-                          ID: {log.caregiverId}
-                        </div>
-                        {log.caregiverPhone && (
-                          <div className="text-[10px] text-slate-500 font-mono">
-                            {log.caregiverPhone}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Assigned Careseeker */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div
-                          onClick={() => log.elderName && onSelectElderByName?.(log.elderName)}
-                          className="font-bold text-slate-800 text-xs hover:text-teal-700 cursor-pointer transition"
-                        >
-                          {log.elderName || 'Standby Corridor Hub'}
-                        </div>
-                        <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <MapPin className="w-3 h-3 text-slate-400" />
-                          <span>{log.locality}</span>
-                        </div>
-                      </td>
-
-                      {/* Scheduled Shift Time */}
-                      <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
-                        <div className="font-bold text-slate-900">
-                          {log.scheduledCheckIn} – {log.scheduledCheckOut}
-                        </div>
-                        <div className="text-[10px] text-slate-500">{log.shiftType}</div>
-                      </td>
-
-                      {/* Verified Check-In Timestamp */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{log.actualCheckIn}</span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Scheduled: {log.scheduledCheckIn}
-                        </div>
-                      </td>
-
-                      {/* Geofence Verification Status */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                          <span>Verified On-Site</span>
-                        </span>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          Perimeter: &lt; 35m confirmed
-                        </div>
-                      </td>
-
-                      {/* Active Shift Status */}
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 inline-flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
-                          <span>Active on Duty ({log.totalHoursLogged})</span>
-                        </span>
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-4 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => onSelectCaregiverByName?.(log.caregiverName)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-900 border border-slate-200 text-xs font-bold transition cursor-pointer"
-                        >
-                          View Profile
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
+            Showing {filteredLogs.length} of {logs.length} shifts
+          </span>
         </div>
-      )}
 
-      {/* ========================================================
-          TAB 2: NOT YET REACHED / PENDING
-         ======================================================== */}
-      {arrivalTab === 'NOT_YET_REACHED' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="font-heading font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Pending Arrival & En Route Attendants</span>
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Caregivers scheduled for today who have not yet checked in at beneficiary residence.
-              </p>
-            </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-              {filteredLogs.length} Pending Arrival
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                  <th className="py-3.5 px-4">Caregiver</th>
-                  <th className="py-3.5 px-4">Assigned Careseeker</th>
-                  <th className="py-3.5 px-4">Scheduled Shift Time</th>
-                  <th className="py-3.5 px-4">Current Status</th>
-                  <th className="py-3.5 px-4">Expected Arrival</th>
-                  <th className="py-3.5 px-4">Geofence Status</th>
-                  <th className="py-3.5 px-4 text-right">Quick Action</th>
+        <div className="w-full max-w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th className="py-3.5 px-4">Caregiver</th>
+                <th className="py-3.5 px-4">Care Recipient & Locality</th>
+                <th className="py-3.5 px-4">Scheduled Shift</th>
+                <th className="py-3.5 px-4">Check-In Timestamp</th>
+                <th className="py-3.5 px-4">Check-Out Timestamp</th>
+                <th className="py-3.5 px-4">Hours Logged</th>
+                <th className="py-3.5 px-4">Geofence Status</th>
+                <th className="py-3.5 px-4">Shift Status</th>
+                <th className="py-3.5 px-4">Clinical Tasks</th>
+                <th className="py-3.5 px-4 text-right">Supervisor Signoff</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400 text-xs">
+                    No shift records match the selected filter criteria.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400 text-xs">
-                      All caregivers have successfully arrived on site. Zero pending arrivals!
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLogs.map((log) => {
-                    const isDelayed =
-                      log.status === 'DELAYED_UNACKNOWLEDGED' ||
-                      log.status === 'LATE_CHECK_IN' ||
-                      (log.expectedArrivalTime && log.expectedArrivalTime.includes('Delayed'));
+              ) : (
+                filteredLogs.map((log) => {
+                  const isExpanded = expandedRowId === log.id;
+                  const completed = log.tasksCompletedCount || 4;
+                  const total = log.tasksTotalCount || 6;
+                  const taskPercent = Math.round((completed / total) * 100);
 
-                    return (
-                      <tr key={log.id} className="hover:bg-amber-50/40 transition-colors">
+                  return (
+                    <React.Fragment key={log.id}>
+                      <tr className="hover:bg-slate-50/70 transition-colors">
                         {/* Caregiver Name */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           <div
@@ -685,148 +492,15 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                           <div className="text-[10px] text-teal-700 font-mono">
                             ID: {log.caregiverId}
                           </div>
-                          <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
-                            <Phone className="w-2.5 h-2.5 text-slate-400" />
-                            <span>{log.caregiverPhone || '+91 98400 00000'}</span>
-                          </div>
                         </td>
 
-                        {/* Assigned Careseeker */}
+                        {/* Care Recipient & Locality */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           <div
                             onClick={() => log.elderName && onSelectElderByName?.(log.elderName)}
                             className="font-bold text-slate-800 text-xs hover:text-teal-700 cursor-pointer transition"
                           >
-                            {log.elderName || 'Careseeker Beneficiary'}
-                          </div>
-                          <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-slate-400" />
-                            <span>{log.locality}</span>
-                          </div>
-                        </td>
-
-                        {/* Scheduled Shift Time */}
-                        <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
-                          <div className="font-bold text-slate-900">
-                            {log.scheduledCheckIn} – {log.scheduledCheckOut}
-                          </div>
-                          <div className="text-[10px] text-slate-500">{log.shiftType}</div>
-                        </td>
-
-                        {/* Current Status */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          {isDelayed ? (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200 inline-flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                              <span>Delayed / Unacknowledged</span>
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                              <span>En Route</span>
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Expected Arrival */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800 text-xs">
-                            {log.expectedArrivalTime || 'Approaching within 15 mins'}
-                          </div>
-                          {log.distanceToSiteMeters && (
-                            <div className="text-[10px] text-slate-500">
-                              Approx. {log.distanceToSiteMeters}m from address
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Geofence Status */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            Pending Check-In
-                          </span>
-                        </td>
-
-                        {/* Quick Action: Contact Caregiver Button */}
-                        <td className="py-4 px-4 whitespace-nowrap text-right">
-                          <button
-                            onClick={() => handleOpenContactModal(log)}
-                            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 ml-auto shadow-sm cursor-pointer active:scale-95"
-                          >
-                            <PhoneCall className="w-3.5 h-3.5" />
-                            <span>Contact Caregiver</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          TAB 3: ALL ATTENDANCE & TASKS LEDGER
-         ======================================================== */}
-      {arrivalTab === 'ALL' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h3 className="font-heading font-extrabold text-sm text-slate-900">
-                Complete Daily Shift & Clinical Task Ledger
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Full chronological ledger with clinical protocol compliance checklist and supervisory sign-off.
-              </p>
-            </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200">
-              Showing {filteredLogs.length} of {logs.length} records
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                  <th className="py-3.5 px-4">Caregiver</th>
-                  <th className="py-3.5 px-4">Care Recipient & Locality</th>
-                  <th className="py-3.5 px-4">Scheduled Shift</th>
-                  <th className="py-3.5 px-4">Check-In</th>
-                  <th className="py-3.5 px-4">Hours Logged</th>
-                  <th className="py-3.5 px-4">Arrival & Geofence</th>
-                  <th className="py-3.5 px-4">Clinical Tasks</th>
-                  <th className="py-3.5 px-4 text-right">Supervisor Signoff</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLogs.map((log) => {
-                  const isExpanded = expandedRowId === log.id;
-                  const completed = log.tasksCompletedCount || 0;
-                  const total = log.tasksTotalCount || 6;
-                  const taskPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
-                  const arrived = isLogArrived(log);
-
-                  return (
-                    <React.Fragment key={log.id}>
-                      <tr className="hover:bg-slate-50/70 transition-colors">
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div
-                            onClick={() => onSelectCaregiverByName?.(log.caregiverName)}
-                            className="font-bold text-slate-900 text-xs hover:text-teal-700 cursor-pointer"
-                          >
-                            {log.caregiverName}
-                          </div>
-                          <div className="text-[10px] text-teal-700 font-mono">ID: {log.caregiverId}</div>
-                        </td>
-
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div
-                            onClick={() => log.elderName && onSelectElderByName?.(log.elderName)}
-                            className="font-bold text-slate-800 text-xs hover:text-teal-700 cursor-pointer"
-                          >
-                            {log.elderName || 'Standby Hub'}
+                            {log.elderName || 'Standby Corridor Hub'}
                           </div>
                           <div className="text-[10px] text-slate-500 flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-slate-400" />
@@ -834,205 +508,238 @@ export const AdminAttendanceView: React.FC<AdminAttendanceViewProps> = ({
                           </div>
                         </td>
 
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900">{log.scheduledCheckIn} – {log.scheduledCheckOut}</div>
-                          <div className="text-[10px] text-slate-400">{log.shiftType}</div>
+                        {/* Scheduled Shift */}
+                        <td className="py-4 px-4 whitespace-nowrap text-slate-700 font-medium">
+                          <div className="font-semibold text-slate-900">
+                            {log.scheduledCheckIn} – {log.scheduledCheckOut}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {log.shiftType.split('(')[0]}
+                          </div>
                         </td>
 
+                        {/* Check-In Timestamp */}
                         <td className="py-4 px-4 whitespace-nowrap">
-                          <span className="font-bold text-slate-900">{log.actualCheckIn}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-slate-900 text-xs">
+                              {log.actualCheckIn}
+                            </span>
+                            {log.isCheckInGeofenceVerified && (
+                              <span
+                                className="inline-flex items-center text-emerald-600 text-[10px] font-bold"
+                                title="Geofence GPS Verified"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            Sched: {log.scheduledCheckIn}
+                          </span>
                         </td>
 
-                        <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-700">
-                          {log.totalHoursLogged}
+                        {/* Check-Out Timestamp */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="font-bold text-slate-900 text-xs">
+                            {log.actualCheckOut || (
+                              <span className="text-teal-700 font-medium flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
+                                In Progress
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            Sched: {log.scheduledCheckOut}
+                          </span>
                         </td>
 
+                        {/* Total Hours Logged */}
                         <td className="py-4 px-4 whitespace-nowrap">
-                          {arrived ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              ✓ Verified On-Site
+                          <span className="px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-900 font-bold text-[11px]">
+                            {log.totalHoursLogged}
+                          </span>
+                        </td>
+
+                        {/* Geofence Verification Status */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {log.geofenceStatus === 'VERIFIED' || log.isCheckInGeofenceVerified ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Verified (GPS &lt; 35m)</span>
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                              ⏳ Not Yet Reached
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              <span>Off-site Flag</span>
                             </span>
                           )}
                         </td>
 
+                        {/* Shift Status */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {getStatusBadge(log.status)}
+                        </td>
+
+                        {/* Clinical Tasks */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           <button
                             onClick={() => setExpandedRowId(isExpanded ? null : log.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-800 text-xs font-bold transition border border-slate-200 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-teal-50 text-slate-700 hover:text-teal-900 border border-slate-200 hover:border-teal-300 font-bold text-xs transition"
                           >
-                            <span>{completed}/{total} Tasks ({taskPercent}%)</span>
-                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            <ListChecks className="w-3.5 h-3.5 text-teal-600" />
+                            <span>
+                              {completed}/{total} ({taskPercent}%)
+                            </span>
+                            {isExpanded ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            )}
                           </button>
                         </td>
 
-                        <td className="py-4 px-4 whitespace-nowrap text-right">
+                        {/* Supervisor Signoff */}
+                        <td className="py-4 px-4 text-right whitespace-nowrap">
                           <button
                             onClick={() => handleToggleSupervisorSignoff(log.id)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition border flex items-center gap-1.5 ml-auto ${
                               log.supervisorSignoff
-                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-teal-300'
                             }`}
                           >
-                            {log.supervisorSignoff ? '✓ Approved' : 'Sign Off'}
+                            <CheckCircle2
+                              className={`w-3.5 h-3.5 ${
+                                log.supervisorSignoff ? 'text-emerald-600' : 'text-slate-400'
+                              }`}
+                            />
+                            <span>{log.supervisorSignoff ? 'Verified' : 'Sign Off'}</span>
                           </button>
                         </td>
                       </tr>
 
-                      {/* Expandable Task Protocol Checklist */}
+                      {/* Expanded Row: Shift Tasks Checklist & Notes */}
                       {isExpanded && (
-                        <tr className="bg-teal-50/30">
-                          <td colSpan={8} className="p-4 border-t border-slate-100">
-                            <div className="space-y-2">
-                              <span className="text-[11px] font-extrabold uppercase tracking-wider text-teal-900 block">
-                                Shift Protocol Checklist ({completed}/{total} completed)
-                              </span>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                {(log.tasks || []).map((task) => (
-                                  <div
-                                    key={task.id}
-                                    onClick={() => handleToggleTaskStatus(log.id, task.id)}
-                                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-start gap-2 ${
-                                      task.status === 'COMPLETED'
-                                        ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                                        : 'bg-white border-slate-200 text-slate-700 hover:border-teal-300'
-                                    }`}
-                                  >
+                        <tr className="bg-teal-50/40 border-b border-teal-100 animate-fadeIn">
+                          <td colSpan={10} className="p-4 sm:p-6">
+                            <div className="space-y-4 max-w-4xl">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-heading font-extrabold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                  <ListChecks className="w-4 h-4 text-teal-600" />
+                                  <span>
+                                    Daily Clinical Tasks Checklist for {log.caregiverName} ({log.shiftDate})
+                                  </span>
+                                </h4>
+                                <span className="text-xs font-bold text-teal-900">
+                                  {completed} of {total} Protocols Completed
+                                </span>
+                              </div>
+
+                              {/* Task List */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                {(log.tasks || []).map((task: ClinicalTaskItem) => {
+                                  const isCompleted = task.status === 'COMPLETED';
+                                  return (
                                     <div
-                                      className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 mt-0.5 border ${
-                                        task.status === 'COMPLETED'
-                                          ? 'bg-emerald-600 border-emerald-600 text-white'
-                                          : 'border-slate-300 bg-white'
+                                      key={task.id}
+                                      onClick={() => handleToggleTaskStatus(log.id, task.id)}
+                                      className={`p-3.5 rounded-2xl border text-xs space-y-1 shadow-2xs cursor-pointer transition flex items-start gap-3 select-none ${
+                                        isCompleted
+                                          ? 'bg-emerald-50/50 border-emerald-200/80 hover:bg-emerald-50'
+                                          : 'bg-white border-slate-200 hover:bg-slate-50'
                                       }`}
                                     >
-                                      {task.status === 'COMPLETED' && <Check className="w-3 h-3" />}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <div className="font-bold truncate">{task.title}</div>
-                                      <div className="text-[10px] text-slate-500">
-                                        {task.scheduledTime} {task.completedAt ? `(Done: ${task.completedAt})` : ''}
+                                      <input
+                                        type="checkbox"
+                                        checked={isCompleted}
+                                        onChange={() => {}} // handled by parent onClick
+                                        className="mt-1 w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer accent-teal-600 shrink-0"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div
+                                            className={`font-bold ${
+                                              isCompleted
+                                                ? 'text-emerald-950 line-through opacity-80'
+                                                : 'text-slate-800'
+                                            }`}
+                                          >
+                                            {task.title}
+                                          </div>
+                                          <span
+                                            className={`px-2 py-0.5 rounded-md text-[9px] font-bold shrink-0 ${
+                                              isCompleted
+                                                ? 'bg-emerald-100 text-emerald-800'
+                                                : task.status === 'MISSED_FLAGGED'
+                                                ? 'bg-rose-100 text-rose-800'
+                                                : 'bg-amber-100 text-amber-800'
+                                            }`}
+                                          >
+                                            {task.status.replace(/_/g, ' ')}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
+                                          <span className="font-mono bg-slate-50 px-1 py-0.5 rounded border border-slate-100">
+                                            {task.scheduledTime}
+                                          </span>
+                                          <span>•</span>
+                                          <span className="font-semibold text-teal-800">
+                                            {task.category}
+                                          </span>
+                                          {task.completedAt && (
+                                            <>
+                                              <span>•</span>
+                                              <span className="text-emerald-700 font-medium">
+                                                Logged at {task.completedAt}
+                                              </span>
+                                            </>
+                                          )}
+                                        </div>
+                                        {task.notes && (
+                                          <p className="text-[11px] text-slate-600 italic pt-1">
+                                            "{task.notes}"
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
+
+                              {/* Handoff Notes */}
+                              {log.handoffNotes && (
+                                <div className="p-3 rounded-2xl bg-white border border-teal-200 text-xs space-y-1">
+                                  <span className="font-bold text-teal-950 block text-[11px]">
+                                    Attendant Shift Handoff Notes:
+                                  </span>
+                                  <p className="text-slate-700 leading-relaxed text-[11px]">
+                                    {log.handoffNotes}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </td>
                         </tr>
                       )}
                     </React.Fragment>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
 
-      {/* ========================================================
-          MODAL: CONTACT CAREGIVER QUICK ACTION
-         ======================================================== */}
-      {contactModalLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fadeIn">
-          <div className="w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 space-y-5 animate-scaleUp">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                  Operations Dispatch Desk
-                </span>
-                <h3 className="text-lg font-heading font-extrabold text-slate-900 mt-1.5 flex items-center gap-2">
-                  <PhoneCall className="w-5 h-5 text-emerald-600" />
-                  <span>Contact Caregiver: {contactModalLog.caregiverName}</span>
-                </h3>
-              </div>
-              <button
-                onClick={() => setContactModalLog(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Shift Context Card */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Assigned Careseeker:</span>
-                <strong className="text-slate-900">{contactModalLog.elderName || 'Careseeker'}</strong>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Scheduled Shift:</span>
-                <span className="font-semibold text-slate-800">
-                  {contactModalLog.scheduledCheckIn} – {contactModalLog.scheduledCheckOut}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Destination Corridor:</span>
-                <span className="font-semibold text-slate-800">{contactModalLog.locality}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Expected Arrival:</span>
-                <span className="font-bold text-amber-700">
-                  {contactModalLog.expectedArrivalTime || 'Pending confirmation'}
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <a
-                href={`tel:${contactModalLog.caregiverPhone || '+919840112233'}`}
-                className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Call Caregiver Directly</span>
-              </a>
-
-              <a
-                href={`https://wa.me/${(contactModalLog.caregiverPhone || '+919840112233').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(customSmsText)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="py-3 px-4 rounded-2xl bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>Send WhatsApp Check-In</span>
-              </a>
-            </div>
-
-            {/* Dispatch Custom Alert */}
-            <div className="space-y-1.5 text-xs">
-              <label className="font-bold text-slate-700">Urgent Dispatch Message / SMS:</label>
-              <textarea
-                rows={3}
-                value={customSmsText}
-                onChange={(e) => setCustomSmsText(e.target.value)}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-
-            {/* Footer Actions */}
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
-              <button
-                onClick={() => setContactModalLog(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendUrgentPing}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
-              >
-                <Send className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Trigger Urgent App Push & Log Call</span>
-              </button>
-            </div>
-          </div>
+        {/* Ledger Footer */}
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+          <span>
+            Shift attendance records are synchronized via GPS Geofencing radius (35-meter perimeter) & biometric check-in.
+          </span>
+          <span className="font-bold text-emerald-700">
+            ✓ ISO-27001 Clinical Compliance Verified
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
+
