@@ -431,6 +431,7 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="one-time-code"
                 maxLength={6}
                 required
                 autoFocus

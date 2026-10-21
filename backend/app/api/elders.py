@@ -65,7 +65,7 @@ async def list_elders(
     result = await db.execute(
         select(Elder)
         .where(Elder.familyId == current_user.id, Elder.personaStatus != "DELETED")
-        .options(selectinload(Elder.location))
+        .options(selectinload(Elder.location), selectinload(Elder.preferred_hospital))
         .order_by(Elder.createdAt.desc())
     )
     elders = result.scalars().all()
@@ -83,7 +83,7 @@ async def get_elder(
     result = await db.execute(
         select(Elder)
         .where(Elder.id == elder_id)
-        .options(selectinload(Elder.location))
+        .options(selectinload(Elder.location), selectinload(Elder.preferred_hospital))
     )
     elder = result.scalar_one()
     return elder
@@ -114,7 +114,7 @@ async def update_elder_persona(
     result = await db.execute(
         select(Elder)
         .where(Elder.id == elder.id)
-        .options(selectinload(Elder.location))
+        .options(selectinload(Elder.location), selectinload(Elder.preferred_hospital))
     )
     refreshed_elder = result.scalar_one()
     return refreshed_elder

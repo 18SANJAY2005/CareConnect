@@ -15,6 +15,10 @@ import type {
   ShiftEarningItem,
   ElderEarningGroup,
   PayoutHistoryItem,
+  OnboardingState,
+  DocumentScanResult,
+  ElderEmergencyContext,
+  HospitalInfo,
 } from '../types';
 import { offlineQueue } from './offlineQueue';
 
@@ -402,8 +406,91 @@ class CaregiverApiService {
     return this.request<ElderEarningGroup[]>('/payouts/caregiver/by-elder', { method: 'GET' });
   }
 
-  async getPayoutHistory(): Promise<PayoutHistoryItem[]> {
-    return this.request<PayoutHistoryItem[]>('/payouts/caregiver/history', { method: 'GET' });
+  async getPayoutHistory(search?: string, status?: string): Promise<PayoutHistoryItem[]> {
+    const params = new URLSearchParams();
+    if (search && search.trim()) params.append('search', search.trim());
+    if (status && status.trim() && status !== 'ALL') params.append('status', status.trim());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<PayoutHistoryItem[]>(`/payouts/caregiver/history${query}`, { method: 'GET' });
+  }
+
+  // --- 4-Step KYC Onboarding & Verification (Requirements A, B, J) ---
+  async getOnboardingState(): Promise<OnboardingState> {
+    return this.request<OnboardingState>('/caregivers/me/onboarding', { method: 'GET' });
+  }
+
+  async saveOnboardingStep1(payload: {
+    document_type: string;
+    document_number: string;
+    document_storage_reference?: string | null;
+    terms_accepted?: boolean;
+    service_consent_granted?: boolean;
+    promotional_consent_granted?: boolean;
+  }): Promise<any> {
+    return this.request<any>('/caregivers/me/onboarding/step1', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async saveOnboardingStep2(payload: {
+    fullName: string;
+    dob: string;
+    gender: string;
+    phone?: string;
+    email?: string;
+    locality: string;
+    bio?: string;
+  }): Promise<any> {
+    return this.request<any>('/caregivers/me/onboarding/step2', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async saveOnboardingStep3(payload: {
+    institution: string;
+    course: string;
+    completionYear?: number | null;
+    credentialId?: string | null;
+    documentUrl?: string | null;
+    qrPayload?: string | null;
+    verificationMethod?: string;
+  }): Promise<any> {
+    return this.request<any>('/caregivers/me/onboarding/step3', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async saveOnboardingStep4(payload: {
+    servicesOffered: string[];
+    shiftPreferences: string[];
+    preferredHours?: string;
+    dailyRate?: number;
+    hourlyRate?: number;
+    isAvailable?: boolean;
+  }): Promise<any> {
+    return this.request<any>('/caregivers/me/onboarding/step4', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async extractDocument(documentType: 'IDENTITY' | 'EDUCATION', fileData: string): Promise<DocumentScanResult> {
+    return this.request<DocumentScanResult>('/caregivers/me/document/extract', {
+      method: 'POST',
+      body: JSON.stringify({ documentType, fileData }),
+    });
+  }
+
+  // --- Emergency Hospitals (Requirements C, E, F) ---
+  async getElderEmergencyHospitalContext(elderId: string): Promise<ElderEmergencyContext> {
+    return this.request<ElderEmergencyContext>(`/hospitals/elder/${elderId}/emergency-context`, { method: 'GET' });
+  }
+
+  async getNearbyHospitals(lat: number, lng: number, radiusKm: number = 15): Promise<HospitalInfo[]> {
+    return this.request<HospitalInfo[]>(`/hospitals/nearby?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`, { method: 'GET' });
   }
 
   // --- Consent Disclosures ---

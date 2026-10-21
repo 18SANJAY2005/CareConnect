@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -19,6 +19,18 @@ class Settings(BaseSettings):
         "sqlite+aiosqlite:///./careconnect.db"
     )
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    ENABLE_DEV_OTP: bool = os.getenv("ENABLE_DEV_OTP", "true").lower() in ("true", "1")
+    CARECONNECT_SMS_PROVIDER: Optional[str] = os.getenv("CARECONNECT_SMS_PROVIDER", None)
+    TWILIO_ACCOUNT_SID: Optional[str] = os.getenv("TWILIO_ACCOUNT_SID", None)
+    TWILIO_AUTH_TOKEN: Optional[str] = os.getenv("TWILIO_AUTH_TOKEN", None)
+    TWILIO_PHONE_NUMBER: Optional[str] = os.getenv("TWILIO_PHONE_NUMBER", None)
+    SMS_GATEWAY_KEY: Optional[str] = os.getenv("SMS_GATEWAY_KEY", None)
+
+    @property
+    def is_dev_otp_allowed(self) -> bool:
+        if self.ENVIRONMENT.lower() in ["production", "prod"]:
+            return False
+        return self.ENABLE_DEV_OTP
 
     CHENNAI_PINCODES: List[str] = [
         "600020", "600090", "600041", "600042", "600004",

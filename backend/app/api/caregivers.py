@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.core.database import get_db
 from app.core.security import require_role, get_current_user
 from app.core.phone_validator import validate_and_normalize_phone
@@ -30,6 +30,13 @@ from app.schemas.caregiver import (
     WorkHistoryResponse,
     CompletedShiftItem,
     EarningsSummary,
+    OnboardingStep1Request,
+    OnboardingStep2Request,
+    OnboardingStep3Request,
+    OnboardingStep4Request,
+    DocumentScanRequest,
+    DocumentScanResponse,
+    EducationVerificationUpdateRequest,
 )
 from app.schemas.kyc import (
     KycSubmitRequest,
@@ -41,6 +48,7 @@ from app.services.matching_service import (
     get_curated_caregivers_for_elder,
     seed_initial_data_if_empty,
 )
+from app.services.extraction_service import DocumentExtractionService
 
 router = APIRouter(
     prefix="/caregivers",
@@ -223,6 +231,392 @@ async def submit_my_kyc(
     )
 
 
+# -------------------------------------------------------------
+# Document Scan & Extraction Endpoint (Requirement B & J)
+# -------------------------------------------------------------
+@router.post("/me/document/extract", response_model=DocumentScanResponse)
+async def extract_caregiver_document(
+    payload: DocumentScanRequest,
+    current_user: User = Depends(require_role(["CAREGIVER", "ADMIN", "OPS_MANAGER"])),
+):
+    """
+    Scans a base64 document or certificate image for QR/barcodes and extracts candidate fields.
+    Does NOT mark documents verified; marks status as QR_DETECTED or DECODED_UNCONFIRMED.
+    """
+    if payload.documentType == "IDENTITY":
+        res = DocumentExtractionService.extract_identity_document(payload.fileData)
+    else:
+        res = DocumentExtractionService.extract_education_certificate(payload.fileData)
+
+    return DocumentScanResponse(
+        detected=res.get("detected", False),
+        status=res.get("status", "NOT_CHECKED"),
+        rawPayload=res.get("rawPayload"),
+        message=res.get("message", "Document scanned"),
+        extractedFields=res.get("extractedFields", {}),
+        verifiedAt=res.get("verifiedAt"),
+    )
+
+
+# -------------------------------------------------------------
+# 4-Step KYC Onboarding Endpoints (Requirement A)
+# -------------------------------------------------------------
+@router.get("/me/onboarding")
+async def get_my_onboarding_state(
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Returns the saved state of all 4 onboarding steps so caregivers can resume anytime.
+    """
+    cg = await _get_or_create_caregiver_record(db, current_user)
+
+    # Step 1: Identity KYC
+    kyc_res = await db.execute(
+        select(CaregiverKYC).where(CaregiverKYC.caregiver_id == current_user.id)
+    )
+    kyc = kyc_res.scalars().first()
+
+    step1_data = {
+        "documentType": kyc.document_type if kyc else None,
+        "maskedDocumentNumber": mask_document_number(kyc.document_type, kyc.document_number) if kyc else None,
+        "documentStorageReference": kyc.document_storage_reference if kyc else None,
+        "verificationStatus": kyc.verification_status if kyc else "NOT_SUBMITTED",
+        "rejectionReason": kyc.rejection_reason if kyc else None,
+        "isSubmitted": kyc is not None,
+    }
+
+    # Step 2: Personal Details
+    step2_data = {
+        "fullName": current_user.fullName or cg.full_name or "",
+        "dob": current_user.dob or cg.dob or "",
+        "gender": current_user.gender or cg.gender or "FEMALE",
+        "phone": current_user.phone or cg.phone or "",
+        "email": current_user.email or "",
+        "locality": current_user.locality or cg.locality or "Adyar, Chennai",
+        "bio": cg.bio or "",
+    }
+
+    # Step 3: Education Details
+    step3_data = {
+        "institution": getattr(cg, "education_institution", None) or getattr(cg, "educational_qualifications", "") or "",
+        "course": getattr(cg, "education_course", None) or getattr(cg, "qualifications", "") or "",
+        "completionYear": getattr(cg, "education_completion_year", None),
+        "credentialId": getattr(cg, "education_credential_id", None) or "",
+        "documentUrl": getattr(cg, "education_document_url", None) or "",
+        "qrPayload": getattr(cg, "education_qr_payload", None) or "",
+        "verificationStatus": getattr(cg, "education_verification_status", "NOT_CHECKED") or "NOT_CHECKED",
+        "verificationMethod": getattr(cg, "education_verification_method", None),
+        "rejectionReason": getattr(cg, "education_rejection_reason", None),
+    }
+
+    # Step 4: Services Offered & Work Preferences
+    skills_raw = cg.skills or ""
+    skills_list = [s.strip() for s in skills_raw.split(",") if s.strip()]
+    shift_types_raw = cg.shift_types or ""
+    shift_types_list = [st.strip() for st in shift_types_raw.split(",") if st.strip()]
+
+    step4_data = {
+        "servicesOffered": skills_list,
+        "shiftPreferences": shift_types_list,
+        "preferredHours": getattr(cg, "preferred_hours", "08:00 AM - 06:00 PM"),
+        "dailyRate": float(cg.daily_rate or 2000.0),
+        "hourlyRate": float(cg.hourly_rate or 250.0),
+        "isAvailable": cg.status == "AVAILABLE",
+    }
+
+    # Determine highest completed step
+    current_step = 1
+    if kyc and kyc.verification_status in ["PENDING", "VERIFIED"]:
+        current_step = 2
+        if current_user.fullName and current_user.dob and current_user.locality:
+            current_step = 3
+            if getattr(cg, "education_course", None) or getattr(cg, "education_institution", None):
+                current_step = 4
+
+    eligibility = await _evaluate_caregiver_eligibility(db, current_user)
+
+    return {
+        "step1": step1_data,
+        "step2": step2_data,
+        "step3": step3_data,
+        "step4": step4_data,
+        "currentStep": current_step,
+        "isProfileComplete": bool(current_user.isProfileComplete),
+        "kycStatus": step1_data["verificationStatus"],
+        "isEligibleForWork": eligibility.isEligibleForWork,
+        "eligibilityState": eligibility.eligibilityState,
+        "message": eligibility.message,
+    }
+
+
+@router.put("/me/onboarding/step1")
+async def save_onboarding_step1(
+    payload: OnboardingStep1Request,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 1: Save Identification & Identity KYC Document.
+    """
+    validate_kyc_document_format(payload.document_type, payload.document_number)
+    validate_document_storage_reference(payload.document_storage_reference)
+
+    kyc_res = await db.execute(
+        select(CaregiverKYC).where(CaregiverKYC.caregiver_id == current_user.id)
+    )
+    kyc = kyc_res.scalars().first()
+
+    if kyc:
+        kyc.document_type = payload.document_type.upper()
+        kyc.document_number = payload.document_number.strip()
+        if payload.document_storage_reference:
+            kyc.document_storage_reference = payload.document_storage_reference
+        kyc.verification_status = "PENDING"
+        kyc.rejection_reason = None
+    else:
+        kyc = CaregiverKYC(
+            caregiver_id=current_user.id,
+            document_type=payload.document_type.upper(),
+            document_number=payload.document_number.strip(),
+            document_storage_reference=payload.document_storage_reference,
+            verification_status="PENDING",
+        )
+        db.add(kyc)
+
+    current_user.termsAccepted = payload.terms_accepted
+    current_user.serviceConsentGranted = payload.service_consent_granted
+    current_user.promotionalConsentGranted = payload.promotional_consent_granted
+
+    await db.commit()
+    await db.refresh(kyc)
+
+    return {
+        "success": True,
+        "step": 1,
+        "nextStep": 2,
+        "message": "Identification details saved successfully. Proceed to personal details.",
+        "kyc": KycResponse(
+            id=kyc.id,
+            caregiver_id=kyc.caregiver_id,
+            document_type=kyc.document_type,
+            masked_document_number=mask_document_number(kyc.document_type, kyc.document_number),
+            document_storage_reference=kyc.document_storage_reference,
+            verification_status=kyc.verification_status,
+            rejection_reason=kyc.rejection_reason,
+            created_at=kyc.created_at,
+            updated_at=kyc.updated_at,
+        ),
+    }
+
+
+@router.put("/me/onboarding/step2")
+async def save_onboarding_step2(
+    payload: OnboardingStep2Request,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 2: Save Personal Details (prepopulated from OCR or manually edited).
+    """
+    if not payload.fullName or not payload.fullName.strip():
+        raise HTTPException(status_code=400, detail="Full name is required.")
+    if not payload.dob or not payload.dob.strip():
+        raise HTTPException(status_code=400, detail="Date of birth is required.")
+
+    current_user.fullName = payload.fullName.strip()
+    current_user.dob = payload.dob.strip()
+    current_user.gender = payload.gender.strip().upper()
+    current_user.locality = payload.locality.strip()
+    if payload.email:
+        current_user.email = payload.email.strip()
+
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    cg.full_name = current_user.fullName
+    cg.dob = current_user.dob
+    cg.gender = current_user.gender
+    cg.locality = current_user.locality
+    if payload.bio:
+        cg.bio = payload.bio.strip()
+
+    await db.commit()
+    await db.refresh(current_user)
+    await db.refresh(cg)
+
+    return {
+        "success": True,
+        "step": 2,
+        "nextStep": 3,
+        "message": "Personal details saved successfully. Proceed to education details.",
+    }
+
+
+@router.put("/me/onboarding/step3")
+async def save_onboarding_step3(
+    payload: OnboardingStep3Request,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 3: Save Education Details and Certificate.
+    Decodes QR/barcode if available, sets verification status to QR_DETECTED or PENDING_REVIEW.
+    Never marks authenticity verified without authoritative review.
+    """
+    if not payload.course or not payload.course.strip():
+        raise HTTPException(status_code=400, detail="Course or qualification name is required.")
+    if not payload.institution or not payload.institution.strip():
+        raise HTTPException(status_code=400, detail="Educational institution is required.")
+
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    cg.education_institution = payload.institution.strip()
+    cg.education_course = payload.course.strip()
+    cg.education_completion_year = payload.completionYear
+    cg.education_credential_id = payload.credentialId.strip() if payload.credentialId else None
+
+    if payload.documentUrl:
+        validate_document_storage_reference(payload.documentUrl)
+        cg.education_document_url = payload.documentUrl
+
+    if payload.qrPayload:
+        cg.education_qr_payload = payload.qrPayload.strip()
+        cg.education_verification_status = "QR_DETECTED"
+        cg.education_verification_method = "BARCODE_QR_SCAN"
+    else:
+        cg.education_verification_status = "PENDING_REVIEW"
+        cg.education_verification_method = "MANUAL_REVIEW"
+
+    # Also sync legacy qualification strings for matching backwards-compatibility
+    cg.qualifications = payload.course.strip()
+    cg.educational_qualifications = f"{payload.course.strip()} - {payload.institution.strip()}"
+
+    await db.commit()
+    await db.refresh(cg)
+
+    return {
+        "success": True,
+        "step": 3,
+        "nextStep": 4,
+        "message": f"Education details saved. Status: {cg.education_verification_status}",
+        "educationVerificationStatus": cg.education_verification_status,
+        "educationVerificationMethod": cg.education_verification_method,
+    }
+
+
+@router.put("/me/onboarding/step4")
+async def save_onboarding_step4(
+    payload: OnboardingStep4Request,
+    current_user: User = Depends(require_role(["CAREGIVER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Step 4: Save Services Offered, Shift Preferences, and Rates.
+    Marks profile complete and re-evaluates work eligibility.
+    """
+    if not payload.servicesOffered:
+        raise HTTPException(status_code=400, detail="Please select at least one service offered.")
+
+    cg = await _get_or_create_caregiver_record(db, current_user)
+    cg.skills = ", ".join(payload.servicesOffered)
+    cg.specializations = ", ".join(payload.servicesOffered[:3])
+    cg.preferred_care_types = ", ".join(payload.servicesOffered)
+
+    if payload.shiftPreferences:
+        cg.shift_types = ", ".join(payload.shiftPreferences)
+    if payload.preferredHours:
+        cg.preferred_hours = payload.preferredHours
+    if payload.dailyRate:
+        cg.daily_rate = float(payload.dailyRate)
+    if payload.hourlyRate:
+        cg.hourly_rate = float(payload.hourlyRate)
+
+    cg.status = "AVAILABLE" if payload.isAvailable else "UNAVAILABLE"
+
+    # Mark user profile complete
+    current_user.isProfileComplete = True
+
+    await db.commit()
+    await db.refresh(current_user)
+    await db.refresh(cg)
+
+    eligibility = await _evaluate_caregiver_eligibility(db, current_user)
+
+    return {
+        "success": True,
+        "step": 4,
+        "message": "Onboarding complete! Profile is ready.",
+        "isProfileComplete": current_user.isProfileComplete,
+        "isEligibleForWork": eligibility.isEligibleForWork,
+        "eligibilityState": eligibility.eligibilityState,
+        "eligibilityMessage": eligibility.message,
+    }
+
+
+@router.patch("/{caregiver_id}/education-verification")
+async def update_caregiver_education_verification(
+    caregiver_id: str,
+    payload: EducationVerificationUpdateRequest,
+    current_user: User = Depends(require_role(["ADMIN", "OPS_MANAGER"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Admin verification endpoint for Caregiver Educational Credentials.
+    Allows ADMIN/OPS_MANAGER to verify or reject education credentials after manual or issuer review.
+    """
+    cg = None
+    if caregiver_id.isdigit():
+        res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+        cg = res.scalars().first()
+
+    if not cg:
+        # Check by User ID
+        u_res = await db.execute(select(User).where(User.id == caregiver_id))
+        u = u_res.scalars().first()
+        if u and u.phone:
+            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == u.phone))
+            cg = cg_res.scalars().first()
+
+    if not cg:
+        raise HTTPException(status_code=404, detail="Caregiver directory record not found.")
+
+    valid_statuses = [
+        "NOT_CHECKED",
+        "QR_DETECTED",
+        "DECODED_UNCONFIRMED",
+        "PENDING_ISSUER_VERIFICATION",
+        "VERIFIED_BY_ISSUER",
+        "VERIFIED",
+        "MISMATCH_DETECTED",
+        "MANUAL_REVIEW_REQUIRED",
+        "REJECTED",
+        "FAILED",
+    ]
+    new_status = payload.verificationStatus.upper()
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+
+    cg.education_verification_status = new_status
+    cg.education_verification_method = payload.verificationMethod or "MANUAL_ADMIN_REVIEW"
+    if new_status in ["VERIFIED", "VERIFIED_BY_ISSUER"]:
+        cg.education_verified_at = datetime.now(timezone.utc)
+        cg.education_rejection_reason = None
+        cg.is_clinical_certified = True
+    elif new_status == "REJECTED":
+        cg.education_rejection_reason = payload.rejectionReason or "Document could not be verified."
+        cg.is_clinical_certified = False
+
+    await db.commit()
+    await db.refresh(cg)
+
+    return {
+        "success": True,
+        "caregiverId": str(cg.id),
+        "educationVerificationStatus": cg.education_verification_status,
+        "educationVerificationMethod": cg.education_verification_method,
+        "educationVerifiedAt": cg.education_verified_at.isoformat() if cg.education_verified_at else None,
+        "educationRejectionReason": cg.education_rejection_reason,
+    }
+
+
 @router.get("/admin/all")
 async def list_admin_caregivers(
     current_user: User = Depends(require_role(["ADMIN", "OPS_MANAGER"])),
@@ -321,6 +715,15 @@ async def list_admin_caregivers(
             "rejectionReason": rejection_reason,
             "kycCreatedAt": created_at,
             "kycUpdatedAt": updated_at,
+            "educationInstitution": getattr(cg, "education_institution", None),
+            "educationCourse": getattr(cg, "education_course", None),
+            "educationCompletionYear": getattr(cg, "education_completion_year", None),
+            "educationCredentialId": getattr(cg, "education_credential_id", None),
+            "educationDocumentUrl": getattr(cg, "education_document_url", None),
+            "educationVerificationStatus": getattr(cg, "education_verification_status", "NOT_CHECKED") or "NOT_CHECKED",
+            "educationVerificationMethod": getattr(cg, "education_verification_method", None),
+            "educationVerifiedAt": cg.education_verified_at.isoformat() if getattr(cg, "education_verified_at", None) else None,
+            "educationRejectionReason": getattr(cg, "education_rejection_reason", None),
         })
 
     return output
@@ -631,6 +1034,10 @@ async def _evaluate_caregiver_eligibility(
         isEligibleForWork=is_eligible,
         eligibilityState=eligibility_state,
         message=message,
+        educationVerificationStatus=getattr(cg, "education_verification_status", "NOT_CHECKED") or "NOT_CHECKED",
+        educationVerificationMethod=getattr(cg, "education_verification_method", None),
+        educationDegree=getattr(cg, "education_course", None) or getattr(cg, "qualifications", None),
+        educationInstitution=getattr(cg, "education_institution", None),
     )
 
 
@@ -1679,14 +2086,23 @@ async def get_caregiver_schedule(
             "address": eloc.addressLine1 if eloc and eloc.addressLine1 else (elder.address if elder else "Residence"),
         })
 
+    existing_elder_dates = {
+        (s.elderId, s.scheduledStart.strftime("%Y-%m-%d"))
+        for s in shifts
+        if s.scheduledStart
+    }
+
     for a in assignments:
+        a_date = a.start_date or "Pending Start"
+        if (a.elder_id, a_date) in existing_elder_dates:
+            continue
         elder = await db.get(Elder, a.elder_id)
         schedule_items.append({
             "id": str(a.id),
             "type": "ASSIGNMENT",
             "elderId": a.elder_id,
             "elderName": elder.name if elder else "Care Seeker",
-            "date": a.start_date or "Pending Start",
+            "date": a_date,
             "startTime": "08:00 AM",
             "endTime": "06:00 PM",
             "shiftType": a.shift_type or "Day 10-Hour",

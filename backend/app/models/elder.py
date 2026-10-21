@@ -164,6 +164,13 @@ class Elder(Base):
         nullable=True,
     )
 
+    preferred_hospital_id = Column(
+        String(36),
+        ForeignKey("hospitals.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     createdAt = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -196,3 +203,18 @@ class Elder(Base):
         back_populates="elder",
         cascade="all, delete-orphan",
     )
+
+    preferred_hospital = relationship(
+        "Hospital",
+        foreign_keys=[preferred_hospital_id],
+        lazy="selectin",
+    )
+
+    @property
+    def preferredHospitalId(self):
+        return self.preferred_hospital_id
+
+    @preferredHospitalId.setter
+    def preferredHospitalId(self, value):
+        self.preferred_hospital_id = value
+

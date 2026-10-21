@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IndianRupee, TrendingUp, Clock, CheckCircle2, ShieldCheck, AlertCircle, RefreshCw, Calendar, ArrowUpRight, Filter, FileText, User } from 'lucide-react';
+import { IndianRupee, TrendingUp, Clock, CheckCircle2, ShieldCheck, AlertCircle, RefreshCw, Calendar, ArrowUpRight, Filter, FileText, User, Search, X } from 'lucide-react';
 import { BackButton } from '../common/BackButton';
 import { caregiverApi } from '../../services/api';
 import type { PayoutSummary, ShiftEarningItem, ElderEarningGroup, PayoutHistoryItem } from '../../types';
@@ -16,6 +16,11 @@ export const PayoutScreen: React.FC<PayoutScreenProps> = ({ onBack }) => {
   const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'SHIFTS' | 'ELDERS' | 'HISTORY'>('SHIFTS');
+
+  // Search & Filter state for Payout History (Requirement G)
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [searching, setSearching] = useState<boolean>(false);
 
   const loadFinancialData = async () => {
     setLoading(true);
@@ -47,6 +52,34 @@ export const PayoutScreen: React.FC<PayoutScreenProps> = ({ onBack }) => {
     { id: 'last_month', label: 'Last Month' },
     { id: 'all', label: 'All Time' },
   ];
+
+  const fetchFilteredHistory = async (query: string, status: string) => {
+    setSearching(true);
+    try {
+      const histRes = await caregiverApi.getPayoutHistory(query, status);
+      setPayoutHistory(histRes);
+    } catch (err) {
+      console.error('Failed to search payout history:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    fetchFilteredHistory(val, statusFilter);
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    fetchFilteredHistory(searchQuery, status);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setStatusFilter('ALL');
+    fetchFilteredHistory('', 'ALL');
+  };
 
   return (
     <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
@@ -237,20 +270,77 @@ export const PayoutScreen: React.FC<PayoutScreenProps> = ({ onBack }) => {
             </div>
           )}
 
-          {/* Section 3: Payout History & Auditable Dates */}
+          {/* Section 3: Payout History & Auditable Dates (Requirement G: Payout Search) */}
           {activeTab === 'HISTORY' && (
-            <div className="space-y-2.5">
-              {payoutHistory.length === 0 ? (
-                <div className="bg-white rounded-2xl p-8 text-center border border-dashed border-slate-300 text-slate-500">
-                  <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                  <p className="text-xs font-semibold">No historical payout batches generated yet.</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Payout batches are generated weekly by Operations.</p>
+            <div className="space-y-3">
+              {/* Search Control Box */}
+              <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Search by care seeker, payout ref, UTR..."
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Status Filter Badges */}
+                <div className="flex items-center gap-1.5 overflow-x-auto text-[11px] font-semibold text-slate-600 pt-0.5">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider shrink-0 mr-1">Status:</span>
+                  {['ALL', 'PAID', 'APPROVED', 'PENDING'].map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => handleStatusFilterChange(st)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                        statusFilter === st
+                          ? 'bg-primary text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {searching ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-xs text-slate-500">
+                  <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                  <span>Searching authorized payout records...</span>
+                </div>
+              ) : payoutHistory.length === 0 ? (
+                <div className="bg-white rounded-2xl p-8 text-center border border-dashed border-slate-300 text-slate-500 space-y-2">
+                  <FileText className="w-8 h-8 mx-auto text-slate-300" />
+                  <p className="text-xs font-semibold">
+                    {searchQuery ? 'No payout records match your search query.' : 'No historical payout batches generated yet.'}
+                  </p>
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="text-xs text-primary font-bold underline hover:text-teal-800"
+                    >
+                      Clear search filter
+                    </button>
+                  )}
                 </div>
               ) : (
                 payoutHistory.map((hist) => (
                   <div
                     key={hist.id}
-                    className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2"
+                    className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2.5"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -271,6 +361,25 @@ export const PayoutScreen: React.FC<PayoutScreenProps> = ({ onBack }) => {
                         {hist.status}
                       </span>
                     </div>
+
+                    {/* Associated Care Seeker(s) - Requirement G */}
+                    {hist.careSeekerNames && hist.careSeekerNames.length > 0 && (
+                      <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl text-[11px]">
+                        <span className="text-slate-400 block text-[10px] font-semibold uppercase tracking-wider">
+                          Care Seeker / Elder:
+                        </span>
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {hist.careSeekerNames.map((name) => (
+                            <span
+                              key={name}
+                              className="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 text-xs"
+                            >
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                       <div>

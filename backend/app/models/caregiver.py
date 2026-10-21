@@ -64,6 +64,18 @@ class Caregiver(Base):
     preferred_hours = Column(String(100), nullable=True)
     performance_metrics = Column(Text, nullable=True)
 
+    # Education & Credential Verification (Requirement B)
+    education_institution = Column(String(255), nullable=True)
+    education_course = Column(String(255), nullable=True)
+    education_completion_year = Column(Integer, nullable=True)
+    education_credential_id = Column(String(100), nullable=True)
+    education_document_url = Column(Text, nullable=True)
+    education_verification_status = Column(String(50), nullable=False, default="NOT_CHECKED", index=True)
+    education_verification_method = Column(String(50), nullable=True)
+    education_qr_payload = Column(Text, nullable=True)
+    education_verified_at = Column(DateTime(timezone=True), nullable=True)
+    education_rejection_reason = Column(Text, nullable=True)
+
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

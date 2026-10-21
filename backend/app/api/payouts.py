@@ -70,6 +70,8 @@ class PayoutHistoryItem(BaseModel):
     providerReference: Optional[str] = None
     paidAt: Optional[str] = None
     createdAt: str
+    careSeekerNames: List[str] = []
+    shiftsCount: int = 0
 
 
 class GeneratePayoutRequest(BaseModel):
@@ -283,41 +285,87 @@ async def get_earnings_grouped_by_elder(
 
 @router.get("/caregiver/history", response_model=List[PayoutHistoryItem])
 async def get_payout_history(
+    search: Optional[str] = Query(None, description="Search by care-seeker name, payout reference, or status"),
+    status: Optional[str] = Query(None, description="Filter by status (e.g. PENDING, APPROVED, PAID)"),
+    caregiver_id: Optional[str] = Query(None, description="Optional caregiver ID for Admin view"),
+    limit: int = Query(50, ge=1, le=100, description="Pagination limit"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
     current_user: User = Depends(require_role(["CAREGIVER", "ADMIN", "OPS_MANAGER"])),
-    caregiver_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Retrieve auditable payout history and relevant dates.
+    Retrieve auditable payout history with optional search across care seeker names,
+    payout number, and provider reference. Enforces strict caregiver isolation.
     """
     target_id = current_user.id
     if current_user.role in ["ADMIN", "OPS_MANAGER"] and caregiver_id:
         target_id = caregiver_id
 
-    res = await db.execute(
-        select(CaregiverPayout)
-        .where(CaregiverPayout.caregiverId == target_id)
-        .order_by(CaregiverPayout.createdAt.desc())
-    )
+    stmt = select(CaregiverPayout).where(CaregiverPayout.caregiverId == target_id)
+    if status and status.strip():
+        stmt = stmt.where(CaregiverPayout.status == status.strip().upper())
+    stmt = stmt.order_by(CaregiverPayout.createdAt.desc())
+
+    res = await db.execute(stmt)
     payouts = res.scalars().all()
 
-    return [
-        PayoutHistoryItem(
-            id=p.id,
-            payoutNumber=p.payoutNumber,
-            periodStart=p.periodStart.strftime("%d %b %Y"),
-            periodEnd=p.periodEnd.strftime("%d %b %Y"),
-            totalEarned=p.totalEarned,
-            deductionsAmount=p.deductionsAmount,
-            netPayoutAmount=p.netPayoutAmount,
-            currency=p.currency,
-            status=p.status,
-            providerReference=p.providerReference,
-            paidAt=p.paidAt.strftime("%d %b %Y, %I:%M %p") if p.paidAt else None,
-            createdAt=p.createdAt.strftime("%d %b %Y"),
+    payout_ids = [p.id for p in payouts]
+    payout_elders = {}
+    payout_shifts = {}
+
+    if payout_ids:
+        earnings_res = await db.execute(
+            select(CaregiverShiftEarning, Elder.name)
+            .outerjoin(Elder, Elder.id == CaregiverShiftEarning.elderId)
+            .where(
+                CaregiverShiftEarning.caregiverId == target_id,
+                CaregiverShiftEarning.payoutId.in_(payout_ids),
+            )
         )
-        for p in payouts
-    ]
+        for earning, elder_name in earnings_res.all():
+            p_id = earning.payoutId
+            if p_id not in payout_elders:
+                payout_elders[p_id] = set()
+                payout_shifts[p_id] = 0
+            if elder_name:
+                payout_elders[p_id].add(elder_name)
+            payout_shifts[p_id] += 1
+
+    results = []
+    search_term = search.strip().lower() if search and search.strip() else None
+
+    for p in payouts:
+        elder_names = sorted(list(payout_elders.get(p.id, set())))
+        shifts_count = payout_shifts.get(p.id, 0)
+
+        if search_term:
+            matches_elder = any(search_term in name.lower() for name in elder_names)
+            matches_num = search_term in (p.payoutNumber or "").lower()
+            matches_ref = search_term in (p.providerReference or "").lower()
+            matches_stat = search_term in (p.status or "").lower()
+            if not (matches_elder or matches_num or matches_ref or matches_stat):
+                continue
+
+        results.append(
+            PayoutHistoryItem(
+                id=p.id,
+                payoutNumber=p.payoutNumber,
+                periodStart=p.periodStart.strftime("%d %b %Y"),
+                periodEnd=p.periodEnd.strftime("%d %b %Y"),
+                totalEarned=p.totalEarned,
+                deductionsAmount=p.deductionsAmount,
+                netPayoutAmount=p.netPayoutAmount,
+                currency=p.currency,
+                status=p.status,
+                providerReference=p.providerReference,
+                paidAt=p.paidAt.strftime("%d %b %Y, %I:%M %p") if p.paidAt else None,
+                createdAt=p.createdAt.strftime("%d %b %Y"),
+                careSeekerNames=elder_names,
+                shiftsCount=shifts_count,
+            )
+        )
+
+    return results[offset : offset + limit]
 
 
 @router.post("/admin/generate", status_code=status.HTTP_201_CREATED)

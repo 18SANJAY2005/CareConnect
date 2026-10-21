@@ -12,6 +12,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.elder import Elder
 from app.models.caregiver import Caregiver
+from app.models.caregiver_kyc import CaregiverKYC
 from app.models.assignment import CareAssignment
 from app.models.billing import Invoice, InvoiceLineItem
 from app.models.renewal import Renewal
@@ -581,6 +582,7 @@ async def create_care_assignment(
 
     # ------------------------------------------------------------------------
     # Revalidate caregiver eligibility, verification, and schedule availability
+    # Invariant: PROFILE COMPLETE + REQUIRED KYC VERIFIED + CAREGIVER ACTIVE = ELIGIBLE FOR WORK
     # ------------------------------------------------------------------------
     if not caregiver.is_active:
         raise HTTPException(
@@ -588,10 +590,38 @@ async def create_care_assignment(
             detail=f"Caregiver {caregiver.full_name} is inactive and cannot be assigned.",
         )
 
-    if not caregiver.is_identity_verified and not caregiver.is_clinical_certified:
+    is_verified = bool(caregiver.is_identity_verified)
+    if caregiver.phone:
+        u_res = await db.execute(select(User).where(User.phone == caregiver.phone))
+        cg_user = u_res.scalars().first()
+        if cg_user:
+            if not cg_user.is_active:
+                raise HTTPException(status_code=400, detail="Caregiver account is inactive.")
+            if cg_user.isProfileComplete is False:
+                raise HTTPException(status_code=400, detail=f"Caregiver {caregiver.full_name} has not completed their required profile.")
+            kyc_res = await db.execute(select(CaregiverKYC).where(CaregiverKYC.caregiver_id == cg_user.id))
+            kyc = kyc_res.scalars().first()
+            if kyc:
+                if kyc.verification_status != "VERIFIED":
+                    raise HTTPException(status_code=400, detail=f"Caregiver {caregiver.full_name} identity KYC is {kyc.verification_status.lower()}.")
+                is_verified = True
+
+    if not is_verified:
         raise HTTPException(
             status_code=400,
             detail=f"Caregiver {caregiver.full_name} has not completed mandatory identity verification.",
+        )
+
+    # Enforce service-specific verified qualifications for clinical work
+    requires_clinical = bool(payload.get("requires_clinical"))
+    if elder.careRequirements and isinstance(elder.careRequirements, list):
+        if any(any(k in str(req).lower() for k in ["nurs", "clinical", "iv", "catheter", "injection", "wound"]) for req in elder.careRequirements):
+            requires_clinical = True
+
+    if requires_clinical and not (caregiver.is_clinical_certified or caregiver.education_verification_status == "VERIFIED"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Caregiver {caregiver.full_name} does not hold verified qualifications required for clinical care.",
         )
 
     # Check for conflicting active assignment
@@ -725,6 +755,39 @@ async def confirm_care_assignment(
     caregiver = assignment.caregiver
     if not caregiver or not caregiver.is_active:
         raise HTTPException(status_code=400, detail="Assigned caregiver is not active.")
+
+    is_verified = bool(caregiver.is_identity_verified)
+    if caregiver.phone:
+        u_res = await db.execute(select(User).where(User.phone == caregiver.phone))
+        cg_user = u_res.scalars().first()
+        if cg_user:
+            if not cg_user.is_active:
+                raise HTTPException(status_code=400, detail="Assigned caregiver account is inactive.")
+            if cg_user.isProfileComplete is False:
+                raise HTTPException(status_code=400, detail=f"Assigned caregiver {caregiver.full_name} has an incomplete profile.")
+            kyc_res = await db.execute(select(CaregiverKYC).where(CaregiverKYC.caregiver_id == cg_user.id))
+            kyc = kyc_res.scalars().first()
+            if kyc:
+                if kyc.verification_status != "VERIFIED":
+                    raise HTTPException(status_code=400, detail=f"Assigned caregiver {caregiver.full_name} identity KYC is {kyc.verification_status.lower()}.")
+                is_verified = True
+
+    if not is_verified:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Assigned caregiver {caregiver.full_name} is not identity-verified.",
+        )
+
+    # Recheck clinical requirements if applicable
+    elder_res = await db.execute(select(Elder).where(Elder.id == assignment.elder_id))
+    elder = elder_res.scalar_one_or_none()
+    if elder and elder.careRequirements and isinstance(elder.careRequirements, list):
+        if any(any(k in str(req).lower() for k in ["nurs", "clinical", "iv", "catheter", "injection", "wound"]) for req in elder.careRequirements):
+            if not (caregiver.is_clinical_certified or caregiver.education_verification_status == "VERIFIED"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Assigned caregiver {caregiver.full_name} does not hold verified qualifications required for clinical care.",
+                )
 
     old_status = assignment.status
     assignment.status = "SERVICE_CONFIRMED"

@@ -36,6 +36,18 @@ class CaregiverBase(BaseModel):
 
 
 
+    # Education & Credential Verification
+    education_institution: Optional[str] = None
+    education_course: Optional[str] = None
+    education_completion_year: Optional[int] = None
+    education_credential_id: Optional[str] = None
+    education_document_url: Optional[str] = None
+    education_verification_status: Optional[str] = "NOT_CHECKED"
+    education_verification_method: Optional[str] = None
+    education_qr_payload: Optional[str] = None
+    education_rejection_reason: Optional[str] = None
+
+
 class CaregiverResponse(CaregiverBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
@@ -69,6 +81,73 @@ class CaregiverEligibilityResponse(BaseModel):
     isEligibleForWork: bool
     eligibilityState: str
     message: str
+    educationVerificationStatus: Optional[str] = "NOT_CHECKED"
+    educationVerificationMethod: Optional[str] = None
+    educationDegree: Optional[str] = None
+    educationInstitution: Optional[str] = None
+
+
+# -------------------------------------------------------------
+# 4-Page KYC Onboarding Schemas (Requirement A & B)
+# -------------------------------------------------------------
+
+class OnboardingStep1Request(BaseModel):
+    document_type: str
+    document_number: str
+    document_storage_reference: Optional[str] = None
+    terms_accepted: bool = True
+    service_consent_granted: bool = True
+    promotional_consent_granted: bool = False
+
+
+class OnboardingStep2Request(BaseModel):
+    fullName: str
+    dob: str
+    gender: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    locality: str
+    bio: Optional[str] = None
+
+
+class OnboardingStep3Request(BaseModel):
+    institution: str
+    course: str
+    completionYear: Optional[int] = None
+    credentialId: Optional[str] = None
+    documentUrl: Optional[str] = None
+    qrPayload: Optional[str] = None
+    verificationMethod: Optional[str] = "BARCODE_QR_SCAN"
+
+
+class OnboardingStep4Request(BaseModel):
+    servicesOffered: List[str] = []
+    shiftPreferences: List[str] = []
+    preferredHours: Optional[str] = None
+    dailyRate: Optional[float] = 2000.0
+    hourlyRate: Optional[float] = 250.0
+    isAvailable: bool = True
+
+
+class DocumentScanRequest(BaseModel):
+    documentType: str = "EDUCATION"  # IDENTITY or EDUCATION
+    fileData: str  # Base64 string or data URL
+
+
+class DocumentScanResponse(BaseModel):
+    detected: bool
+    status: str
+    rawPayload: Optional[str] = None
+    message: str
+    extractedFields: dict = {}
+    verifiedAt: Optional[str] = None
+
+
+class EducationVerificationUpdateRequest(BaseModel):
+    verificationStatus: str  # VERIFIED_BY_ISSUER, VERIFIED, REJECTED, MANUAL_REVIEW_REQUIRED
+    verificationMethod: Optional[str] = "MANUAL_ADMIN_REVIEW"
+    rejectionReason: Optional[str] = None
+
 
 
 class CaregiverAvailabilityRequest(BaseModel):

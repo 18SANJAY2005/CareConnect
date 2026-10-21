@@ -2,6 +2,7 @@ from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.location import ElderLocationResponse
+from app.schemas.hospital import HospitalResponse
 
 class MobilityLevel:
     INDEPENDENT = "INDEPENDENT"
@@ -27,6 +28,7 @@ class ElderCreate(BaseModel):
     dateOfBirth: Optional[date] = None
     phoneNumber: Optional[str] = None
     isMyself: Optional[bool] = False
+    preferredHospitalId: Optional[str] = None
 
 class ElderUpdate(BaseModel):
     name: Optional[str] = None
@@ -36,6 +38,7 @@ class ElderUpdate(BaseModel):
     phoneNumber: Optional[str] = None
     isMyself: Optional[bool] = None
     locationId: Optional[str] = None
+    preferredHospitalId: Optional[str] = None
     mobilityLevel: Optional[str] = None
     medicalConditions: Optional[List[str]] = None
     careRequirements: Optional[List[str]] = None
@@ -61,6 +64,7 @@ class ElderResponse(BaseModel):
     phoneNumber: Optional[str] = None
     isMyself: bool = False
     locationId: Optional[str] = None
+    preferredHospitalId: Optional[str] = None
     mobilityLevel: str
     medicalConditions: List[str] = []
     careRequirements: List[str] = []
@@ -76,3 +80,5 @@ class ElderResponse(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     location: Optional[ElderLocationResponse] = None
+    preferredHospital: Optional[HospitalResponse] = Field(default=None, alias="preferred_hospital")
+

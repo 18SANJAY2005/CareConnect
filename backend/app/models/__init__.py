@@ -2,6 +2,7 @@ from app.models.user import User
 from app.models.elder import Elder
 from app.models.location import ElderLocation, ServiceInterest
 from app.models.assessment import HomeAssessmentRequest
+from app.models.hospital import Hospital
 
 # ============================================================
 # Phase B models
@@ -44,6 +45,7 @@ __all__ = [
     "ElderLocation",
     "ServiceInterest",
     "HomeAssessmentRequest",
+    "Hospital",
 
     # Phase B
     "Caregiver",

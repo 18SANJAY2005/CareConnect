@@ -324,6 +324,92 @@ export interface PayoutHistoryItem {
   providerReference?: string | null;
   paidAt?: string | null;
   createdAt: string;
+  careSeekerNames?: string[];
+  shiftsCount?: number;
+}
+
+export interface HospitalInfo {
+  id: string;
+  name: string;
+  address: string;
+  area?: string;
+  locality?: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  emergencyPhone?: string;
+  distanceKm?: number;
+  etaMins?: number;
+  traumaLevel?: string;
+  ambulanceAvailable?: boolean;
+}
+
+export interface ElderEmergencyContext {
+  elderId: string;
+  elderName: string;
+  preferredHospital: HospitalInfo | null;
+  hasPreferredHospital: boolean;
+  residenceCoordinates?: {
+    latitude: number;
+    longitude: number;
+    locality?: string;
+    hasGps?: boolean;
+  } | null;
+  nearbyHospitals: HospitalInfo[];
+}
+
+export interface OnboardingState {
+  step1: {
+    documentType?: KycDocumentType | null;
+    maskedDocumentNumber?: string | null;
+    documentStorageReference?: string | null;
+    verificationStatus: string;
+    rejectionReason?: string | null;
+    isSubmitted: boolean;
+  };
+  step2: {
+    fullName: string;
+    dob: string;
+    gender: string;
+    phone: string;
+    email: string;
+    locality: string;
+    bio: string;
+  };
+  step3: {
+    institution: string;
+    course: string;
+    completionYear?: number | null;
+    credentialId: string;
+    documentUrl?: string | null;
+    qrPayload?: string | null;
+    verificationStatus: string;
+    verificationMethod?: string | null;
+    rejectionReason?: string | null;
+  };
+  step4: {
+    servicesOffered: string[];
+    shiftPreferences: string[];
+    preferredHours: string;
+    dailyRate: number;
+    hourlyRate: number;
+    isAvailable: boolean;
+  };
+  currentStep: number;
+  isProfileComplete: boolean;
+  kycStatus: string;
+  isEligibleForWork: boolean;
+  eligibilityState: string;
+  message: string;
+}
+
+export interface DocumentScanResult {
+  detected: boolean;
+  status: string;
+  rawPayload?: string | null;
+  message: string;
+  extractedFields: Record<string, any>;
+  verifiedAt?: string | null;
 }
 
 

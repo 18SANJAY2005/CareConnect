@@ -1195,7 +1195,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
       )}
 
       {/* P1 SOS Emergency Modal */}
-      {showSosModal && shiftDetails && (
+      {showSosModal && (
         <SosModal
           isOpen={showSosModal}
           onClose={() => setShowSosModal(false)}

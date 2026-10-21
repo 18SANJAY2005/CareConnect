@@ -92,9 +92,9 @@ async def init_db() -> None:
             is_postgres = sync_conn.dialect.name.startswith("postgres")
 
             if is_postgres:
-                # PostgreSQL supports ALTER TABLE ... ADD COLUMN IF NOT EXISTS natively
                 sync_conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS "phoneNumber" VARCHAR(20)'))
                 sync_conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS "isMyself" BOOLEAN DEFAULT FALSE'))
+                sync_conn.execute(text('ALTER TABLE elders ADD COLUMN IF NOT EXISTS preferred_hospital_id VARCHAR(36)'))
                 sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS dob VARCHAR(20)'))
                 sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20)'))
                 sync_conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS locality VARCHAR(255)'))
@@ -124,6 +124,18 @@ async def init_db() -> None:
                 sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS preferred_hours VARCHAR(100)'))
                 sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS performance_metrics TEXT'))
 
+                # Caregiver education verification columns (Requirement B)
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_institution VARCHAR(255)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_course VARCHAR(255)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_completion_year INTEGER'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_credential_id VARCHAR(100)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_document_url TEXT'))
+                sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_verification_status VARCHAR(50) DEFAULT 'NOT_CHECKED'"))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_verification_method VARCHAR(50)'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_qr_payload TEXT'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_verified_at TIMESTAMP WITH TIME ZONE'))
+                sync_conn.execute(text('ALTER TABLE caregivers ADD COLUMN IF NOT EXISTS education_rejection_reason TEXT'))
+
                 # CareAssignment deadline columns
                 sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "responseDeadline" TIMESTAMP WITH TIME ZONE'))
                 sync_conn.execute(text('ALTER TABLE care_assignments ADD COLUMN IF NOT EXISTS "declinedReason" TEXT'))
@@ -136,6 +148,24 @@ async def init_db() -> None:
                 sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "correctedByUserId" VARCHAR(36)'))
                 sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "correctedAt" TIMESTAMP WITH TIME ZONE'))
                 sync_conn.execute(text('ALTER TABLE care_tasks ADD COLUMN IF NOT EXISTS "originalStatus" VARCHAR(50)'))
+
+                # Indices and foreign key constraints
+                sync_conn.execute(text('CREATE INDEX IF NOT EXISTS ix_elders_preferred_hospital_id ON elders (preferred_hospital_id)'))
+                sync_conn.execute(text('CREATE INDEX IF NOT EXISTS ix_caregivers_education_verification_status ON caregivers (education_verification_status)'))
+                sync_conn.execute(text("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM pg_constraint WHERE conname = 'fk_elders_preferred_hospital'
+                        ) THEN
+                            ALTER TABLE elders 
+                            ADD CONSTRAINT fk_elders_preferred_hospital 
+                            FOREIGN KEY (preferred_hospital_id) 
+                            REFERENCES hospitals(id) 
+                            ON DELETE SET NULL;
+                        END IF;
+                    END $$;
+                """))
             else:
                 inspector = inspect(sync_conn)
                 table_names = inspector.get_table_names()
@@ -146,6 +176,8 @@ async def init_db() -> None:
                         sync_conn.execute(text('ALTER TABLE elders ADD COLUMN "phoneNumber" VARCHAR(20)'))
                     if "isMyself" not in elder_cols:
                         sync_conn.execute(text('ALTER TABLE elders ADD COLUMN "isMyself" BOOLEAN DEFAULT 0'))
+                    if "preferred_hospital_id" not in elder_cols:
+                        sync_conn.execute(text('ALTER TABLE elders ADD COLUMN preferred_hospital_id VARCHAR(36)'))
 
                 if "users" in table_names:
                     user_cols = {c["name"] for c in inspector.get_columns("users")}
@@ -188,6 +220,26 @@ async def init_db() -> None:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN preferred_hours VARCHAR(100)"))
                     if "performance_metrics" not in cg_cols:
                         sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN performance_metrics TEXT"))
+                    if "education_institution" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_institution VARCHAR(255)"))
+                    if "education_course" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_course VARCHAR(255)"))
+                    if "education_completion_year" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_completion_year INTEGER"))
+                    if "education_credential_id" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_credential_id VARCHAR(100)"))
+                    if "education_document_url" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_document_url TEXT"))
+                    if "education_verification_status" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_verification_status VARCHAR(50) DEFAULT 'NOT_CHECKED'"))
+                    if "education_verification_method" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_verification_method VARCHAR(50)"))
+                    if "education_qr_payload" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_qr_payload TEXT"))
+                    if "education_verified_at" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_verified_at TIMESTAMP"))
+                    if "education_rejection_reason" not in cg_cols:
+                        sync_conn.execute(text("ALTER TABLE caregivers ADD COLUMN education_rejection_reason TEXT"))
 
                 if "care_assignments" in table_names:
                     asg_cols = {c["name"] for c in inspector.get_columns("care_assignments")}
@@ -228,5 +280,11 @@ async def init_db() -> None:
                     for col_name, col_type in otp_cols:
                         if col_name not in shift_cols:
                             sync_conn.execute(text(f'ALTER TABLE shifts ADD COLUMN "{col_name}" {col_type}'))
+
+                # SQLite indices
+                if "elders" in table_names:
+                    sync_conn.execute(text('CREATE INDEX IF NOT EXISTS ix_elders_preferred_hospital_id ON elders (preferred_hospital_id)'))
+                if "caregivers" in table_names:
+                    sync_conn.execute(text('CREATE INDEX IF NOT EXISTS ix_caregivers_education_verification_status ON caregivers (education_verification_status)'))
 
         await conn.run_sync(sync_migrations)

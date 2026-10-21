@@ -1,5 +1,6 @@
 import uuid
 import secrets
+import hmac
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, status, HTTPException
@@ -19,6 +20,8 @@ from app.schemas.shift import (
     CheckInRequest, CheckOutRequest, SupervisorOverrideRequest,
     ShiftResponse, ShiftDetailResponse, LiveShiftMonitorItem
 )
+from app.core.authorization import verify_elder_access
+from app.models.assignment import CareAssignment
 from app.services.attendance_service import AttendanceService
 from app.services.care_task_service import CareTaskService
 
@@ -131,6 +134,137 @@ async def get_elder_shift_status(
             "onDuty": shift.status in ["ACTIVE", "CHECKED_IN"]
         } if latest_log else None
     }
+
+
+@router.get("/elder/{elder_id}/schedule", status_code=status.HTTP_200_OK)
+async def get_elder_shift_schedule(
+    elder_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve the full shift schedule for an elder (Care Seeker / Family calendar view).
+    Strictly isolated: verified by verify_elder_access.
+    Includes:
+      - Shifts per date
+      - Daily shift counts
+      - Chronological ordering
+      - Overnight shift detection
+      - Deduplicated assignment entries
+    """
+    elder = await verify_elder_access(db, current_user, elder_id)
+
+    # Fetch concrete CareShift records for this elder
+    shift_query = select(CareShift).where(CareShift.elderId == elder_id)
+    if start_date:
+        try:
+            sd = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+            shift_query = shift_query.where(CareShift.scheduledStart >= sd)
+        except Exception:
+            pass
+    if end_date:
+        try:
+            ed = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+            shift_query = shift_query.where(CareShift.scheduledEnd <= ed)
+        except Exception:
+            pass
+
+    shift_res = await db.execute(shift_query.order_by(CareShift.scheduledStart.asc()))
+    shifts = shift_res.scalars().all()
+
+    # Fetch active/confirmed CareAssignments for this elder
+    asg_res = await db.execute(
+        select(CareAssignment)
+        .where(
+            CareAssignment.elder_id == elder_id,
+            CareAssignment.status.in_(["ACTIVE", "SERVICE_CONFIRMED", "WAITING_CONFIRMATION"])
+        )
+    )
+    assignments = asg_res.scalars().all()
+
+    items = []
+    seen_elder_dates = set()
+
+    for s in shifts:
+        cg_user = None
+        if s.caregiverId:
+            cg_res = await db.execute(select(User).where(User.id == s.caregiverId))
+            cg_user = cg_res.scalar_one_or_none()
+
+        d_str = s.scheduledStart.strftime("%Y-%m-%d") if s.scheduledStart else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        seen_elder_dates.add(d_str)
+
+        # Detect overnight shift
+        is_overnight = False
+        if s.scheduledStart and s.scheduledEnd:
+            is_overnight = s.scheduledEnd.date() > s.scheduledStart.date()
+        if not is_overnight and s.shiftType and any(k in s.shiftType.lower() for k in ["night", "24", "overnight"]):
+            is_overnight = True
+
+        items.append({
+            "id": s.id,
+            "type": "SHIFT",
+            "date": d_str,
+            "startTime": s.scheduledStart.strftime("%I:%M %p") if s.scheduledStart else "08:00 AM",
+            "endTime": s.scheduledEnd.strftime("%I:%M %p") if s.scheduledEnd else "06:00 PM",
+            "shiftType": s.shiftType or "Day 10-Hour",
+            "status": s.status,
+            "isOvernight": is_overnight,
+            "caregiver": {
+                "id": cg_user.id if cg_user else s.caregiverId,
+                "fullName": cg_user.fullName if cg_user else "Assigned Caregiver",
+                "phone": cg_user.phone if cg_user else None,
+            }
+        })
+
+    # Include assignments where concrete shifts have not yet been instantiated
+    for a in assignments:
+        a_date = a.start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        if a_date in seen_elder_dates:
+            continue
+
+        cg_record = None
+        if a.caregiver_id:
+            cg_r = await db.execute(select(Caregiver).where(Caregiver.id == a.caregiver_id))
+            cg_record = cg_r.scalar_one_or_none()
+
+        is_overnight = bool(a.shift_type and any(k in a.shift_type.lower() for k in ["night", "24", "overnight"]))
+
+        items.append({
+            "id": str(a.id),
+            "type": "ASSIGNMENT",
+            "date": a_date,
+            "startTime": "08:00 AM",
+            "endTime": "06:00 PM",
+            "shiftType": a.shift_type or "Day 10-Hour",
+            "status": a.status,
+            "isOvernight": is_overnight,
+            "caregiver": {
+                "id": str(a.caregiver_id),
+                "fullName": cg_record.full_name if cg_record else "Assigned Caregiver",
+                "phone": cg_record.phone if cg_record else None,
+            }
+        })
+
+    # Sort all items chronologically
+    items.sort(key=lambda x: (x["date"], x["startTime"]))
+
+    # Aggregate counts per date
+    counts_by_date = {}
+    for item in items:
+        dt = item["date"]
+        counts_by_date[dt] = counts_by_date.get(dt, 0) + 1
+
+    return {
+        "elderId": elder.id,
+        "elderName": elder.name,
+        "totalShifts": len(items),
+        "countsByDate": counts_by_date,
+        "schedule": items,
+    }
+
 
 @router.get("/monitor", response_model=List[LiveShiftMonitorItem], status_code=status.HTTP_200_OK)
 async def get_live_shift_monitor(
@@ -267,11 +401,14 @@ async def request_visit_start_otp(
     sms_configured = bool(getattr(settings, "TWILIO_ACCOUNT_SID", None) or getattr(settings, "SMS_GATEWAY_KEY", None))
     email_configured = bool(getattr(settings, "SENDGRID_API_KEY", None) or getattr(settings, "SMTP_HOST", None))
 
+    dev_otp = otp_code if getattr(settings, "is_dev_otp_allowed", False) else None
+
     return {
         "success": True,
         "shiftId": shift.id,
         "message": "Visit-start OTP generated successfully and dispatched to CareSeeker.",
-        "otp": otp_code,
+        "otp": dev_otp,
+        "devOtp": dev_otp,
         "expiresAt": expires_at.isoformat(),
         "delivery": {
             "channel": "IN_APP",
@@ -323,7 +460,7 @@ async def verify_visit_start_otp(
         await db.commit()
         raise HTTPException(status_code=429, detail="Maximum OTP verification attempts exceeded. Please request a new OTP.")
 
-    if shift.startOtp.strip() != payload.otp.strip():
+    if not hmac.compare_digest(str(shift.startOtp).strip(), str(payload.otp).strip()):
         remaining = max(0, 3 - shift.startOtpAttempts)
         await db.commit()
         raise HTTPException(status_code=400, detail=f"Invalid verification code. {remaining} attempt(s) remaining.")
@@ -420,11 +557,14 @@ async def request_visit_completion_otp(
     sms_configured = bool(getattr(settings, "TWILIO_ACCOUNT_SID", None) or getattr(settings, "SMS_GATEWAY_KEY", None))
     email_configured = bool(getattr(settings, "SENDGRID_API_KEY", None) or getattr(settings, "SMTP_HOST", None))
 
+    dev_otp = otp_code if getattr(settings, "is_dev_otp_allowed", False) else None
+
     return {
         "success": True,
         "shiftId": shift.id,
         "message": "Completion OTP generated and dispatched to CareSeeker.",
-        "otp": otp_code,
+        "otp": dev_otp,
+        "devOtp": dev_otp,
         "expiresAt": expires_at.isoformat(),
         "delivery": {
             "channel": "IN_APP",
@@ -474,7 +614,7 @@ async def verify_visit_completion_otp(
         await db.commit()
         raise HTTPException(status_code=429, detail="Maximum completion OTP verification attempts exceeded.")
 
-    if shift.completionOtp.strip() != payload.otp.strip():
+    if not hmac.compare_digest(str(shift.completionOtp).strip(), str(payload.otp).strip()):
         remaining = max(0, 3 - shift.completionOtpAttempts)
         await db.commit()
         raise HTTPException(status_code=400, detail=f"Invalid completion OTP. {remaining} attempt(s) remaining.")
@@ -535,6 +675,24 @@ async def get_shift_otp_status(
         exp = shift.completionOtpExpiresAt.replace(tzinfo=timezone.utc) if shift.completionOtpExpiresAt.tzinfo is None else shift.completionOtpExpiresAt
         comp_expired = now > exp
 
+    elder_res = await db.execute(select(Elder).where(Elder.id == shift.elderId))
+    elder = elder_res.scalar_one_or_none()
+    is_sponsor_or_admin = bool(
+        current_user.role in ["ADMIN", "OPS_MANAGER"]
+        or (elder and current_user.id in [elder.familyId, elder.sponsor_id])
+    )
+
+    start_in_app = (
+        shift.startOtp
+        if (is_sponsor_or_admin and not shift.startOtpUsed and not start_expired)
+        else None
+    )
+    comp_in_app = (
+        shift.completionOtp
+        if (is_sponsor_or_admin and not shift.completionOtpUsed and not comp_expired)
+        else None
+    )
+
     return {
         "shiftId": shift.id,
         "startOtp": {
@@ -542,14 +700,14 @@ async def get_shift_otp_status(
             "isUsed": bool(shift.startOtpUsed),
             "isExpired": start_expired,
             "attempts": shift.startOtpAttempts or 0,
-            "inAppCode": shift.startOtp if (not shift.startOtpUsed and not start_expired) else None,
+            "inAppCode": start_in_app,
         },
         "completionOtp": {
             "hasOtp": bool(shift.completionOtp),
             "isUsed": bool(shift.completionOtpUsed),
             "isExpired": comp_expired,
             "attempts": shift.completionOtpAttempts or 0,
-            "inAppCode": shift.completionOtp if (not shift.completionOtpUsed and not comp_expired) else None,
+            "inAppCode": comp_in_app,
         },
     }
 

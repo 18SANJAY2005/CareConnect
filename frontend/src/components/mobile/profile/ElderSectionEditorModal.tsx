@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   Check,
@@ -9,9 +9,12 @@ import {
   Heart,
   FileText,
   Trash2,
+  Building2,
+  Phone,
+  Search,
 } from "lucide-react";
 import { api } from "../../../services/api";
-import type { Elder } from "../../../types";
+import type { Elder, HospitalInfo } from "../../../types";
 
 export type EditableSection =
   | "NAME"
@@ -20,7 +23,8 @@ export type EditableSection =
   | "REQUIREMENTS"
   | "DURATION"
   | "PREFERENCES"
-  | "DETAILED_CARE";
+  | "DETAILED_CARE"
+  | "PREFERRED_HOSPITAL";
 
 interface ElderSectionEditorModalProps {
   section: EditableSection;
@@ -133,6 +137,34 @@ export const ElderSectionEditorModal: React.FC<
     elder.dietaryPreferences || ["Vegetarian"],
   );
 
+  // Preferred Hospital state (Requirement D)
+  const [selectedHospitalId, setSelectedHospitalId] = useState<string>(
+    elder.preferredHospitalId || elder.preferredHospital?.id || "",
+  );
+  const [hospitalsList, setHospitalsList] = useState<HospitalInfo[]>([]);
+  const [loadingHospitals, setLoadingHospitals] = useState<boolean>(false);
+  const [hospitalSearch, setHospitalSearch] = useState<string>("");
+
+  useEffect(() => {
+    if (section === "PREFERRED_HOSPITAL") {
+      setLoadingHospitals(true);
+      const lat = elder.location?.latitude || 13.0827;
+      const lng = elder.location?.longitude || 80.2707;
+      api
+        .getNearbyHospitals(lat, lng, 15.0)
+        .then((res) => {
+          setHospitalsList(res);
+          if (!selectedHospitalId && res.length > 0) {
+            setSelectedHospitalId(res[0].id);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load nearby hospitals:", err);
+        })
+        .finally(() => setLoadingHospitals(false));
+    }
+  }, [section, elder]);
+
   // Async state
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -153,6 +185,8 @@ export const ElderSectionEditorModal: React.FC<
         return "Edit Additional Preferences";
       case "DETAILED_CARE":
         return "Edit Clinical & Health Details";
+      case "PREFERRED_HOSPITAL":
+        return "Select Preferred Hospital";
     }
   };
 
@@ -164,6 +198,23 @@ export const ElderSectionEditorModal: React.FC<
     const patchPayload: Record<string, any> = {};
 
     try {
+      if (section === "PREFERRED_HOSPITAL") {
+        if (!selectedHospitalId) {
+          throw new Error("Please select a preferred hospital for emergency care.");
+        }
+        const res = await api.updateElderPreferredHospital(
+          elder.id,
+          selectedHospitalId,
+        );
+        onSave({
+          ...elder,
+          preferredHospitalId: res.preferredHospitalId,
+          preferredHospital: res.preferredHospital,
+        });
+        onClose();
+        return;
+      }
+
       if (section === "NAME") {
         if (!name.trim()) throw new Error("Name cannot be blank.");
         patchPayload.name = name.trim();
@@ -653,6 +704,98 @@ export const ElderSectionEditorModal: React.FC<
                   })}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* 8. Preferred Hospital Selection (Requirement D) */}
+          {section === "PREFERRED_HOSPITAL" && (
+            <div className="space-y-3.5 animate-fadeIn">
+              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-3 text-xs text-teal-800">
+                <p className="font-semibold">
+                  Select a preferred emergency hospital for <strong>{elder.name}</strong>.
+                  This hospital is prominently displayed in the emergency SOS view for assigned caregivers.
+                </p>
+              </div>
+
+              {/* Search Box */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={hospitalSearch}
+                  onChange={(e) => setHospitalSearch(e.target.value)}
+                  placeholder="Search hospital by name or locality..."
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white"
+                />
+              </div>
+
+              {loadingHospitals ? (
+                <div className="flex flex-col items-center justify-center p-8 text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mb-1.5" />
+                  <p className="text-xs font-semibold">Finding nearby hospitals...</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {hospitalsList
+                    .filter((h) => {
+                      if (!hospitalSearch.trim()) return true;
+                      const q = hospitalSearch.toLowerCase();
+                      return (
+                        h.name.toLowerCase().includes(q) ||
+                        h.address.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((h) => {
+                      const isSelected = selectedHospitalId === h.id;
+                      return (
+                        <div
+                          key={h.id}
+                          onClick={() => setSelectedHospitalId(h.id)}
+                          className={`p-3 rounded-2xl border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? "bg-teal-50/80 border-primary ring-1 ring-primary shadow-xs"
+                              : "bg-white border-slate-200 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <Building2 className={`w-3.5 h-3.5 ${isSelected ? "text-primary" : "text-slate-400"}`} />
+                                <h4 className="font-extrabold text-slate-900 text-xs">
+                                  {h.name}
+                                </h4>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-tight">
+                                {h.address}
+                              </p>
+                              <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-600">
+                                <span className="flex items-center gap-1 font-mono font-semibold text-slate-700">
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  {h.contactNumber}
+                                </span>
+                                {h.distanceKm !== undefined && (
+                                  <span className="px-1.5 py-0.2 bg-slate-100 rounded text-[10px] font-bold text-slate-600">
+                                    ~{h.distanceKm.toFixed(1)} km away
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                              isSelected ? "border-primary bg-primary" : "border-slate-300"
+                            }`}>
+                              {isSelected && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  {hospitalsList.length === 0 && (
+                    <div className="text-center p-6 text-slate-400 text-xs">
+                      No nearby hospitals found.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

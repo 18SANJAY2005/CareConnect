@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AlertCircle,
   Phone,
@@ -6,9 +6,12 @@ import {
   ShieldAlert,
   CheckCircle2,
   Loader2,
+  Building2,
+  Navigation,
 } from "lucide-react";
 import { api } from "../../services/api";
 import { offlineQueue } from "../../services/offlineQueue";
+import type { ElderEmergencyContext } from "../../types";
 
 interface MobileSosModalProps {
   isOpen: boolean;
@@ -27,6 +30,25 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
   const [isSent, setIsSent] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
+  // Hospital & Emergency Context (Requirement F)
+  const [emergencyContext, setEmergencyContext] = useState<ElderEmergencyContext | null>(null);
+  const [loadingContext, setLoadingContext] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && elderId) {
+      setLoadingContext(true);
+      api
+        .getElderEmergencyHospitalContext(elderId)
+        .then((ctx) => {
+          setEmergencyContext(ctx);
+        })
+        .catch((err) => {
+          console.error("Failed to load elder emergency context:", err);
+        })
+        .finally(() => setLoadingContext(false));
+    }
+  }, [isOpen, elderId]);
+
   if (!isOpen) return null;
 
   const handleTriggerOnlineSos = async () => {
@@ -40,22 +62,26 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
     setStatusMessage(null);
 
     try {
-      // Attempt geolocation if available
-      let lat = 13.0012;
-      let lng = 80.2565;
+      // Attempt geolocation if available; fallback to stored residence coordinates
+      let lat: number | undefined = emergencyContext?.residenceLatitude ?? undefined;
+      let lng: number | undefined = emergencyContext?.residenceLongitude ?? undefined;
+      let locationSource = emergencyContext?.residenceLatitude ? "STORED_RESIDENCE" : "COORDINATES_UNAVAILABLE";
+
       if (navigator.geolocation) {
         try {
           const pos: GeolocationPosition = await new Promise(
             (resolve, reject) => {
               navigator.geolocation.getCurrentPosition(resolve, reject, {
                 timeout: 3000,
+                enableHighAccuracy: true,
               });
             },
           );
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
+          locationSource = "DEVICE_GPS";
         } catch {
-          // Continue with default fallback coords
+          // Keep stored residence fallback (or undefined if not stored)
         }
       }
 
@@ -63,12 +89,12 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
         elderId,
         latitude: lat,
         longitude: lng,
-        notes: `Emergency SOS triggered from mobile app for ${elderName || "Elder"}.`,
+        notes: `Emergency SOS triggered from mobile app for ${elderName || "Elder"} (${locationSource}).`,
       });
 
       setIsSent(true);
       setStatusMessage(
-        "🚨 Emergency SOS broadcasted! Operations Care Desk has been alerted.",
+        "🚨 Emergency SOS broadcasted! Operations Care Desk and assigned caregiver have been alerted.",
       );
     } catch (err: any) {
       offlineQueue.enqueue("/incidents/sos", "POST", {
@@ -129,6 +155,96 @@ export const MobileSosModal: React.FC<MobileSosModalProps> = ({
               <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             )}
             <span className="leading-relaxed font-medium">{statusMessage}</span>
+          </div>
+        )}
+
+        {/* Preferred & Nearby Hospitals (Requirement F) */}
+        {loadingContext ? (
+          <div className="flex items-center justify-center p-3 gap-2 bg-slate-50 rounded-2xl text-xs text-slate-500">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span>Locating emergency hospitals...</span>
+          </div>
+        ) : (
+          <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+            {emergencyContext?.preferredHospital && (
+              <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-3 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-rose-800 flex items-center gap-1">
+                    <Building2 className="w-3 h-3 text-rose-600" />
+                    <span>Family Preferred Emergency ER</span>
+                  </span>
+                  <span className="px-1.5 py-0.2 bg-rose-200/70 text-rose-900 rounded text-[9px] font-bold">
+                    Primary Choice
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-black text-slate-900 text-xs">
+                    {emergencyContext.preferredHospital.name}
+                  </h4>
+                  <p className="text-[11px] text-slate-600 leading-tight mt-0.5">
+                    {emergencyContext.preferredHospital.address}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-rose-200/60">
+                  <a
+                    href={`tel:${emergencyContext.preferredHospital.contactNumber}`}
+                    className="font-bold text-rose-800 hover:underline flex items-center gap-1 text-xs"
+                  >
+                    <Phone className="w-3 h-3 text-rose-600" />
+                    <span>{emergencyContext.preferredHospital.contactNumber}</span>
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${emergencyContext.preferredHospital.latitude},${emergencyContext.preferredHospital.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 text-xs"
+                  >
+                    <Navigation className="w-3 h-3 text-slate-500" />
+                    <span>Navigate</span>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {emergencyContext?.nearbyHospitals && emergencyContext.nearbyHospitals.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block px-1">
+                  Nearby Emergency Rooms (~10km)
+                </span>
+                {emergencyContext.nearbyHospitals
+                  .filter((h) => h.id !== emergencyContext.preferredHospital?.id)
+                  .slice(0, 3)
+                  .map((h) => (
+                    <div
+                      key={h.id}
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <h5 className="font-extrabold text-slate-900 text-xs truncate">
+                          {h.name}
+                        </h5>
+                        <p className="text-[10px] text-slate-500 truncate">
+                          {h.address}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {h.distanceKm !== undefined && (
+                          <span className="text-[10px] font-bold text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                            {h.distanceKm.toFixed(1)} km
+                          </span>
+                        )}
+                        <a
+                          href={`tel:${h.contactNumber}`}
+                          className="p-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg border border-rose-200"
+                          title="Call Emergency"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
 

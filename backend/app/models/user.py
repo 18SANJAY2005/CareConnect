@@ -82,11 +82,13 @@ class User(Base):
         - Gender
         For other roles, checks that fullName is set and not empty.
         """
+        if hasattr(self, "_explicit_profile_complete") and self._explicit_profile_complete is not None:
+            return bool(self._explicit_profile_complete)
         if not self.fullName or not self.fullName.strip():
             return False
         cleaned = self.fullName.strip().lower()
         if self.role == "CAREGIVER":
-            if cleaned in ["", "caregiver", "new caregiver", "pending caregiver", "pending onboarding", "family sponsor"]:
+            if cleaned in ["", "caregiver", "new caregiver", "pending caregiver", "pending onboarding", "family sponsor", "incomplete caregiver"]:
                 return False
             if len(self.fullName.strip()) < 2:
                 return False
@@ -100,5 +102,5 @@ class User(Base):
 
     @isProfileComplete.setter
     def isProfileComplete(self, value: bool) -> None:
-        """Allow setting isProfileComplete as a no-op / compatibility setter."""
-        pass
+        """Allow setting isProfileComplete explicitly."""
+        self._explicit_profile_complete = value

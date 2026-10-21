@@ -19,6 +19,9 @@ import {
   AlertCircle,
   Loader2,
   KeyRound,
+  ChevronLeft,
+  ChevronRight,
+  Moon,
 } from "lucide-react";
 import { api } from "../../../services/api";
 import type {
@@ -94,15 +97,24 @@ export const FamilyCaregiverScreen: React.FC<FamilyCaregiverScreenProps> = ({
   const [otpMessage, setOtpMessage] = useState<string | null>(null);
   const [isRequestingOtp, setIsRequestingOtp] = useState(false);
 
+  // Weekly Schedule state
+  const [scheduleData, setScheduleData] = useState<any>(null);
+  const [weekOffset, setWeekOffset] = useState<number>(0);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    return new Date().toISOString().split("T")[0];
+  });
+
   const loadData = async (isInitial = false) => {
     if (isInitial) setIsLoading(true);
     try {
-      const [asg, shift] = await Promise.all([
+      const [asg, shift, sched] = await Promise.all([
         api.getActiveAssignment(elder.id).catch(() => null),
         api.getElderShiftStatus(elder.id).catch(() => null),
+        api.getElderShiftSchedule(elder.id).catch(() => null),
       ]);
       setAssignment(asg);
       setShiftStatus(shift);
+      if (sched) setScheduleData(sched);
       if (shift?.id) {
         const st = await api.getShiftOtpStatus(shift.id).catch(() => null);
         if (st) setOtpStatus(st);
@@ -222,10 +234,6 @@ export const FamilyCaregiverScreen: React.FC<FamilyCaregiverScreenProps> = ({
     (shiftStatus?.startTime && shiftStatus?.endTime
       ? `${shiftStatus.startTime} – ${shiftStatus.endTime}`
       : "08:00 AM – 06:00 PM (10 hrs)");
-
-  const nextScheduledShift =
-    shiftStatus?.nextShift ||
-    (isOnDuty ? "Tomorrow, 08:00 AM" : "Today, 08:00 AM (Upcoming)");
 
   const handleRequestStartOtp = async () => {
     const shiftId = shiftStatus?.id || "shift-demo-1";
@@ -633,13 +641,13 @@ export const FamilyCaregiverScreen: React.FC<FamilyCaregiverScreenProps> = ({
         </div>
       </div>
 
-      {/* SECTION E: SHIFT INFORMATION */}
-      <div className="rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-        <div className="flex items-center justify-between mb-3.5">
+      {/* SECTION E: SHIFT INFORMATION & WEEKLY SCHEDULE */}
+      <div className="rounded-[28px] sm:rounded-[30px] border border-slate-200 bg-white p-4 sm:p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] space-y-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
             <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-              Shift Information
+              Weekly Care Schedule
             </h4>
           </div>
           <span
@@ -649,60 +657,169 @@ export const FamilyCaregiverScreen: React.FC<FamilyCaregiverScreenProps> = ({
                 : "bg-amber-50 text-amber-800 border border-amber-200"
             }`}
           >
-            {isOnDuty ? "Active Shift" : "Scheduled Shift"}
+            {isOnDuty ? "Active Shift" : "Scheduled Care"}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5 text-xs">
-          {/* Current shift status */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                Current Shift Status
-              </span>
-              <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    isOnDuty ? "bg-emerald-500 animate-ping" : "bg-amber-500"
-                  }`}
-                />
-                <span>{isOnDuty ? "Checked-In & On Duty" : "Shift Scheduled"}</span>
+        {/* Week navigation and Day selector */}
+        {(() => {
+          const now = new Date();
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay() + 1 + weekOffset * 7); // Monday
+          const days = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            const count = scheduleData?.countsByDate?.[dateStr] || (dateStr === selectedDate ? 1 : 0);
+            return {
+              dateStr,
+              dayName: d.toLocaleDateString("en-US", { weekday: "short" }),
+              dayNumber: d.getDate(),
+              count,
+            };
+          });
+
+          const currentMonthName = startOfWeek.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
+                <span>{currentMonthName}</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((prev) => prev - 1)}
+                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
+                    title="Previous Week"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset(0)}
+                    className="px-2 py-0.5 text-[10px] font-bold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((prev) => prev + 1)}
+                    className="p-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
+                    title="Next Week"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 7 Days Row */}
+              <div className="grid grid-cols-7 gap-1.5">
+                {days.map((day) => {
+                  const isSelected = day.dateStr === selectedDate;
+                  return (
+                    <button
+                      key={day.dateStr}
+                      type="button"
+                      onClick={() => setSelectedDate(day.dateStr)}
+                      className={`flex flex-col items-center py-2 px-1 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-primary text-white border-primary shadow-sm"
+                          : "bg-slate-50 text-slate-700 border-slate-200/80 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span className={`text-[10px] font-semibold ${isSelected ? "text-teal-100" : "text-slate-400"}`}>
+                        {day.dayName}
+                      </span>
+                      <span className="text-sm font-extrabold my-0.5">{day.dayNumber}</span>
+                      {day.count > 0 ? (
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                            isSelected
+                              ? "bg-white text-teal-900"
+                              : "bg-teal-100 text-teal-800"
+                          }`}
+                        >
+                          {day.count}
+                        </span>
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-transparent" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <span className="text-[10px] text-slate-500">
-              {isOnDuty ? "Adyar, Chennai" : "Assigned"}
+          );
+        })()}
+
+        {/* Selected Date Shifts List (Chronological Order) */}
+        <div className="space-y-2 pt-1 border-t border-slate-100">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <span>Shifts on {selectedDate}</span>
+            <span className="text-primary font-bold">
+              {(scheduleData?.schedule?.filter((s: any) => s.date === selectedDate) || []).length || (selectedDate ? 1 : 0)} Shift(s)
             </span>
           </div>
 
-          {/* Scheduled working hours */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                Scheduled Working Hours
-              </span>
-              <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                <Clock className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span>{scheduledHours}</span>
-              </div>
-            </div>
-            <span className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">
-              10 Hours
-            </span>
-          </div>
+          {(() => {
+            const dayShifts = (scheduleData?.schedule || []).filter((s: any) => s.date === selectedDate);
+            if (dayShifts.length > 0) {
+              return dayShifts.map((s: any, idx: number) => (
+                <div
+                  key={s.id || idx}
+                  className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-xs text-slate-900">
+                      {s.shiftType || "Day Care Shift"}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {s.isOvernight && (
+                        <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <Moon className="h-2.5 w-2.5 text-indigo-600" />
+                          <span>Overnight</span>
+                        </span>
+                      )}
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                        {s.status}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3 w-3 text-slate-400" />
+                      <span>{s.startTime} - {s.endTime}</span>
+                    </div>
+                    <span className="font-semibold text-slate-800">
+                      {s.caregiver?.fullName || caregiverName}
+                    </span>
+                  </div>
+                </div>
+              ));
+            }
 
-          {/* Next scheduled shift */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
-                Next Scheduled Shift
-              </span>
-              <div className="flex items-center gap-1.5 font-bold text-slate-800">
-                <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span>{nextScheduledShift}</span>
+            // Fallback for current active scheduled shift
+            return (
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-xs text-slate-900">Day 10-Hour Shift</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
+                    {isOnDuty ? "IN_PROGRESS" : "SCHEDULED"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-slate-600">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3 text-slate-400" />
+                    <span>{scheduledHours}</span>
+                  </div>
+                  <span className="font-semibold text-slate-800">{caregiverName}</span>
+                </div>
               </div>
-            </div>
-            <span className="text-[10px] text-slate-500">Upcoming</span>
-          </div>
+            );
+          })()}
         </div>
       </div>
 

@@ -1,4 +1,6 @@
 import time
+import secrets
+import hmac
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,22 +11,32 @@ from app.core.security import create_access_token
 from app.core.config import settings
 from app.core.phone_validator import validate_and_normalize_phone
 
-# In-memory OTP storage: phone -> {code, expires_at, send_count, verify_count, last_sent}
+# In-memory OTP storage: phone -> {code, expires_at, send_count, verify_count, last_sent_at, first_send_at}
 _otp_store: Dict[str, Dict[str, Any]] = {}
 
 class AuthService:
     @staticmethod
     def send_otp(phone: str, channel: str = "WHATSAPP", country_code: Optional[str] = None) -> Dict[str, Any]:
-        """Generate and dispatch OTP with rate limiting and strict phone validation."""
+        """Generate and dispatch OTP with rate limiting, resend throttling, and strict phone validation."""
         normalized_phone = validate_and_normalize_phone(phone, country_code)
         now = time.time()
         record = _otp_store.get(normalized_phone, {
             "send_count": 0,
             "verify_count": 0,
             "first_send_at": now,
+            "last_sent_at": 0,
             "code": None,
-            "expires_at": 0
+            "expires_at": 0,
         })
+
+        # Resend throttling: minimum 30 seconds cooldown between dispatches
+        last_sent = record.get("last_sent_at", 0)
+        if last_sent and (now - last_sent < 30):
+            remaining = int(30 - (now - last_sent))
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Please wait {remaining} seconds before requesting a new verification code.",
+            )
 
         # Rate limiting: max 5 attempts per hour
         if now - record.get("first_send_at", now) > 3600:
@@ -34,22 +46,43 @@ class AuthService:
         if record["send_count"] >= 5:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Too many OTP requests for this phone number. Please try again in 1 hour."
+                detail="Too many OTP requests for this phone number. Please try again in 1 hour.",
             )
 
-        # In dev or test environments, deterministic code '123456' can be generated/accepted
-        code = "123456"
+        is_production = settings.ENVIRONMENT.lower() in ["production", "prod"]
+        sms_configured = bool(
+            getattr(settings, "CARECONNECT_SMS_PROVIDER", None)
+            or getattr(settings, "TWILIO_ACCOUNT_SID", None)
+            or getattr(settings, "SMS_GATEWAY_KEY", None)
+        )
+
+        # In production: FAIL CLOSED if SMS provider is not configured
+        if is_production and not sms_configured:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="SMS delivery provider is not configured. Cellular OTP dispatch is unavailable in production.",
+            )
+
+        # Generate cryptographically secure OTP or local dev OTP
+        if is_production or not getattr(settings, "is_dev_otp_allowed", False):
+            code = f"{secrets.randbelow(900000) + 100000}"
+            dev_otp = None
+        else:
+            code = "123456"
+            dev_otp = code
+
         record["code"] = code
         record["expires_at"] = now + 600  # 10 minute expiry
         record["send_count"] += 1
         record["verify_count"] = 0
+        record["last_sent_at"] = now
         _otp_store[normalized_phone] = record
 
         return {
             "success": True,
             "message": f"Verification code sent via {channel} to {normalized_phone}",
             "phone": normalized_phone,
-            "dev_otp": code if settings.ENVIRONMENT in ["development", "test"] else None
+            "dev_otp": dev_otp,
         }
 
     @staticmethod
@@ -67,34 +100,40 @@ class AuthService:
         record = _otp_store.get(normalized_phone)
         now = time.time()
 
-        # Allow '123456' as master test code in dev/test, otherwise require active record
-        is_dev_master = settings.ENVIRONMENT in ["development", "test"] and otp == "123456"
-        
+        # Deterministic master bypass is ONLY permitted when dev OTP is explicitly enabled (never in production)
+        is_dev_master = bool(
+            getattr(settings, "is_dev_otp_allowed", False)
+            and otp == "123456"
+        )
+
         if not is_dev_master:
-            if not record:
+            if not record or not record.get("code"):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No active OTP found. Please request a new code."
+                    detail="No active OTP found. Please request a new code.",
                 )
             if now > record["expires_at"]:
+                if normalized_phone in _otp_store:
+                    del _otp_store[normalized_phone]
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="OTP has expired. Please request a new code."
+                    detail="OTP has expired. Please request a new code.",
                 )
             record["verify_count"] += 1
             if record["verify_count"] > 5:
-                del _otp_store[phone]
+                if normalized_phone in _otp_store:
+                    del _otp_store[normalized_phone]
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Too many failed verification attempts. Please request a new code."
+                    detail="Too many failed verification attempts. Please request a new code.",
                 )
-            if record["code"] != otp:
+            if not hmac.compare_digest(str(record["code"]).strip(), str(otp).strip()):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid verification code. Please check and try again."
+                    detail="Invalid verification code. Please check and try again.",
                 )
 
-        # Clear OTP upon successful verification
+        # Clear OTP upon successful verification (Single-Use Guarantee)
         if normalized_phone in _otp_store:
             del _otp_store[normalized_phone]
 
@@ -119,10 +158,11 @@ class AuthService:
                 cg_locality = existing_cg.locality
                 cg_dob = getattr(existing_cg, "dob", None)
                 cg_avatar = getattr(existing_cg, "avatarUrl", None) or getattr(existing_cg, "photo_url", None)
-            elif role in ["CAREGIVER", "OPS_MANAGER", "ADMIN"]:
-                assigned_role = role
+            elif role == "CAREGIVER":
+                assigned_role = "CAREGIVER"
                 user_full_name = fullName if (fullName and fullName != "Family Sponsor") else "Caregiver"
             else:
+                # Disallow public self-registration as ADMIN or OPS_MANAGER
                 assigned_role = "FAMILY_SPONSOR"
                 user_full_name = fullName or "Family Sponsor"
 
@@ -135,7 +175,7 @@ class AuthService:
                 gender=cg_gender,
                 locality=cg_locality,
                 avatarUrl=cg_avatar,
-                authProvider="PHONE_OTP"
+                authProvider="PHONE_OTP",
             )
             db.add(user)
             await db.commit()

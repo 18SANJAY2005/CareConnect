@@ -53,7 +53,26 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
 
   const selectedDateKey = formatDateKey(selectedDate);
 
-  // Group items by date string (YYYY-MM-DD)
+  // Helper to parse time strings like "08:00 AM" or "20:00" to minutes for chronological ordering
+  const parseTimeToMinutes = (t: string) => {
+    if (!t) return 0;
+    const match = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+    if (!match) return 0;
+    let h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const p = match[3]?.toUpperCase();
+    if (p === 'PM' && h < 12) h += 12;
+    if (p === 'AM' && h === 12) h = 0;
+    return h * 60 + m;
+  };
+
+  const isOvernight = (startTime: string, endTime: string) => {
+    const s = parseTimeToMinutes(startTime);
+    const e = parseTimeToMinutes(endTime);
+    return e < s; // Ends next day
+  };
+
+  // Group and sort items by date string (YYYY-MM-DD) chronologically
   const itemsByDate: Record<string, ScheduleItem[]> = {};
   scheduleItems.forEach((item) => {
     const key = item.date.slice(0, 10);
@@ -61,6 +80,11 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
       itemsByDate[key] = [];
     }
     itemsByDate[key].push(item);
+  });
+
+  // Sort each day's shifts chronologically by start time
+  Object.keys(itemsByDate).forEach((key) => {
+    itemsByDate[key].sort((a, b) => parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime));
   });
 
   const getStatusBadge = (status: string) => {
@@ -110,10 +134,16 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const filteredListItems = scheduleItems.filter((it) => {
-    if (statusFilter === 'ALL') return true;
-    return it.status.toUpperCase() === statusFilter;
-  });
+  const filteredListItems = [...scheduleItems]
+    .filter((it) => {
+      if (statusFilter === 'ALL') return true;
+      return it.status.toUpperCase() === statusFilter;
+    })
+    .sort((a, b) => {
+      const dateCmp = a.date.localeCompare(b.date);
+      if (dateCmp !== 0) return dateCmp;
+      return parseTimeToMinutes(a.startTime) - parseTimeToMinutes(b.startTime);
+    });
 
   const selectedDayItems = itemsByDate[selectedDateKey] || [];
 
@@ -226,14 +256,18 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
                     {dayNames[index]}
                   </span>
                   <span className="text-sm font-black mt-0.5">{d.getDate()}</span>
-                  {hasItems && (
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full mt-1 ${
-                        isSelected ? 'bg-amber-300' : 'bg-primary'
-                      }`}
-                      title={`${count} assignment slot(s)`}
-                    />
-                  )}
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-1 min-w-[20px] text-center ${
+                      isSelected
+                        ? 'bg-amber-300 text-teal-950 font-black'
+                        : count > 0
+                        ? 'bg-teal-100 text-teal-900 font-extrabold'
+                        : 'text-slate-300'
+                    }`}
+                    title={`${count} assignment slot(s)`}
+                  >
+                    {count > 0 ? count : '–'}
+                  </span>
                 </button>
               );
             })}
@@ -299,6 +333,12 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
                     </div>
                   </div>
 
+                  {isOvernight(slot.startTime, slot.endTime) && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg">
+                      <span>🌙 Overnight Shift: Extends to the next morning</span>
+                    </div>
+                  )}
+
                   {slot.address && (
                     <p className="text-[11px] text-slate-500 truncate bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
                       📍 {slot.address}
@@ -363,6 +403,12 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
                     <span>{item.locality}</span>
                   </div>
                 </div>
+
+                {isOvernight(item.startTime, item.endTime) && (
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md w-fit">
+                    <span>🌙 Overnight</span>
+                  </div>
+                )}
               </div>
             ))
           )}

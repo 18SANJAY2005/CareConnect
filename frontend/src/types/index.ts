@@ -72,6 +72,8 @@ export interface Elder {
   additionalNotes?: string | null;
   personaStatus: PersonaStatus;
   isMyself?: boolean;
+  preferredHospitalId?: string | null;
+  preferredHospital?: HospitalInfo | null;
   createdAt: string;
   updatedAt: string;
   location?: ElderLocation | null;
@@ -535,4 +537,26 @@ export interface AuditLog {
   newValue?: string | null;
   auditMetadata?: Record<string, any> | null;
   createdAt: string;
+}
+
+export interface HospitalInfo {
+  id: string;
+  name: string;
+  address: string;
+  contactNumber: string;
+  latitude: number;
+  longitude: number;
+  source?: string;
+  isActive: boolean;
+  distanceKm?: number;
+}
+
+export interface ElderEmergencyContext {
+  elderId: string;
+  elderName: string;
+  residenceLatitude?: number | null;
+  residenceLongitude?: number | null;
+  residenceAddress?: string | null;
+  preferredHospital?: HospitalInfo | null;
+  nearbyHospitals: HospitalInfo[];
 }

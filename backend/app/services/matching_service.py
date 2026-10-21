@@ -592,17 +592,41 @@ async def get_curated_caregivers_for_elder(
 
     filtered_caregivers = []
     for cg in all_caregivers:
-        # KYC verification gate: Caregiver must not have pending or rejected KYC
+        # Invariant: PROFILE COMPLETE + REQUIRED KYC VERIFIED + CAREGIVER ACTIVE = ELIGIBLE FOR WORK
+        if not cg.is_active:
+            continue
+
+        is_verified = bool(cg.is_identity_verified)
         if cg.phone:
             user_res = await db.execute(select(User).where(User.phone == cg.phone))
             cg_user = user_res.scalars().first()
             if cg_user:
+                if not cg_user.is_active:
+                    continue
+                # Explicit incomplete flag or placeholder name check
+                if getattr(cg_user, "_explicit_profile_complete", None) is False:
+                    continue
+                if any(bad in (cg_user.fullName or "").lower() for bad in ["incomplete", "pending onboarding", "new caregiver"]):
+                    continue
+                if not cg_user.isProfileComplete and not (cg.full_name and cg.gender):
+                    continue
+
                 kyc_res = await db.execute(select(CaregiverKYC).where(CaregiverKYC.caregiver_id == cg_user.id))
                 kyc = kyc_res.scalars().first()
-                if kyc and kyc.verification_status != "VERIFIED":
+                if kyc:
+                    if kyc.verification_status != "VERIFIED":
+                        continue
+                    is_verified = True
+                elif not cg.is_identity_verified:
                     continue
-        if not cg.is_identity_verified:
+
+        if not is_verified:
             continue
+
+        # Enforce verified qualifications for clinical work
+        if qualification and any(k in qualification.lower() for k in ["bsc", "nurs", "clinical", "gnm"]):
+            if cg.is_clinical_certified is False or cg.education_verification_status == "REJECTED":
+                continue
 
         # 1. Qualification filter
         if qualification and qualification.strip() and qualification.strip().upper() != "ALL":

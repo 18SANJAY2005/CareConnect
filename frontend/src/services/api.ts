@@ -24,6 +24,8 @@ import type {
   AuditLog,
   BillingAdjustment,
   ShiftOtpStatus,
+  HospitalInfo,
+  ElderEmergencyContext,
 } from "../types";
 
 import type {
@@ -797,6 +799,38 @@ class ApiService {
     return this.request(`/shifts/elder/${elderId}`);
   }
 
+  async getElderShiftSchedule(
+    elderId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<{
+    elderId: string;
+    elderName: string;
+    totalShifts: number;
+    countsByDate: Record<string, number>;
+    schedule: Array<{
+      id: string;
+      type: "SHIFT" | "ASSIGNMENT";
+      date: string;
+      startTime: string;
+      endTime: string;
+      shiftType: string;
+      status: string;
+      isOvernight: boolean;
+      caregiver: {
+        id: string | number | null;
+        fullName: string;
+        phone?: string | null;
+      };
+    }>;
+  }> {
+    const params = new URLSearchParams();
+    if (startDate) params.append("start_date", startDate);
+    if (endDate) params.append("end_date", endDate);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return this.request(`/shifts/elder/${elderId}/schedule${qs}`);
+  }
+
   async getLiveShiftMonitor(): Promise<LiveShiftMonitorItem[]> {
     return this.request<LiveShiftMonitorItem[]>("/shifts/monitor");
   }
@@ -1139,6 +1173,30 @@ class ApiService {
         method: item.method,
         body: JSON.stringify(item.body),
       });
+    });
+  }
+
+  /* ---------------------------------------------------------
+     Hospital Catalog & Preferred Hospital (Requirements C, D & F)
+     --------------------------------------------------------- */
+
+  async getHospitals(search?: string): Promise<HospitalInfo[]> {
+    const q = search ? `?search=${encodeURIComponent(search)}` : "";
+    return this.request<HospitalInfo[]>(`/hospitals${q}`);
+  }
+
+  async getNearbyHospitals(lat: number, lng: number, radiusKm: number = 10.0): Promise<HospitalInfo[]> {
+    return this.request<HospitalInfo[]>(`/hospitals/nearby?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`);
+  }
+
+  async getElderEmergencyHospitalContext(elderId: string): Promise<ElderEmergencyContext> {
+    return this.request<ElderEmergencyContext>(`/hospitals/elder/${elderId}/emergency-context`);
+  }
+
+  async updateElderPreferredHospital(elderId: string, hospitalId: string): Promise<{ success: boolean; preferredHospitalId: string; preferredHospital: HospitalInfo }> {
+    return this.request(`/hospitals/elder/${elderId}/preferred`, {
+      method: "PUT",
+      body: JSON.stringify({ hospital_id: hospitalId }),
     });
   }
 }

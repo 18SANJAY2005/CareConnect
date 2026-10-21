@@ -60,6 +60,7 @@ from app.api import (
     renewals,
     audit,
     payouts,
+    hospitals,
 )
 
 
@@ -82,6 +83,8 @@ async def lifespan(app: FastAPI):
     # Seed Phase B baseline/demo data using an async session.
     async with AsyncSessionLocal() as db:
         await seed_initial_data_if_empty(db)
+        from app.services.hospital_service import HospitalService
+        await HospitalService.seed_initial_hospitals_if_empty(db)
 
     yield
 
@@ -336,5 +339,15 @@ app.include_router(
 
 app.include_router(
     payouts.router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    hospitals.router,
+    prefix=settings.API_V1_STR,
+)
+
+app.include_router(
+    hospitals.router,
     prefix="/api/v1",
 )
