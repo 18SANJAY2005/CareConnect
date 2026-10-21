@@ -16,12 +16,14 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { caregiverApi } from '../../services/api';
 import type { ShiftDetails } from '../../types';
+import { BackButton } from '../common/BackButton';
 
 interface VitalsAndLogsScreenProps {
   shiftDetails: ShiftDetails | null;
+  onBack?: () => void;
 }
 
-export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftDetails }) => {
+export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftDetails, onBack }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'VITALS' | 'PHOTO' | 'NOTES'>('VITALS');
 
@@ -226,6 +228,11 @@ export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftD
   if (!elderId) {
     return (
       <div className="p-4 max-w-md mx-auto text-center py-12 text-slate-500">
+        {onBack && (
+          <div className="mb-4 text-left">
+            <BackButton onClick={onBack} label="Back to Today" />
+          </div>
+        )}
         <HeartPulse className="w-8 h-8 text-primary mx-auto mb-2" />
         <h3 className="font-bold text-sm text-slate-800">No Patient Selected</h3>
         <p className="text-xs mt-1">Please ensure an active shift is started on the Today screen.</p>
@@ -235,6 +242,17 @@ export const VitalsAndLogsScreen: React.FC<VitalsAndLogsScreenProps> = ({ shiftD
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto pb-24">
+      {/* Top Header Row with Back Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {onBack && <BackButton onClick={onBack} label="Today" />}
+          <div>
+            <h2 className="font-bold text-base text-slate-900">{t('tabLogs')}</h2>
+            <p className="text-[11px] text-slate-500">{shiftDetails?.elder?.name}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Sub-navigation Tabs */}
       <div className="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-xs grid grid-cols-3 gap-1">
         <button

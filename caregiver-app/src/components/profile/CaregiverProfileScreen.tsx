@@ -29,12 +29,19 @@ import {
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
 import { caregiverApi } from '../../services/api';
 import { CaregiverKycModal } from './CaregiverKycModal';
+import { BackButton } from '../common/BackButton';
 import type { CaregiverKyc, CaregiverEligibility, FullCaregiverProfile } from '../../types';
 
-export const CaregiverProfileScreen: React.FC = () => {
+interface CaregiverProfileScreenProps {
+  onBack?: () => void;
+}
+
+export const CaregiverProfileScreen: React.FC<CaregiverProfileScreenProps> = ({ onBack }) => {
   const { user, updateProfile, logout } = useCaregiverAuth();
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [isEditingCareTypes, setIsEditingCareTypes] = useState<boolean>(false);
+  const [savingCareTypes, setSavingCareTypes] = useState<boolean>(false);
   const [kycData, setKycData] = useState<CaregiverKyc | null>(null);
   const [loadingKyc, setLoadingKyc] = useState<boolean>(true);
   const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
@@ -303,7 +310,7 @@ export const CaregiverProfileScreen: React.FC = () => {
       });
       setFullProfile(res);
       setIsEditingQualifications(false);
-      setFeedbackMessage({ type: 'success', text: 'Professional qualifications & preferences updated.' });
+      setFeedbackMessage({ type: 'success', text: 'Professional qualifications updated.' });
     } catch (err: any) {
       setFeedbackMessage({ type: 'error', text: err.message || 'Failed to update qualifications.' });
     } finally {
@@ -311,8 +318,54 @@ export const CaregiverProfileScreen: React.FC = () => {
     }
   };
 
+  const handleSaveCareTypes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (prefCareTypes.length === 0) {
+      setFeedbackMessage({ type: 'error', text: 'Please select at least one supported care category.' });
+      return;
+    }
+    setSavingCareTypes(true);
+    setFeedbackMessage(null);
+    try {
+      const res = await caregiverApi.updateFullProfile({
+        preferredCareTypes: prefCareTypes.join(', '),
+        workPreferences: workPrefInput.trim(),
+        preferredHours: prefHoursInput.trim(),
+      });
+      setFullProfile(res);
+      setIsEditingCareTypes(false);
+      setFeedbackMessage({ type: 'success', text: 'Care categories and work preferences updated successfully.' });
+    } catch (err: any) {
+      setFeedbackMessage({ type: 'error', text: err.message || 'Failed to update preferences.' });
+    } finally {
+      setSavingCareTypes(false);
+    }
+  };
+
+  const handleTopBack = () => {
+    if (isEditing) {
+      setIsEditing(false);
+      return;
+    }
+    if (isEditingCareTypes) {
+      setIsEditingCareTypes(false);
+      return;
+    }
+    if (isEditingQualifications) {
+      setIsEditingQualifications(false);
+      return;
+    }
+    onBack?.();
+  };
+
   return (
     <div className="pb-24 max-w-md mx-auto px-4 pt-4 animate-in fade-in">
+      {/* Top Header Back Button */}
+      {onBack && (
+        <div className="mb-3 flex items-center justify-between">
+          <BackButton onClick={handleTopBack} label="Back to Today" />
+        </div>
+      )}
       {/* Toast / Feedback Banner */}
       {feedbackMessage && (
         <div
@@ -1043,56 +1096,184 @@ export const CaregiverProfileScreen: React.FC = () => {
         )}
       </div>
 
-      {/* 2. Supported Care Types & Work Preferences Card (Requirement 4) */}
+      {/* 2. Supported Care Types & Work Preferences Card (Requirement 4 & 5) */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <HeartHandshake className="w-4 h-4 text-teal-700" />
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-            Care Types & Work Preferences
-          </h2>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <HeartHandshake className="w-4 h-4 text-teal-700" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Care Types & Work Preferences
+            </h2>
+          </div>
+          {!isEditingCareTypes && (
+            <button
+              type="button"
+              id="edit-care-preferences-btn"
+              onClick={() => {
+                const currentTypes = (fullProfile?.preferredCareTypes || '')
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                if (currentTypes.length > 0) setPrefCareTypes(currentTypes);
+                setWorkPrefInput(fullProfile?.workPreferences || '');
+                setPrefHoursInput(fullProfile?.preferredHours || '08:00 - 18:00');
+                setIsEditingCareTypes(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-teal-700" />
+              <span>Edit</span>
+            </button>
+          )}
         </div>
 
-        <div className="space-y-3 text-xs">
-          <div>
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-              Supported Elder Care Requirements
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {(fullProfile?.preferredCareTypes || '')
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean)
-                .map((ctId) => {
-                  const item = ALL_CARE_TYPES.find((c) => c.id === ctId);
+        {!isEditingCareTypes ? (
+          <div className="space-y-3 text-xs">
+            <div>
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Supported Elder Care Requirements
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {(fullProfile?.preferredCareTypes || '')
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map((ctId) => {
+                    const item = ALL_CARE_TYPES.find((c) => c.id === ctId);
+                    return (
+                      <span key={ctId} className="px-2.5 py-1 bg-teal-50 border border-teal-200 rounded-lg text-teal-900 font-semibold text-[11px]">
+                        ✓ {item?.label || ctId}
+                      </span>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Work Preferences
+                </span>
+                <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
+                  {fullProfile?.workPreferences || 'Day Shifts (< 12km)'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Preferred Hours
+                </span>
+                <span className="font-semibold text-slate-800 text-xs mt-0.5 block flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-slate-500" />
+                  <span>{fullProfile?.preferredHours || '08:00 - 18:00'}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSaveCareTypes} className="space-y-4 pt-1 animate-fadeIn">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Supported Elder Care Categories <span className="text-red-500">*</span>
+              </label>
+              <p className="text-[11px] text-slate-500 mb-2">
+                Select the care categories you are qualified and available to support:
+              </p>
+              <div className="space-y-2">
+                {ALL_CARE_TYPES.map((ct) => {
+                  const isChecked = prefCareTypes.includes(ct.id);
                   return (
-                    <span key={ctId} className="px-2.5 py-1 bg-teal-50 border border-teal-200 rounded-lg text-teal-900 font-semibold text-[11px]">
-                      ✓ {item?.label || ctId}
-                    </span>
+                    <label
+                      key={ct.id}
+                      onClick={() => toggleCareType(ct.id)}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        isChecked
+                          ? 'bg-teal-50 border-teal-400 text-teal-950 shadow-xs'
+                          : 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}}
+                        className="mt-0.5 rounded text-primary focus:ring-primary shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-xs block text-slate-900">{ct.label}</span>
+                        <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">{ct.desc}</span>
+                      </div>
+                    </label>
                   );
                 })}
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-            <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Work Preferences
-              </span>
-              <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
-                {fullProfile?.workPreferences || 'Day Shifts (< 12km)'}
-              </span>
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Shift & Travel Preferences
+                </label>
+                <input
+                  type="text"
+                  value={workPrefInput}
+                  onChange={(e) => setWorkPrefInput(e.target.value)}
+                  placeholder="e.g. Day 10-Hour, 12-Hour Day, South Chennai within 12km"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {['Day 10-Hour', '12-Hour Day', '12-Hour Night', '24/7 Live-in', 'Flexible'].map((shift) => (
+                    <button
+                      key={shift}
+                      type="button"
+                      onClick={() => {
+                        const existing = workPrefInput ? workPrefInput.split(',').map((s) => s.trim()) : [];
+                        if (!existing.includes(shift)) {
+                          setWorkPrefInput(existing.length ? `${workPrefInput}, ${shift}` : shift);
+                        }
+                      }}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-semibold border border-slate-200"
+                    >
+                      + {shift}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Preferred Working Hours
+                </label>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={prefHoursInput}
+                    onChange={(e) => setPrefHoursInput(e.target.value)}
+                    placeholder="e.g. 08:00 - 18:00"
+                    className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+              </div>
             </div>
-            <div>
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Preferred Hours
-              </span>
-              <span className="font-semibold text-slate-800 text-xs mt-0.5 block flex items-center gap-1">
-                <Clock className="w-3 h-3 text-slate-500" />
-                <span>{fullProfile?.preferredHours || '08:00 - 18:00'}</span>
-              </span>
+
+            <div className="pt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsEditingCareTypes(false)}
+                className="flex-1 min-h-[42px] py-2 px-3 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={savingCareTypes}
+                className="flex-1 min-h-[42px] py-2 px-3 bg-primary text-white rounded-xl text-xs font-bold shadow-xs hover:bg-primary-hover flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {savingCareTypes ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Save Preferences</span>
+              </button>
             </div>
-          </div>
-        </div>
+          </form>
+        )}
       </div>
 
       {/* 3. Caregiver Quality & Track Record Metrics Card (Requirement 4) */}

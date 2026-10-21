@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, List, Clock, MapPin, ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, RefreshCw, Sparkles, AlertTriangle, Eye } from 'lucide-react';
+import { BackButton } from '../common/BackButton';
 import { caregiverApi } from '../../services/api';
 import type { ScheduleItem } from '../../types';
 
-export const ScheduleScreen: React.FC = () => {
+interface ScheduleScreenProps {
+  onBack?: () => void;
+}
+
+export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ onBack }) => {
   const [viewMode, setViewMode] = useState<'CALENDAR' | 'LIST'>('CALENDAR');
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -116,9 +121,12 @@ export const ScheduleScreen: React.FC = () => {
     <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
       {/* Header & View Switcher */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-black text-slate-900 tracking-tight">Care Schedule</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Assigned shifts & visit calendar</p>
+        <div className="flex items-center gap-2 min-w-0">
+          {onBack && <BackButton onClick={onBack} label="Back" />}
+          <div>
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">Care Schedule</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Assigned shifts & visit calendar</p>
+          </div>
         </div>
 
         {/* View Switch: Calendar vs List */}

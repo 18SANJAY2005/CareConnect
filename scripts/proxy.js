@@ -69,11 +69,15 @@ const server = http.createServer(async (req, res) => {
     res.end(`404 Not Found: No proxy route configured for ${req.url}`);
     return;
   }
+  let targetPath = req.url;
+  if (route.prefix === '/caregiver') {
+    targetPath = req.url.slice('/caregiver'.length) || '/';
+  }
 
   const options = {
     hostname: '127.0.0.1',
     port: route.targetPort,
-    path: req.url,
+    path: targetPath,
     method: req.method,
     headers: { ...req.headers, host: `127.0.0.1:${route.targetPort}` },
   };

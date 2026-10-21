@@ -13,12 +13,14 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { getGoogleMapsNavigationUrl } from '../../utils/mapUtils';
 import type { ShiftDetails } from '../../types';
+import { BackButton } from '../common/BackButton';
 
 interface ElderProfileScreenProps {
   shiftDetails: ShiftDetails | null;
+  onBack?: () => void;
 }
 
-export const ElderProfileScreen: React.FC<ElderProfileScreenProps> = ({ shiftDetails }) => {
+export const ElderProfileScreen: React.FC<ElderProfileScreenProps> = ({ shiftDetails, onBack }) => {
   const { t } = useLanguage();
   const elder = shiftDetails?.elder;
   const shift = shiftDetails?.shift;
@@ -26,6 +28,11 @@ export const ElderProfileScreen: React.FC<ElderProfileScreenProps> = ({ shiftDet
   if (!elder) {
     return (
       <div className="p-4 max-w-md mx-auto text-center py-12 text-slate-500">
+        {onBack && (
+          <div className="mb-4 text-left">
+            <BackButton onClick={onBack} label="Back to Today" />
+          </div>
+        )}
         <User className="w-8 h-8 text-primary mx-auto mb-2" />
         <h3 className="font-bold text-sm text-slate-800">No Patient Profile Available</h3>
         <p className="text-xs mt-1">Please start or assign an active shift first.</p>
@@ -35,6 +42,11 @@ export const ElderProfileScreen: React.FC<ElderProfileScreenProps> = ({ shiftDet
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto pb-24">
+      {onBack && (
+        <div className="flex items-center justify-between">
+          <BackButton onClick={onBack} label="Today" />
+        </div>
+      )}
       {/* Profile Header Card */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 text-center relative overflow-hidden">
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-teal-700 to-teal-500 text-white font-bold text-2xl flex items-center justify-center mx-auto shadow-md mb-3">

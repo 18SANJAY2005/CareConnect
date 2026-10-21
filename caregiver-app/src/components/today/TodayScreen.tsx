@@ -57,7 +57,6 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [showSosModal, setShowSosModal] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   // Rapido Captain Worker states: Eligibility & Availability
   const [eligibility, setEligibility] = useState<CaregiverEligibility | null>(null);
@@ -312,19 +311,6 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
     return { allowed: true, msg: 'Check-in window active' };
   };
 
-  const handleSeedDemo = async () => {
-    setSeeding(true);
-    try {
-      await caregiverApi.seedDemoScenario();
-      onRefresh();
-      fetchEligibility();
-    } catch (err) {
-      console.error('Failed to seed demo:', err);
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -350,7 +336,7 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
   }
 
   return (
-    <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-3.5 sm:space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
+    <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-3.5 sm:space-y-4 max-w-md mx-auto pb-36 animate-fadeIn">
       {/* Toast Alert Banner */}
       {actionAlert && (
         <div
@@ -704,15 +690,6 @@ export const TodayScreen: React.FC<TodayScreenProps> = ({
                     <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
                       You are online and ready! As soon as families request care in Chennai, jobs will appear here instantly.
                     </p>
-                    <button
-                      type="button"
-                      onClick={handleSeedDemo}
-                      disabled={seeding}
-                      className="w-full py-3 px-4 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200 font-bold text-xs rounded-xl shadow-2xs transition-colors flex items-center justify-center gap-2"
-                    >
-                      {seeding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-teal-600" />}
-                      <span>Seed Chennai Active Care Scenario</span>
-                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3">

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { IndianRupee, TrendingUp, Clock, CheckCircle2, ShieldCheck, AlertCircle, RefreshCw, Calendar, ArrowUpRight, Filter, FileText, User } from 'lucide-react';
+import { BackButton } from '../common/BackButton';
 import { caregiverApi } from '../../services/api';
 import type { PayoutSummary, ShiftEarningItem, ElderEarningGroup, PayoutHistoryItem } from '../../types';
 
-export const PayoutScreen: React.FC = () => {
+interface PayoutScreenProps {
+  onBack?: () => void;
+}
+
+export const PayoutScreen: React.FC<PayoutScreenProps> = ({ onBack }) => {
   const [period, setPeriod] = useState<string>('this_month');
   const [summary, setSummary] = useState<PayoutSummary | null>(null);
   const [shiftEarnings, setShiftEarnings] = useState<ShiftEarningItem[]>([]);
@@ -47,9 +52,12 @@ export const PayoutScreen: React.FC = () => {
     <div className="px-3 sm:px-4 py-3 sm:py-4 space-y-4 max-w-md mx-auto pb-28 animate-fadeIn">
       {/* Header */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200 flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-lg font-black text-slate-900 tracking-tight">Earnings & Payouts</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Auditable financial ledger</p>
+        <div className="flex items-center gap-2 min-w-0">
+          {onBack && <BackButton onClick={onBack} label="Back" />}
+          <div>
+            <h1 className="text-lg font-black text-slate-900 tracking-tight">Earnings & Payouts</h1>
+            <p className="text-xs text-slate-500 mt-0.5">Auditable financial ledger</p>
+          </div>
         </div>
         <div className="p-2 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200">
           <IndianRupee className="w-5 h-5 text-emerald-600" />

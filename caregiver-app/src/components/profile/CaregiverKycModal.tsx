@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  ArrowLeft,
 } from 'lucide-react';
 import { caregiverApi } from '../../services/api';
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
@@ -274,20 +275,27 @@ export const CaregiverKycModal: React.FC<CaregiverKycModalProps> = ({ isOpen, on
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
       <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92dvh]">
         {/* Header */}
-        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-primary text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-1.5 bg-teal-800/60 rounded-lg shrink-0">
-              <ShieldCheck className="w-5 h-5 text-teal-200" />
-            </div>
+        <div className="px-3 sm:px-5 py-3 sm:py-4 bg-primary text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Back"
+              className="p-1.5 text-teal-100 hover:text-white hover:bg-teal-700/60 rounded-lg transition-colors shrink-0 flex items-center gap-1 cursor-pointer"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-xs font-semibold hidden xs:inline">Back</span>
+            </button>
             <div className="min-w-0">
               <h2 className="font-bold text-sm sm:text-base tracking-tight truncate">Identity Verification & KYC</h2>
-              <p className="text-teal-100 text-[11px] sm:text-xs truncate">Caregiver credentials & government verification</p>
+              <p className="text-teal-100 text-[10px] sm:text-xs truncate">Caregiver credentials & government verification</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-teal-100 hover:text-white hover:bg-teal-700/60 rounded-lg transition-colors shrink-0"
+            aria-label="Close"
+            className="p-1.5 text-teal-100 hover:text-white hover:bg-teal-700/60 rounded-lg transition-colors shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

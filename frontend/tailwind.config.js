@@ -29,7 +29,7 @@ export default {
 
         // RESERVED STRICTLY FOR SOS / EMERGENCY
         error: {
-          DEFAULT: "#ba1a1a",
+          DEFAULT: "#ba1a1aff",
           container: "#ffdad6",
           light: "#fee2e2",
         },

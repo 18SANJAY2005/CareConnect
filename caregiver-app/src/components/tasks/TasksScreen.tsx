@@ -18,11 +18,14 @@ import { caregiverApi } from '../../services/api';
 import { offlineQueue } from '../../services/offlineQueue';
 import type { CareTask, TimeOfDay, ShiftDetails } from '../../types';
 
+import { BackButton } from '../common/BackButton';
+
 interface TasksScreenProps {
   shiftDetails: ShiftDetails | null;
+  onBack?: () => void;
 }
 
-export const TasksScreen: React.FC<TasksScreenProps> = ({ shiftDetails }) => {
+export const TasksScreen: React.FC<TasksScreenProps> = ({ shiftDetails, onBack }) => {
   const { t } = useLanguage();
   const [tasks, setTasks] = useState<CareTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,6 +188,11 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ shiftDetails }) => {
   if (!shiftId) {
     return (
       <div className="p-4 max-w-md mx-auto text-center py-12 text-slate-500">
+        {onBack && (
+          <div className="mb-4 text-left">
+            <BackButton onClick={onBack} label="Back to Today" />
+          </div>
+        )}
         <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
         <h3 className="font-bold text-sm text-slate-800">No Active Shift</h3>
         <p className="text-xs mt-1">Please start or check into a shift on the Today tab first.</p>
@@ -197,7 +205,10 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ shiftDetails }) => {
       {/* Header & Progress Card */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-bold text-base text-slate-900">{t('tasksTitle')}</h2>
+          <div className="flex items-center gap-2">
+            {onBack && <BackButton onClick={onBack} label="Today" />}
+            <h2 className="font-bold text-base text-slate-900">{t('tasksTitle')}</h2>
+          </div>
           <span className="text-xs font-bold text-primary">
             {completedTasks}/{totalTasks} ({progressPercent}%)
           </span>

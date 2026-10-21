@@ -17,7 +17,8 @@
     "test:backend": "cd backend && python -m pytest",
     "test:all": "npm run test:backend",
     "lint:all": "npm --prefix frontend run lint",
-    "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/run_tunnel.ps1"
+    "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/run_tunnel.ps1",
+    "seed:demo": "cd backend && python scripts/seed_demo_data.py"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

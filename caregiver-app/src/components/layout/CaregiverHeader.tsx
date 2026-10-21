@@ -13,6 +13,8 @@ interface CaregiverHeaderProps {
   shiftDetails?: ShiftDetails | null;
   onNavigateToProfile?: () => void;
   onRefreshShift?: () => void;
+  isSosOpen?: boolean;
+  setIsSosOpen?: (open: boolean) => void;
 }
 
 export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({
@@ -20,11 +22,16 @@ export const CaregiverHeader: React.FC<CaregiverHeaderProps> = ({
   shiftDetails,
   onNavigateToProfile,
   onRefreshShift,
+  isSosOpen: controlledIsSosOpen,
+  setIsSosOpen: controlledSetIsSosOpen,
 }) => {
   const { user, logout } = useCaregiverAuth();
   const { t } = useLanguage();
   const [isKycOpen, setIsKycOpen] = useState<boolean>(false);
-  const [isSosOpen, setIsSosOpen] = useState<boolean>(false);
+  const [localSosOpen, setLocalSosOpen] = useState<boolean>(false);
+
+  const isSosOpen = controlledIsSosOpen !== undefined ? controlledIsSosOpen : localSosOpen;
+  const setIsSosOpen = controlledSetIsSosOpen || setLocalSosOpen;
 
   const handleProfileClick = () => {
     if (onNavigateToProfile) {

@@ -385,19 +385,6 @@ export const PhoneOtpAuthCard: React.FC<PhoneOtpAuthCardProps> = ({
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
             <span>{loading ? 'Sending Code...' : 'Get Verification Code'}</span>
           </button>
-
-          {showDemoFillButton && onQuickDemoFill && (
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={onQuickDemoFill}
-                className="w-full py-2.5 px-3 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/80 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-                <span>Fill Demo Caregiver Account (+91 9876500001)</span>
-              </button>
-            </div>
-          )}
         </form>
       ) : (
         <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fadeIn">

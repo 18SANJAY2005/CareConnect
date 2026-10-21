@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShieldCheck, Sparkles } from 'lucide-react';
+import React from 'react';
+import { ShieldCheck } from 'lucide-react';
 import { CareConnectLogo } from '../common/CareConnectLogo';
 import { PhoneOtpAuthCard } from '../common/PhoneOtpAuthCard';
 import { useCaregiverAuth } from '../../context/CaregiverAuthContext';
@@ -9,8 +9,6 @@ import { caregiverApi } from '../../services/api';
 export const CaregiverLogin: React.FC = () => {
   const { loginWithOtp } = useCaregiverAuth();
   const { t } = useLanguage();
-  const [seeding, setSeeding] = useState<boolean>(false);
-  const [seedInfo, setSeedInfo] = useState<string | null>(null);
 
   const handleSendOtp = async (
     fullPhone: string,
@@ -62,19 +60,6 @@ export const CaregiverLogin: React.FC = () => {
     };
   };
 
-  const handleSeedDemo = async () => {
-    setSeeding(true);
-    setSeedInfo(null);
-    try {
-      const res = await caregiverApi.seedDemoScenario();
-      setSeedInfo(`Scenario seeded! Caregiver: ${res.caregiverName}, Elder: ${res.elderName}`);
-    } catch (err: any) {
-      setSeedInfo(err.message || 'Seeding failed. Is server in test/dev mode?');
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 sm:bg-slate-100 flex flex-col justify-center items-center px-3 sm:px-4 py-4 sm:py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
@@ -90,37 +75,15 @@ export const CaregiverLogin: React.FC = () => {
 
         {/* Content with Shared Phone/OTP Component */}
         <div className="p-4 sm:p-6">
-          {seedInfo && (
-            <div className="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-800 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 shrink-0 text-teal-600 mt-0.5" />
-              <div>{seedInfo}</div>
-            </div>
-          )}
-
           <PhoneOtpAuthCard
             roleBadgeText="Caregiver Field Access"
             appTitle="Caregiver Login"
-            initialPhone="9876500001"
+            initialPhone=""
             initialCountryCode="+91"
             onSendOtp={handleSendOtp}
             onVerifyOtp={handleVerifyOtp}
-            showDemoFillButton={true}
-            onQuickDemoFill={() => {
-              // Quick demo fill handled inside component
-            }}
+            showDemoFillButton={false}
           />
-
-          {/* Reset / Seed Demo */}
-          <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              disabled={seeding}
-              onClick={handleSeedDemo}
-              className="text-[11px] text-slate-500 hover:text-primary transition-colors underline disabled:opacity-50"
-            >
-              {seeding ? 'Seeding demo scenario...' : 'Seed fresh demo shift (Adyar, Chennai)'}
-            </button>
-          </div>
         </div>
 
         {/* Footer info */}

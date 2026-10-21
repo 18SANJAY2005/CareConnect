@@ -442,32 +442,50 @@ def calculate_match_score(
 
     cg_skills = (caregiver.skills or "").lower()
     cg_specs = (caregiver.specializations or "").lower()
+    cg_care_types = (getattr(caregiver, "preferred_care_types", None) or "").lower()
+    cg_work_prefs = (getattr(caregiver, "work_preferences", None) or "").lower()
 
     condition_points = 0.0
 
-    if "dementia" in elder_conditions:
+    if "dementia" in elder_conditions or "memory" in elder_conditions:
         if (
             "dementia" in cg_skills
             or "dementia" in cg_specs
             or "memory" in cg_specs
+            or "dementia" in cg_care_types
+            or "memory" in cg_care_types
         ):
             condition_points += 15.0
             matching_skills.append("Dementia Specialist Care")
 
-    if "stroke" in elder_conditions or "post-fall" in elder_conditions:
+    if "stroke" in elder_conditions or "post-fall" in elder_conditions or "fall" in elder_conditions:
         if (
             "rehab" in cg_skills
             or "stroke" in cg_specs
             or "fall prevention" in cg_skills
+            or "post-op" in cg_care_types
+            or "recovery" in cg_care_types
         ):
             condition_points += 15.0
             matching_skills.append("Fall Prevention & Mobility Rehab")
 
-    if "assisted" in elder_mobility or "wheelchair" in elder_mobility:
+    if "bedridden" in elder_conditions or "bed" in elder_mobility:
+        if (
+            "bedridden" in cg_care_types
+            or "bed_bound" in cg_care_types
+            or "bedridden" in cg_skills
+        ):
+            condition_points += 15.0
+            matching_skills.append("Bedridden Patient Care")
+
+    if "assisted" in elder_mobility or "wheelchair" in elder_mobility or "cane" in elder_mobility:
         if (
             "mobility" in cg_skills
             or "walking" in cg_skills
             or "transfer" in cg_skills
+            or "wheelchair" in cg_care_types
+            or "partial_mobility" in cg_care_types
+            or "mobility" in cg_care_types
         ):
             condition_points = max(condition_points, 15.0)
             matching_skills.append("Assisted Mobility Support")
@@ -494,6 +512,7 @@ def calculate_match_score(
 
     # 5. Schedule & Shift Compatibility
     elder_shift = (getattr(elder, "shiftPreference", "") or getattr(elder, "shift_preference", "") or "").upper()
+    cg_all_shifts = f"{caregiver.shift_types or ''} {cg_work_prefs}".upper()
 
     if "FLEXIBLE" in elder_shift:
         routine = getattr(elder, "dailyRoutine", None) or {}
@@ -505,12 +524,24 @@ def calculate_match_score(
         start_t = routine.get("preferredStartTime") or "09:00"
         end_t = routine.get("preferredEndTime") or "17:00"
         reasons.append(f"Available for flexible schedule ({start_t} - {end_t})")
-    elif "TWENTY_FOUR" in elder_shift or "24" in elder_shift:
-        reasons.append("Aligned with 24-Hour live-in companion care")
-    elif "TWELVE" in elder_shift or "12" in elder_shift:
-        reasons.append("Aligned with 12-Hour day/night shift coverage")
-    elif "EIGHT" in elder_shift or "8" in elder_shift:
-        reasons.append("Aligned with 8-Hour day shift care")
+    elif "TWENTY_FOUR" in elder_shift or "24" in elder_shift or "LIVE_IN" in elder_shift:
+        if "24" in cg_all_shifts or "LIVE" in cg_all_shifts:
+            score += 5.0
+            reasons.append("Prefers and available for 24-Hour live-in companion care")
+        else:
+            reasons.append("Aligned with 24-Hour live-in companion care")
+    elif "TWELVE" in elder_shift or "12" in elder_shift or "NIGHT" in elder_shift:
+        if "12" in cg_all_shifts or "NIGHT" in cg_all_shifts:
+            score += 5.0
+            reasons.append("Available for preferred 12-Hour night shift coverage")
+        else:
+            reasons.append("Aligned with 12-Hour day/night shift coverage")
+    elif "EIGHT" in elder_shift or "8" in elder_shift or "DAY" in elder_shift:
+        if "DAY" in cg_all_shifts or "8" in cg_all_shifts or "10" in cg_all_shifts:
+            score += 5.0
+            reasons.append("Available for preferred 8-10 hour day shift care")
+        else:
+            reasons.append("Aligned with 8-Hour day shift care")
 
     final_score = min(99.0, max(65.0, round(score, 1)))
     rationale = " - ".join(reasons)
@@ -619,7 +650,7 @@ async def get_curated_caregivers_for_elder(
         # 3. Search query filter
         if search and search.strip():
             s_needle = search.strip().lower()
-            blob = f"{cg.full_name} {cg.locality} {cg.skills} {cg.specializations} {cg.qualifications or ''} {cg.headline or ''}".lower()
+            blob = f"{cg.full_name} {cg.locality} {cg.skills} {cg.specializations} {cg.qualifications or ''} {cg.headline or ''} {getattr(cg, 'preferred_care_types', '') or ''} {getattr(cg, 'work_preferences', '') or ''}".lower()
             if s_needle not in blob:
                 continue
 

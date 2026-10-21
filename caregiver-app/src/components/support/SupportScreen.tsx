@@ -14,9 +14,14 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { offlineQueue } from '../../services/offlineQueue';
 import { CaregiverKycModal } from '../profile/CaregiverKycModal';
+import { BackButton } from '../common/BackButton';
 import type { OfflineQueueItem } from '../../types';
 
-export const SupportScreen: React.FC = () => {
+interface SupportScreenProps {
+  onBack?: () => void;
+}
+
+export const SupportScreen: React.FC<SupportScreenProps> = ({ onBack }) => {
   const { t } = useLanguage();
   const [queueItems, setQueueItems] = useState<OfflineQueueItem[]>([]);
   const [isSimulated, setIsSimulated] = useState<boolean>(offlineQueue.getSimulatedOffline());
@@ -57,6 +62,11 @@ export const SupportScreen: React.FC = () => {
 
   return (
     <div className="p-4 space-y-4 max-w-md mx-auto pb-24">
+      {onBack && (
+        <div className="flex items-center justify-between">
+          <BackButton onClick={onBack} label="Back" />
+        </div>
+      )}
       {/* Caregiver Identity & KYC Card */}
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
         <div className="flex items-center justify-between">

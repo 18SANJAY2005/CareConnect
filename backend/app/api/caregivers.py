@@ -252,8 +252,12 @@ async def list_admin_caregivers(
     kycs_res = await db.execute(select(CaregiverKYC))
     kycs = kycs_res.scalars().all()
     kyc_by_user_id = {k.caregiver_id: k for k in kycs}
-
-    users_by_phone = {u.phone: u for u in cg_users if u.phone}
+    users_by_phone = {}
+    for u in cg_users:
+        if not u.phone:
+            continue
+        if u.phone not in users_by_phone or u.id in kyc_by_user_id:
+            users_by_phone[u.phone] = u
 
     output = []
     for cg in cgs:
@@ -412,22 +416,33 @@ async def update_caregiver_kyc_status(
         user_res = await db.execute(select(User).where(User.id == kyc.caregiver_id))
         target_user = user_res.scalars().first()
     else:
-        # 2. Try looking up through Caregiver directory by ID or phone
-        if caregiver_id.isdigit():
-            cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
-            target_cg = cg_res.scalars().first()
-        if not target_cg:
-            cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
-            target_cg = cg_res.scalars().first()
+        # 2a. Check if caregiver_id is a User.id whose phone has a KYC record
+        u_res = await db.execute(select(User).where(User.id == caregiver_id))
+        alt_user = u_res.scalars().first()
+        if alt_user and alt_user.phone:
+            target_user = alt_user
+            kyc_res = await db.execute(
+                select(CaregiverKYC).join(User, CaregiverKYC.caregiver_id == User.id).where(User.phone == alt_user.phone)
+            )
+            kyc = kyc_res.scalars().first()
 
-        if target_cg and target_cg.phone:
-            u_res = await db.execute(select(User).where(User.phone == target_cg.phone))
-            target_user = u_res.scalars().first()
-            if target_user:
-                kyc_res = await db.execute(
-                    select(CaregiverKYC).where(CaregiverKYC.caregiver_id == target_user.id)
-                )
-                kyc = kyc_res.scalars().first()
+        # 2b. Try looking up through Caregiver directory by ID or phone
+        if not kyc:
+            if caregiver_id.isdigit():
+                cg_res = await db.execute(select(Caregiver).where(Caregiver.id == int(caregiver_id)))
+                target_cg = cg_res.scalars().first()
+            if not target_cg:
+                cg_res = await db.execute(select(Caregiver).where(Caregiver.phone == caregiver_id))
+                target_cg = cg_res.scalars().first()
+
+            if target_cg and target_cg.phone:
+                u_res = await db.execute(select(User).where(User.phone == target_cg.phone))
+                target_user = u_res.scalars().first()
+                if target_user:
+                    kyc_res = await db.execute(
+                        select(CaregiverKYC).where(CaregiverKYC.caregiver_id == target_user.id)
+                    )
+                    kyc = kyc_res.scalars().first()
                 if not kyc and payload.verification_status.upper() == "VERIFIED":
                     kyc = CaregiverKYC(
                         caregiver_id=target_user.id,

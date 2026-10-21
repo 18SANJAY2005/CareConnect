@@ -59,6 +59,7 @@ Thumbs.db
 # Local Binaries & Logs
 bin/
 scratch/
+logs/
 *.exe
 cloudflared.exe
 scripts/cloudflared.exe
