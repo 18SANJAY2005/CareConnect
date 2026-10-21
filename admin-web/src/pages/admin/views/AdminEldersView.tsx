@@ -23,7 +23,7 @@ interface AdminEldersViewProps {
   onSelectElder: (elder: AdminElderItem) => void;
   onStatusChange: (elderId: string, newStatus: 'ACTIVE' | 'PENDING' | 'INACTIVE') => void;
   onAddElder?: () => void;
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
 }
 
 export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
@@ -31,7 +31,7 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
   onSelectElder,
   onStatusChange,
   onAddElder,
-  onBackToDashboard,
+  onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPin, setSelectedPin] = useState('ALL');
@@ -93,14 +93,14 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
       {/* Top Controls Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -265,18 +265,18 @@ export const AdminEldersView: React.FC<AdminEldersViewProps> = ({
 
       {/* Table Canvas */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 border-collapse">
             {/* Table Header */}
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <th className="py-4 px-6">Careseeker Name & Demographics</th>
-                <th className="py-4 px-6">Primary Family Contact</th>
-                <th className="py-4 px-6">Service Address & PIN</th>
-                <th className="py-4 px-6">Emergency Hospital Facility</th>
-                <th className="py-4 px-6">Assigned Caregiver</th>
-                <th className="py-4 px-6">Status</th>
-                <th className="py-4 px-6 text-right">Actions</th>
+                <th className="py-3.5 px-4">Careseeker Name & Demographics</th>
+                <th className="py-3.5 px-4">Primary Family Contact</th>
+                <th className="py-3.5 px-4">Service Address & PIN</th>
+                <th className="py-3.5 px-4">Emergency Hospital Facility</th>
+                <th className="py-3.5 px-4">Assigned Caregiver</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
 

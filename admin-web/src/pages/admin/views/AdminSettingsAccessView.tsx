@@ -26,7 +26,7 @@ import type {
 import { AdminTeamAccessView } from './AdminTeamAccessView';
 
 interface AdminSettingsAccessViewProps {
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
   activeRole?: OpsRole;
   onRoleChange?: (role: OpsRole) => void;
   activeSectorScope?: OperatingSectorScope;
@@ -34,7 +34,7 @@ interface AdminSettingsAccessViewProps {
 }
 
 export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = ({
-  onBackToDashboard,
+  onBack,
   activeRole = 'SUPER_ADMIN',
   onRoleChange,
   activeSectorScope = 'ALL',
@@ -175,14 +175,14 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
       {/* Header */}
       <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          {onBackToDashboard && (
+          {onBack && (
             <button
-              onClick={onBackToDashboard}
-              className="px-3 py-2 rounded-2xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-700 hover:text-teal-900 transition-all flex items-center gap-2 group text-xs font-bold shadow-2xs shrink-0 cursor-pointer"
-              title="Return to Dashboard Overview"
+              onClick={onBack}
+              className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-slate-600 hover:text-teal-900 transition flex items-center justify-center shrink-0 shadow-2xs cursor-pointer group"
+              title="Back"
+              aria-label="Back"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5 text-slate-500 group-hover:text-teal-700" />
-              <span className="hidden sm:inline">Back to Dashboard</span>
             </button>
           )}
           <div>
@@ -211,7 +211,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
           }`}
         >
           <Users className="w-4 h-4 text-teal-600" />
-          <span>User Access & Roles</span>
+          <span>User Access & Team</span>
         </button>
 
         <button
@@ -253,7 +253,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
 
       {/* Sub-Tab 0: Administrative Staff & User Management */}
       {settingsSubTab === 'TEAM' && (
-        <AdminTeamAccessView onBackToDashboard={onBackToDashboard} />
+        <AdminTeamAccessView />
       )}
 
       {/* Sub-Tab 1: Role Access (RBAC) */}
@@ -315,7 +315,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
@@ -428,7 +428,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
               </div>
 
               {/* Filter staff by role */}
-              <div className="flex items-center gap-1.5 overflow-x-auto">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {(['ALL', 'SUPER_ADMIN', 'REGIONAL_SUPERVISOR', 'CLINICAL_AUDITOR', 'BILLING_SPECIALIST'] as const).map(
                   (r) => (
                     <button
@@ -455,7 +455,7 @@ export const AdminSettingsAccessView: React.FC<AdminSettingsAccessViewProps> = (
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="w-full max-w-full overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">

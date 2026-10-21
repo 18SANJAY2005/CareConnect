@@ -12,7 +12,7 @@ import {
   Clock,
   BarChart3,
   Building2,
-  CreditCard,
+  Wallet,
 } from 'lucide-react';
 import type { AdminTab } from '../types';
 
@@ -77,7 +77,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         },
         {
           id: 'HOSPITALS',
-          label: 'Hospital Catalog & ER',
+          label: 'Hospital Catalog',
           icon: Building2,
         },
       ],
@@ -86,14 +86,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       title: 'BUSINESS & INTELLIGENCE',
       items: [
         {
-          id: 'SERVICES_PRICING',
-          label: 'Services Catalog',
-          icon: Stethoscope,
+          id: 'PAYOUTS',
+          label: 'Attendant Payouts',
+          icon: Wallet,
         },
         {
-          id: 'PAYOUTS',
-          label: 'Attendant Payout History',
-          icon: CreditCard,
+          id: 'SERVICES_PRICING',
+          label: 'Services & Pricing',
+          icon: Stethoscope,
         },
         {
           id: 'REPORTS',

@@ -33,7 +33,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 text-slate-800">
+    <div className="flex h-screen w-full max-w-full overflow-hidden bg-slate-50 text-slate-800">
       {/* 1. Left Navigation Sidebar */}
       <AdminSidebar
         activeTab={activeTab}
@@ -43,8 +43,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         onToggleCollapse={onToggleCollapse}
       />
 
-      {/* 2. Main Scrollable Canvas */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      {/* 2. Main Scrollable Canvas - strictly fit within frame, no left-to-right scrolling */}
+      <main className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-y-auto overflow-x-hidden">
         {/* Top Navbar */}
         <AdminHeader
           activeTab={activeTab}
@@ -58,8 +58,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           activeRole={activeRole}
         />
 
-        {/* View Content Canvas */}
-        <div className="p-6 flex-1 space-y-6 max-w-7xl w-full mx-auto">
+        {/* View Content Canvas - responsive padding, constrained to frame */}
+        <div className="p-4 md:p-6 flex-1 space-y-6 max-w-7xl w-full mx-auto min-w-0">
           {children}
         </div>
       </main>

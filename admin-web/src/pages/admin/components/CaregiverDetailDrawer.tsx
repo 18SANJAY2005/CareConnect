@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   X,
   MapPin,
@@ -23,9 +23,11 @@ import {
   Eye,
   UserCheck,
   XCircle,
+  Wallet,
+  Search,
 } from 'lucide-react';
 import type { AdminCaregiverItem, ClinicalTaskItem } from '../types';
-import { serviceableCorridors, sample7DayHistoryPriya } from '../mockData';
+import { serviceableCorridors, sample7DayHistoryPriya, initialAttendantPayouts } from '../mockData';
 import { api } from '../../../services/api';
 
 interface CaregiverDetailDrawerProps {
@@ -63,6 +65,54 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
   const [localKycStatus, setLocalKycStatus] = useState<'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED' | 'REJECTED'>('PENDING');
   const [localIsVerified, setLocalIsVerified] = useState(false);
   const [localRejectionReason, setLocalRejectionReason] = useState<string | null>(null);
+
+  // Attendant Payout History states (Requirement 1.3 & 2.6)
+  const [payoutSearchElder, setPayoutSearchElder] = useState('');
+
+  const caregiverPayouts = useMemo(() => {
+    if (!caregiver) return [];
+    const directMatches = initialAttendantPayouts.filter(
+      (p) =>
+        p.caregiverId === caregiver.id ||
+        p.caregiverName.toLowerCase() === caregiver.fullName.toLowerCase()
+    );
+    // If attendant has no direct mock payout, provide fallback historical shifts
+    if (directMatches.length === 0) {
+      return initialAttendantPayouts.slice(0, 3).map((p, idx) => ({
+        ...p,
+        id: `gen_pay_${caregiver.id}_${idx}`,
+        payoutNumber: `PAY-2026-${caregiver.id.toUpperCase()}-${100 + idx}`,
+        caregiverId: caregiver.id,
+        caregiverName: caregiver.fullName,
+        caregiverLocality: caregiver.locality,
+      }));
+    }
+    return directMatches;
+  }, [caregiver]);
+
+  const filteredCaregiverPayouts = useMemo(() => {
+    if (!payoutSearchElder.trim()) return caregiverPayouts;
+    const q = payoutSearchElder.toLowerCase().trim();
+    return caregiverPayouts.filter(
+      (p) =>
+        p.elderName.toLowerCase().includes(q) ||
+        p.serviceName.toLowerCase().includes(q) ||
+        p.payoutNumber.toLowerCase().includes(q) ||
+        (p.providerReference && p.providerReference.toLowerCase().includes(q))
+    );
+  }, [caregiverPayouts, payoutSearchElder]);
+
+  const totalCaregiverEarned = useMemo(() => {
+    return caregiverPayouts
+      .filter((p) => p.status === 'PAID')
+      .reduce((sum, p) => sum + p.netPayoutAmount, 0);
+  }, [caregiverPayouts]);
+
+  const pendingCaregiverPayout = useMemo(() => {
+    return caregiverPayouts
+      .filter((p) => p.status === 'PENDING' || p.status === 'PROCESSING')
+      .reduce((sum, p) => sum + p.netPayoutAmount, 0);
+  }, [caregiverPayouts]);
 
   // Sync corridor selection, tasks, and KYC state when caregiver changes
   useEffect(() => {
@@ -690,6 +740,108 @@ export const CaregiverDetailDrawer: React.FC<CaregiverDetailDrawerProps> = ({
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Section: Attendant Payout History & Earnings (Requirement 1.3 & 2.6) */}
+          <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                  Attendant Payout History & Earnings
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                  Paid: ₹{totalCaregiverEarned.toLocaleString('en-IN')}
+                </span>
+                {pendingCaregiverPayout > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+                    Pending: ₹{pendingCaregiverPayout.toLocaleString('en-IN')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Search by Careseeker (Requirement 2.6) */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search payout records by care seeker name or service..."
+                value={payoutSearchElder}
+                onChange={(e) => setPayoutSearchElder(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+              />
+              {payoutSearchElder && (
+                <button
+                  onClick={() => setPayoutSearchElder('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Payout History Ledger Table */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50/50">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-100/80 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-200">
+                    <th className="py-2 px-3">Date</th>
+                    <th className="py-2 px-3">Care Seeker</th>
+                    <th className="py-2 px-3">Care Type</th>
+                    <th className="py-2 px-3 text-right">Net Payout</th>
+                    <th className="py-2 px-3 text-center">Status</th>
+                    <th className="py-2 px-3">Reference / UTR</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredCaregiverPayouts.map((pay) => (
+                    <tr key={pay.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-2.5 px-3 font-bold text-slate-900 whitespace-nowrap">
+                        <div>{pay.shiftDate}</div>
+                        <div className="text-[10px] font-normal text-slate-400">{pay.shiftDuration}</div>
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-800 whitespace-nowrap">
+                        {pay.elderName}
+                      </td>
+                      <td className="py-2.5 px-3 text-[11px] text-slate-700 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium">
+                          {pay.serviceName}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-heading font-black text-emerald-800 whitespace-nowrap">
+                        ₹{pay.netPayoutAmount.toLocaleString('en-IN')}
+                      </td>
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            pay.status === 'PAID'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : pay.status === 'PROCESSING'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {pay.status}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500 whitespace-nowrap">
+                        {pay.providerReference || 'Pending UTR'}
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredCaregiverPayouts.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-xs text-slate-400">
+                        No payout records found matching your search.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 

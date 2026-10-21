@@ -4,12 +4,12 @@ export type AdminTab =
   | 'ELDERS'
   | 'CAREGIVERS'
   | 'ATTENDANCE'
+  | 'PAYOUTS'
   | 'SOS'
+  | 'HOSPITALS'
   | 'SERVICES_PRICING'
   | 'SERVICES'
   | 'PRICING'
-  | 'HOSPITALS'
-  | 'PAYOUTS'
   | 'REPORTS'
   | 'SETTINGS'
   | 'SETTINGS_ACCESS'
@@ -19,27 +19,22 @@ export interface NearbyHospital {
   id: string;
   name: string;
   locality?: string;
+  location?: string;
   distanceKm: number;
   etaMins?: number;
   emergencyPhone: string;
+  emergencyContact?: string;
   contact?: string;
+  contactDetails?: string;
   address: string;
   traumaLevel?: string;
   latitude?: number;
   longitude?: number;
-}
-
-export interface HospitalFacility {
-  id: string;
-  name: string;
-  address: string;
-  area: string; // Area / Corridor
-  latitude: number;
-  longitude: number;
-  standardPhone: string;
-  emergencyPhone: string; // 24/7 Emergency / Ambulance Desk Contact
-  traumaLevel?: string;
-  ambulanceAvailable?: boolean;
+  city?: string;
+  googleMapsUrl?: string;
+  status?: 'ACTIVE' | 'CLOSED';
+  registeredDate?: string;
+  establishedYear?: number;
 }
 
 export interface ClinicalTaskItem {
@@ -151,49 +146,19 @@ export interface ShiftAttendanceLog {
     | 'OVERTIME'
     | 'ON_DUTY_WITHIN_SHIFT'
     | 'COMPLETED'
-    | 'EN_ROUTE'
-    | 'DELAYED_UNACKNOWLEDGED'
-    | 'NOT_YET_REACHED'
-    | 'DELAYED'
     | 'On Time'
     | 'Late'
     | 'Active'
     | 'Completed'
-    | 'Flagged';
+    | 'Flagged'
+    | 'Pending';
   geofenceStatus: 'VERIFIED' | 'OFF_SITE_FLAG';
-  arrivalStatus?: 'ARRIVED' | 'NOT_YET_REACHED' | 'EN_ROUTE' | 'DELAYED_UNACKNOWLEDGED';
-  caregiverPhone?: string;
-  expectedArrivalTime?: string;
-  distanceToSiteMeters?: number;
   handoffNotes?: string;
   vitalsHandedOver?: boolean;
   supervisorSignoff?: string;
   tasksCompletedCount?: number;
   tasksTotalCount?: number;
   tasks?: ClinicalTaskItem[];
-}
-
-export interface AdminPayoutRecord {
-  id: string; // e.g. "PAY-2026-8812"
-  caregiverId: string;
-  caregiverName: string;
-  caregiverPhone: string;
-  caregiverCorridor: string;
-  careseekerId: string;
-  careseekerName: string;
-  careseekerLocality: string;
-  shiftDate: string;
-  shiftDuration: string;
-  shiftHours: number;
-  payoutAmount: number;
-  status: 'Processed' | 'Pending' | 'Disputed';
-  disputeReason?: string;
-  processedAt?: string;
-  bankReference?: string;
-  receiptNumber?: string;
-  serviceType: string;
-  hourlyRateEquivalent?: number;
-  allowance?: number;
 }
 
 export interface CaregiverShiftSchedule {
@@ -310,6 +275,25 @@ export interface AdminCarePlanItem {
   notes: string;
 }
 
+export interface ServicePricingTier {
+  duration: string;
+  hours: number;
+  careseekerPrice: number;
+  attendantPayout: number;
+  label: string;
+}
+
+export interface PlatformServicePricing {
+  baseShiftHours: number;
+  careseekerPricePerShift: number;
+  careseekerMonthlyPrice: number;
+  hourlyRate: number;
+  attendantPayoutPerShift: number;
+  attendantMonthlyPayout: number;
+  platformMarginPct: number;
+  tiers: ServicePricingTier[];
+}
+
 export interface PlatformService {
   id: string;
   code: string;
@@ -317,6 +301,37 @@ export interface PlatformService {
   description: string;
   icon: 'mobility' | 'medical' | 'medication' | 'monitoring';
   status: 'Active';
+  pricing?: PlatformServicePricing;
+}
+
+export interface AttendantPayoutRecord {
+  id: string;
+  payoutNumber: string; // e.g. PAY-2026-CH-1001
+  caregiverId: string;
+  caregiverName: string;
+  caregiverLocality: string;
+  caregiverPhone?: string;
+  elderId: string;
+  elderName: string;
+  elderLocality?: string;
+  serviceCode: string; // e.g. SVC-MOBILITY
+  serviceName: string; // e.g. Mobility Assistance
+  shiftDate: string;
+  periodStart: string;
+  periodEnd: string;
+  hoursWorked: number;
+  shiftDuration: string;
+  dailyRate: number;
+  grossEarned: number;
+  deductionsAmount: number; // TDS + operational insurance
+  netPayoutAmount: number;
+  status: 'PAID' | 'PROCESSING' | 'PENDING';
+  paymentMethod: 'UPI' | 'IMPS_BANK' | 'DIRECT_CREDIT';
+  providerReference?: string; // Bank UTR / RazorpayX ID
+  approvedBy?: string;
+  approvedAt?: string;
+  paidAt?: string;
+  notes?: string;
 }
 
 export interface ClinicalServiceItem {
@@ -420,4 +435,7 @@ export interface AdminMetrics {
   openSosTickets: number;
   verifiedCaregivers: number;
   bufferPoolAvailable: number;
+  totalAttendants?: number;
+  activeAttendants?: number;
+  inactiveAttendants?: number;
 }

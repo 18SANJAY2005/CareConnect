@@ -21,7 +21,7 @@ import type { AdminRole, AdminUser } from '../types';
 import { initialAdminUsers } from '../mockData';
 
 interface AdminTeamAccessViewProps {
-  onBackToDashboard?: () => void;
+  // Navigation handled via sidebar
 }
 
 const AVAILABLE_LOCATIONS = [
@@ -459,16 +459,16 @@ export const AdminTeamAccessView: React.FC<AdminTeamAccessViewProps> = () => {
 
       {/* Staff Directory Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="w-full max-w-full overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600 border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <th className="py-4 px-6">Administrative Staff Member</th>
-                <th className="py-4 px-6">Assigned Permission Role</th>
-                <th className="py-4 px-6">Assigned Location Scopes</th>
-                <th className="py-4 px-6">Access Status</th>
-                <th className="py-4 px-6">Last Active</th>
-                <th className="py-4 px-6 text-right">Actions</th>
+                <th className="py-3.5 px-4">Administrative Staff Member</th>
+                <th className="py-3.5 px-4">Assigned Permission Role</th>
+                <th className="py-3.5 px-4">Assigned Location Scopes</th>
+                <th className="py-3.5 px-4">Access Status</th>
+                <th className="py-3.5 px-4">Last Active</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -810,7 +810,7 @@ export const AdminTeamAccessView: React.FC<AdminTeamAccessViewProps> = () => {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition active:scale-95"
                 >
-                  {editingUser ? 'Save Permissions & Update Access' : 'Send Invitation & Grant Access'}
+                  {editingUser ? 'Save Permissions' : 'Send Invitation'}
                 </button>
               </div>
             </form>

@@ -3,7 +3,7 @@ import { AdminSettingsAccessView } from './AdminSettingsAccessView';
 import type { OpsRole, OperatingSectorScope } from '../types';
 
 interface AdminSettingsViewProps {
-  onBackToDashboard?: () => void;
+  onBack?: () => void;
   activeRole?: OpsRole;
   onRoleChange?: (role: OpsRole) => void;
   activeSectorScope?: OperatingSectorScope;
@@ -15,4 +15,5 @@ export const AdminSettingsView: React.FC<AdminSettingsViewProps> = (props) => {
 };
 
 export { AdminTeamAccessView } from './AdminTeamAccessView';
+
 
